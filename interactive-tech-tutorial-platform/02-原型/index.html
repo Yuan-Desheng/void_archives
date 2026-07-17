@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交互式技术教程平台 - 原型导航</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+              400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+              800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+            },
+            accent: {
+              50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+              400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+              800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+            },
+            spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+            success: { DEFAULT: '#10B981', 500: '#10B981' },
+            warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+            danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+            surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+            base: '#0A0C10'
+          },
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+          },
+          boxShadow: {
+            glow: '0 0 24px -4px rgba(76,111,255,.45)',
+            'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+            spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --color-bg-base: #0A0C10;
+      --color-bg-surface: #12151C;
+      --color-bg-surface-2: #1A1E27;
+      --color-border: rgba(255,255,255,.06);
+      --color-border-strong: rgba(255,255,255,.12);
+      --color-text-primary: #E6E9F0;
+      --color-text-secondary: #8B93A7;
+      --color-text-muted: #5A6172;
+      --color-primary: #4C6FFF;
+      --color-accent: #22D3EE;
+      --color-spotlight: #FDBA33;
+      --color-success: #10B981;
+      --color-warning: #F59E0B;
+      --color-danger: #EF4444;
+      --radius-card: 16px;
+      --radius-control: 8px;
+      --ease-standard: cubic-bezier(.4,0,.2,1);
+    }
+    html { color-scheme: dark; }
+    body {
+      background-color: var(--color-bg-base);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+      background-attachment: fixed;
+      color: var(--color-text-primary);
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    ::selection { background: rgba(76,111,255,.35); color: #fff; }
+    * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+    * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+    code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+    .glass-card {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
+    }
+    .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+    .grad-primary-accent {
+      background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    }
+    .text-grad {
+      background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    .page-card {
+      display: block;
+      padding: 20px;
+      background: var(--color-bg-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-control);
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    .page-card:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 16px -4px rgba(76,111,255,.35);
+      transform: translateY(-2px);
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .section-header {
+      margin-top: 40px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border-strong);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+    }
+  </style>
+</head>
+<body>
+  <div style="max-width: 1200px; margin: 0 auto; padding: 60px 20px;">
+    <!-- Header -->
+    <div style="margin-bottom: 60px;">
+      <h1 style="font-size: 48px; font-weight: 800; margin-bottom: 16px;">
+        <span class="text-grad">交互式技术教程平台</span>
+      </h1>
+      <p style="font-size: 18px; color: var(--color-text-secondary); line-height: 1.6; max-width: 700px; margin-bottom: 24px;">
+        一个内容与引擎分离的交互式技术教程平台：教程以 TutorialPackage 配置驱动，引擎负责步骤引导、聚光灯高亮与等待用户操作，配合可真实运行的 Sandpack 代码沙箱，让学习者边读边动手；首个主题为 React，结构预留 Vue / JavaScript / 算法扩展。
+      </p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <span style="display: inline-block; padding: 6px 12px; background: rgba(76,111,255,.15); border: 1px solid rgba(76,111,255,.35); border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--color-primary);">React 教程</span>
+        <span style="display: inline-block; padding: 6px 12px; background: rgba(34,211,238,.15); border: 1px solid rgba(34,211,238,.35); border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--color-accent);">代码沙箱</span>
+        <span style="display: inline-block; padding: 6px 12px; background: rgba(253,186,51,.15); border: 1px solid rgba(253,186,51,.35); border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--color-spotlight);">步骤导航</span>
+      </div>
+    </div>
+
+    <!-- Section: 教程与章节目录 -->
+    <div class="section-header">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0;">【教程与章节目录】</h2>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin: 8px 0 0;">浏览主题包、查看课程结构和学习进度</p>
+    </div>
+    <div class="module-grid">
+      <a href="tutorial-catalog__package-selection.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📚 主题包选择页</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">浏览可用教程主题，选择开始学习</div>
+      </a>
+      <a href="tutorial-catalog__chapter-tree.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📖 教程详情页</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">目录树与章节概览</div>
+      </a>
+      <a href="tutorial-catalog__learning-progress-overview.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📊 我的学习总览</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">学习统计与进度概览</div>
+      </a>
+    </div>
+
+    <!-- Section: 课程讲解与步骤导航 -->
+    <div class="section-header">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0;">【课程讲解与步骤导航】</h2>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin: 8px 0 0;">阅读课程内容、查看学习进度</p>
+    </div>
+    <div class="module-grid">
+      <a href="lesson-reader__catalog.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📑 教程包目录</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">章节与课程内容导航</div>
+      </a>
+      <a href="lesson-reader__lesson.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">✏️ 课程学习页</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">阅读教程讲解与完成练习</div>
+      </a>
+      <a href="lesson-reader__my-progress.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📈 我的学习进度</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">查看完成情况与学习统计</div>
+      </a>
+    </div>
+
+    <!-- Section: 引导引擎 -->
+    <div class="section-header">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0;">【引导引擎】</h2>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin: 8px 0 0;">步骤引导、聚光灯高亮与交互工作台</p>
+    </div>
+    <div class="module-grid">
+      <a href="guided-tour__tour-overlay.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">💡 引导蒙层与聚光灯</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">全局叠加层与聚光灯效果</div>
+      </a>
+      <a href="guided-tour__tutorial-workspace.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">🎓 教程学习工作台</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">左讲解/右沙箱的完整学习环境</div>
+      </a>
+      <a href="guided-tour__chapter-toc.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">🗂️ 章节/步骤目录树</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">课程结构与导航树</div>
+      </a>
+      <a href="guided-tour__tutorial-catalog.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">🎯 教程包选择页</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">引导引擎中的主题选择</div>
+      </a>
+      <a href="guided-tour__my-progress.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📊 我的学习进度</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">引导引擎中的进度查看</div>
+      </a>
+    </div>
+
+    <!-- Section: 代码沙箱 -->
+    <div class="section-header">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0;">【代码沙箱】</h2>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin: 8px 0 0;">Sandpack 代码编辑与实时预览</p>
+    </div>
+    <div class="module-grid">
+      <a href="code-sandbox__sandbox-panel.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">⚙️ 沙箱主面板</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">桌面右栏编辑与预览</div>
+      </a>
+      <a href="code-sandbox__sandbox-mobile-tab.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📱 移动端沙箱 Tab</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">响应式 Tab 视图</div>
+      </a>
+      <a href="code-sandbox__sandbox-error-state.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">⚠️ 沙箱异常态</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">错误提示与恢复界面</div>
+      </a>
+    </div>
+
+    <!-- Section: 学习进度与账户 -->
+    <div class="section-header">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0;">【学习进度与账户】</h2>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin: 8px 0 0;">认证、学习管理与进度指示器</p>
+    </div>
+    <div class="module-grid">
+      <a href="learning-progress__auth-entry.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">🔐 登录入口与弹窗</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">用户认证与登录界面</div>
+      </a>
+      <a href="learning-progress__my-learning.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">📚 我的学习</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">学习记录与进度管理</div>
+      </a>
+      <a href="learning-progress__progress-indicators.html" class="page-card">
+        <div style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">✅ 进度标记与同步</div>
+        <div style="font-size: 13px; color: var(--color-text-secondary);">嵌入式进度指示器规范</div>
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--color-border); text-align: center;">
+      <p style="color: var(--color-text-muted); font-size: 13px;">
+        原型导航页 | 功能定义文档位置：<code style="background: var(--color-bg-surface-2); padding: 2px 6px; border-radius: 4px;">specs/ 目录</code>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

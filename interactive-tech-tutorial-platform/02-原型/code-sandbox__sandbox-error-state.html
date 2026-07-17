@@ -1,0 +1,832 @@
+<title>沙箱异常态视图 · 代码沙箱 · React 互动教程</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+  .no-hover-lift:hover { transform: none; }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+
+  /* ===== 页面专属样式 ===== */
+  .scenario-btn { position: relative; }
+  .scenario-btn[aria-pressed="true"] { color: #fff; }
+  .scenario-btn[aria-pressed="true"].sc-normal { background: var(--color-success); box-shadow: 0 0 20px -4px rgba(16,185,129,.5); }
+  .scenario-btn[aria-pressed="true"].sc-compile { background: var(--color-danger); box-shadow: 0 0 20px -4px rgba(239,68,68,.5); }
+  .scenario-btn[aria-pressed="true"].sc-dep { background: var(--color-warning); box-shadow: 0 0 20px -4px rgba(245,158,11,.5); }
+  .scenario-btn[aria-pressed="true"].sc-net { background: var(--color-warning); box-shadow: 0 0 20px -4px rgba(245,158,11,.5); }
+  .scenario-btn[aria-pressed="true"].sc-missing { background: var(--color-primary); box-shadow: 0 0 20px -4px rgba(76,111,255,.5); }
+
+  .ide-tab { position: relative; }
+  .ide-tab.is-active { color: var(--color-text-primary); }
+  .ide-tab.is-active::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 2px; background: var(--color-primary); border-radius: 2px 2px 0 0; }
+  .ide-tab.is-auto-created { animation: tabFlash 1800ms ease-out 1; }
+  @keyframes tabFlash {
+    0% { box-shadow: inset 0 0 0 1px rgba(76,111,255,0); background: rgba(76,111,255,.28); }
+    30% { box-shadow: inset 0 0 0 1px rgba(76,111,255,.6); background: rgba(76,111,255,.18); }
+    100% { box-shadow: inset 0 0 0 1px rgba(76,111,255,0); background: transparent; }
+  }
+
+  .live-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--color-success); box-shadow: 0 0 8px 1px rgba(16,185,129,.7); animation: livePulse 1.8s ease-in-out infinite; }
+  @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .live-dot.is-off { background: var(--color-text-muted); box-shadow: none; animation: none; }
+
+  .code-line { display: grid; grid-template-columns: 34px 1fr; }
+  .code-line.is-error-line { background: rgba(239,68,68,.14); box-shadow: inset 3px 0 0 var(--color-danger); }
+  .code-gutter { color: var(--color-text-muted); text-align: right; padding-right: 10px; user-select: none; }
+  .code-gutter.is-error-line { color: var(--color-danger); font-weight: 600; }
+  .err-underline { text-decoration: wavy underline var(--color-danger); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+
+  .tok-kw { color: #C792EA; }
+  .tok-fn { color: #82AAFF; }
+  .tok-str { color: #C3E88D; }
+  .tok-comment { color: #5A6172; }
+  .tok-tag { color: #F07178; }
+  .tok-attr { color: #FFCB6B; }
+  .tok-num { color: #F78C6C; }
+
+  .notice-enter { animation: noticeSlide 260ms var(--ease-standard) both; }
+  @keyframes noticeSlide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .btn-pulse { animation: btnPulse 480ms var(--ease-standard); }
+  @keyframes btnPulse { 0% { transform: scale(1); } 40% { transform: scale(.94); } 100% { transform: scale(1); } }
+
+  .console-panel { max-height: 0; overflow: hidden; transition: max-height 320ms var(--ease-standard); }
+  .console-panel.is-open { max-height: 320px; }
+
+  .fade-in { animation: fadeIn 220ms var(--ease-standard) both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .retry-spin { animation: spin 900ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .switch-track { width: 36px; height: 20px; border-radius: 999px; background: var(--color-bg-surface-2); border: 1px solid rgba(255,255,255,.12); position: relative; cursor: pointer; }
+  .switch-thumb { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 999px; background: var(--color-text-muted); transition: transform 200ms var(--ease-standard), background 200ms; }
+  .switch-track.is-on { background: rgba(76,111,255,.25); border-color: rgba(76,111,255,.5); }
+  .switch-track.is-on .switch-thumb { transform: translateX(16px); background: var(--color-primary); box-shadow: 0 0 6px rgba(76,111,255,.7); }
+</style>
+
+<div class="min-h-screen flex flex-col">
+
+  <!-- ===== 顶部导航 ===== -->
+  <header class="sticky top-0 z-50 border-b border-white/[.06] bg-base/85 backdrop-blur-md">
+    <div class="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shrink-0 shadow-glow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7 Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+        </div>
+        <div class="min-w-0 hidden sm:block">
+          <p class="text-[11px] text-muted leading-none">代码沙箱</p>
+          <p class="text-sm font-semibold leading-tight truncate">沙箱异常态视图</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="guided-tour__tutorial-workspace.html" class="hidden sm:flex h-9 px-3 rounded-lg border border-white/10 text-xs text-secondary hover:text-text-primary hover:bg-white/5 items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span>返回学习工作台</span>
+        </a>
+        <div class="relative">
+          <button id="siteMapBtn" class="h-9 px-3 rounded-lg border border-white/10 text-xs text-secondary hover:text-text-primary hover:bg-white/5 flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+            <span class="hidden sm:inline">全部页面</span>
+          </button>
+          <div id="siteMapPanel" class="hidden absolute right-0 mt-2 w-72 glass-card no-hover-lift p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,.6)] z-50 max-h-[70vh] overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-[1440px] w-full px-4 md:px-6 lg:px-8 py-5 md:py-6 flex-1">
+
+    <!-- ===== 页面说明条 ===== -->
+    <div class="glass-card no-hover-lift p-4 md:p-5 mb-5 flex flex-col md:flex-row md:items-center gap-4">
+      <div class="w-11 h-11 rounded-xl bg-primary-500/15 border border-primary-500/30 text-primary-300 flex items-center justify-center shrink-0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-base md:text-lg font-bold">沙箱异常态视图</h1>
+        <p class="text-xs md:text-sm text-secondary mt-1 leading-relaxed">本视图不是独立跳转页面，而是沙箱主面板 <span class="font-mono-ui text-accent-400">预览区</span> 在异常场景下的状态表达。下方通过场景切换器模拟真实运行时会出现的四类异常，观察面板如何在不打断编辑与运行的前提下降级展示。</p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 self-start md:self-center">
+        <span class="text-[10px] uppercase tracking-wide text-muted">开发态可见</span>
+        <button id="devModeSwitch" class="switch-track is-on" role="switch" aria-checked="true">
+          <span class="switch-thumb"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== 场景切换器 ===== -->
+    <div class="glass-card no-hover-lift p-4 md:p-5 mb-5">
+      <p class="text-[10px] uppercase tracking-wide text-secondary mb-2.5">场景切换 · scenario</p>
+      <div id="scenarioTabs" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- ===== 主体：沙箱面板 + 右侧数据速查 ===== -->
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5 lg:gap-6 items-start">
+
+      <!-- 左：沙箱主面板（IDE 观感） -->
+      <div class="min-w-0 rounded-2xl border border-white/[.08] bg-[#0B0E14] overflow-hidden shadow-[0_12px_40px_-12px_rgba(0,0,0,.6)]">
+
+        <!-- 通知条区域（依赖失败 / 离线，非阻断） -->
+        <div id="noticeArea"></div>
+
+        <!-- Tab 栏 -->
+        <div class="h-9 flex items-center border-b border-white/[.08] bg-[#0F1218] px-1.5">
+          <div id="tabBar" class="flex items-center h-full flex-1 min-w-0 overflow-x-auto"></div>
+          <div class="flex items-center gap-1.5 pl-2 pr-1.5 shrink-0 border-l border-white/[.08] ml-1.5">
+            <span id="hasErrorPill" class="hidden text-[10px] font-mono-ui px-1.5 py-0.5 rounded border border-danger/40 text-danger bg-danger/10">hasError</span>
+            <div class="flex items-center gap-1.5 text-[10px] text-secondary font-mono-ui">
+              <span id="liveDot" class="live-dot"></span>
+              <span id="liveLabel">Live Preview</span>
+            </div>
+            <button id="resetBtn" title="重置为默认代码模板" class="w-6 h-6 rounded-md flex items-center justify-center text-secondary hover:text-text-primary hover:bg-white/5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 编辑区 + 预览区 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2">
+          <!-- 编辑区 -->
+          <div class="border-b lg:border-b-0 lg:border-r border-white/[.08] min-w-0">
+            <div class="px-3 py-1.5 text-[10px] text-muted border-b border-white/[.05] flex items-center justify-between">
+              <span>编辑区 · EDITOR</span>
+              <span id="activeFileLabel" class="font-mono-ui text-secondary"></span>
+            </div>
+            <div id="editorBody" class="font-mono-ui text-[12.5px] leading-[1.7] py-2 overflow-x-auto"></div>
+          </div>
+
+          <!-- 预览区（异常状态展示核心） -->
+          <div class="min-w-0 relative">
+            <div class="px-3 py-1.5 text-[10px] text-muted border-b border-white/[.05] flex items-center justify-between">
+              <span>预览区 · PREVIEW</span>
+              <span id="lastRunLabel" class="font-mono-ui text-secondary"></span>
+            </div>
+            <div id="previewBody" class="min-h-[280px] lg:min-h-[320px] relative"></div>
+          </div>
+        </div>
+
+        <!-- 底部操作条 -->
+        <div class="h-12 flex items-center justify-between px-3.5 border-t border-white/[.08] bg-[#0F1218]">
+          <div class="text-[11px] text-muted font-mono-ui truncate pr-2" id="statusLine">就绪</div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="runBtn" class="h-8 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-glow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              Run
+            </button>
+          </div>
+        </div>
+
+        <!-- 开发者控制台（开发态可见） -->
+        <div id="consoleEntry" class="border-t border-white/[.08]">
+          <button id="consoleToggleBtn" class="w-full h-9 px-3.5 flex items-center justify-between text-xs text-secondary hover:text-text-primary hover:bg-white/[.03]">
+            <span class="flex items-center gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              开发者控制台
+              <span id="consoleBadge" class="hidden text-[10px] font-mono-ui px-1.5 rounded-full bg-warning/20 text-warning border border-warning/30"></span>
+            </span>
+            <svg id="consoleChevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="consolePanel" class="console-panel border-t border-white/[.06]">
+            <div id="consoleLogList" class="overflow-y-auto max-h-80 divide-y divide-white/[.04] font-mono-ui text-[11.5px]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：数据字段速查 + 场景说明 + 交互说明 -->
+      <aside class="space-y-4 xl:sticky xl:top-[80px]">
+
+        <section class="glass-card no-hover-lift p-4">
+          <h3 class="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">数据字段 · Data Fields</h3>
+          <dl class="space-y-3 text-xs">
+            <div>
+              <dt class="text-muted font-mono-ui">hasError</dt>
+              <dd id="dfHasError" class="mt-1 font-mono-ui text-sm font-semibold">false</dd>
+            </div>
+            <div>
+              <dt class="text-muted font-mono-ui">errorMessage</dt>
+              <dd id="dfErrorMessage" class="mt-1 font-mono-ui text-[11px] text-secondary leading-relaxed break-words">null</dd>
+            </div>
+            <div>
+              <dt class="text-muted font-mono-ui">lastRunTimestamp</dt>
+              <dd id="dfLastRun" class="mt-1 font-mono-ui text-[11px] text-secondary">--</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section id="scenarioDescCard" class="glass-card no-hover-lift p-4">
+          <h3 class="text-xs font-semibold text-secondary uppercase tracking-wide mb-2">当前场景说明</h3>
+          <p id="scenarioDescText" class="text-xs text-secondary leading-relaxed"></p>
+        </section>
+
+        <section class="glass-card no-hover-lift p-4">
+          <h3 class="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">关键交互约定</h3>
+          <ul class="space-y-2.5 text-xs text-secondary leading-relaxed">
+            <li class="flex gap-2"><span class="text-accent-400 shrink-0">·</span>编译失败时自动展示 Sandpack 原生错误堆栈，无需用户手动触发</li>
+            <li class="flex gap-2"><span class="text-accent-400 shrink-0">·</span>Run 按钮任何异常态下都保持可点击，可重新触发编译</li>
+            <li class="flex gap-2"><span class="text-accent-400 shrink-0">·</span>依赖加载失败仅展示提示条，不阻断编辑区继续输入</li>
+            <li class="flex gap-2"><span class="text-accent-400 shrink-0">·</span>文件路径缺失时静默新建文件并加入 Tab，不弹窗打断心流</li>
+          </ul>
+        </section>
+
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+
+  // ---------------------------------------------------------------
+  // 1. 文件与代码内容（模拟 TutorialPackage 注入的 codeSnippet）
+  // ---------------------------------------------------------------
+  const baseFiles = {
+    'App.jsx': [
+      { t: [['tok-kw','import'], [' '], ['tok-fn','Counter'], [' '], ['tok-kw','from'], [' '], ['tok-str',"'./Counter'"]] },
+      { t: [] },
+      { t: [['tok-kw','export default function'], [' '], ['tok-fn','App'], ['() {']] },
+      { t: [['  return (']] },
+      { t: [['    '], ['tok-tag','<div'], [' '], ['tok-attr','className'], ['='], ['tok-str','"app"'], ['tok-tag','>']] },
+      { t: [['      '], ['tok-tag','<Counter />']] },
+      { t: [['    '], ['tok-tag','</div>']] },
+      { t: [['  )']] },
+      { t: [['}']] },
+    ],
+    'Counter.jsx': [
+      { t: [['tok-kw','import'], [' { '], ['tok-fn','useState'], [' } '], ['tok-kw','from'], [' '], ['tok-str',"'react'"]] },
+      { t: [] },
+      { t: [['tok-kw','export default function'], [' '], ['tok-fn','Counter'], ['() {']] },
+      { t: [['  '], ['tok-kw','const'], [' [count, setCount] = '], ['tok-fn','useState'], ['(0)']], errT: [['  '], ['tok-kw','const'], [' [count, setCount] = '], ['tok-fn','useState'], ['(0'], ['err','']], isErrorLine: true },
+      { t: [] },
+      { t: [['  '], ['tok-kw','function'], [' '], ['tok-fn','handleIncrement'], ['() {']] },
+      { t: [['    setCount(count + 1)']] },
+      { t: [['  }']] },
+      { t: [] },
+      { t: [['  '], ['tok-kw','return'], [' (']] },
+      { t: [['    '], ['tok-tag','<div'], [' '], ['tok-attr','className'], ['='], ['tok-str','"counter"'], ['tok-tag','>']] },
+      { t: [['      '], ['tok-tag','<p>'], ['当前计数：{count}'], ['tok-tag','</p>']] },
+      { t: [['      '], ['tok-tag','<button'], [' '], ['tok-attr','onClick'], ['={handleIncrement}'], ['tok-tag','>']] },
+      { t: [['        +1']] },
+      { t: [['      '], ['tok-tag','</button>']] },
+      { t: [['    '], ['tok-tag','</div>']] },
+      { t: [['  )']] },
+      { t: [['}']] },
+    ],
+    'styles.css': [
+      { t: [['.counter {']] },
+      { t: [['  '], ['tok-attr','padding'], [': '], ['tok-num','24px'], [';']] },
+      { t: [['  '], ['tok-attr','font-family'], [': '], ['tok-str','sans-serif'], [';']] },
+      { t: [['}']] },
+    ],
+  };
+
+  function renderTokens(tokens) {
+    return tokens.map(tok => {
+      if (Array.isArray(tok)) {
+        const [cls, text] = tok.length === 2 ? tok : [null, tok[0]];
+        if (cls === 'err') return '';
+        return cls ? `<span class="${cls}">${escapeHtml(text)}</span>` : escapeHtml(text);
+      }
+      return '';
+    }).join('');
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  // ---------------------------------------------------------------
+  // 2. 场景定义
+  // ---------------------------------------------------------------
+  const scenarios = {
+    normal: {
+      label: '正常运行', cls: 'sc-normal',
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+      hasError: false, errorMessage: null,
+      desc: '编译通过，预览区正常渲染组件输出，控制台仅有常规启动日志，无需任何降级处理。',
+      status: 'Compiled successfully',
+      extraTabs: [],
+      notices: [],
+      logs: [
+        { level: 'info', msg: '[sandpack] bundler ready in 428ms' },
+        { level: 'info', msg: '[sandpack] module graph resolved · 3 files' },
+      ],
+    },
+    'compile-error': {
+      label: '编译错误', cls: 'sc-compile',
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      hasError: true,
+      errorMessage: 'SyntaxError: Unexpected token, expected "," (4:37) in src/Counter.jsx',
+      desc: 'Counter.jsx 第 4 行 useState(0 缺少右括号，Babel 解析失败。预览区自动替换为 Sandpack 原生错误堆栈，编辑区仍可继续修改，Run 按钮不禁用。',
+      status: 'Failed to compile',
+      extraTabs: [],
+      notices: [],
+      logs: [
+        { level: 'error', msg: '[sandpack] SyntaxError: Unexpected token, expected "," (4:37)' },
+        { level: 'warn', msg: '[sandpack] preview render skipped · showing error overlay' },
+      ],
+      errorLineFile: 'Counter.jsx',
+    },
+    'dependency-failure': {
+      label: '依赖加载失败', cls: 'sc-dep',
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7 Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>',
+      hasError: false, errorMessage: null,
+      desc: '依赖包 dayjs@1.11.10 从 CDN 拉取超时，Sandpack 自动回退到最近一次成功缓存版本继续渲染，仅在面板顶部展示可关闭的提示条，不影响正常编辑与预览。',
+      status: 'Compiled with cached dependency',
+      extraTabs: [],
+      notices: [
+        { type: 'warning', title: '依赖加载失败，已使用缓存版本', desc: 'dayjs@1.11.10 从 CDN 拉取超时，预览已回退至最近一次成功缓存的依赖版本渲染。', retry: true },
+      ],
+      logs: [
+        { level: 'warn', msg: '[sandpack] fetch https://cdn.skypack.dev/dayjs@1.11.10 timeout after 8000ms' },
+        { level: 'warn', msg: '[sandpack] falling back to cached dependency snapshot (2026-07-15)' },
+      ],
+    },
+    'network-offline': {
+      label: '网络离线', cls: 'sc-net',
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>',
+      hasError: false, errorMessage: null,
+      desc: '浏览器网络连接中断，无法访问 Sandpack CDN 拉取新依赖。已装入内存的模块继续离线运行，预览不中断，仅提示当前处于离线降级模式。',
+      status: 'Running offline (cached bundle)',
+      extraTabs: [],
+      notices: [
+        { type: 'danger', title: '网络连接异常，当前为离线模式', desc: '无法连接 Sandpack CDN，新增依赖暂不可用；已加载的模块继续使用内存缓存运行预览。', retry: true },
+      ],
+      logs: [
+        { level: 'error', msg: '[network] navigator.onLine === false' },
+        { level: 'warn', msg: '[sandpack] CDN unreachable · running from in-memory module cache' },
+      ],
+    },
+    'missing-file': {
+      label: '文件路径缺失', cls: 'sc-missing',
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+      hasError: false, errorMessage: null,
+      desc: '当前步骤的 codeSnippet 引用了 src/hooks/useCounter.js，但沙箱文件系统中尚不存在该路径。系统静默创建空文件并加入 Tab 列表，不弹窗打断，仅在新 Tab 上做短暂高亮提示。',
+      status: 'Compiled successfully · 1 file auto-created',
+      extraTabs: ['useCounter.js'],
+      notices: [],
+      logs: [
+        { level: 'warn', msg: '[sandpack] path not found: src/hooks/useCounter.js' },
+        { level: 'info', msg: '[sandpack] auto-created empty file and added to tabs (silent, no dialog)' },
+      ],
+    },
+  };
+  const scenarioOrder = ['normal', 'compile-error', 'dependency-failure', 'network-offline', 'missing-file'];
+
+  // ---------------------------------------------------------------
+  // 3. 状态
+  // ---------------------------------------------------------------
+  const state = {
+    scenario: 'normal',
+    activeTab: 'Counter.jsx',
+    lastRunTimestamp: Date.now() - 3 * 60 * 1000,
+    devMode: true,
+    consoleOpen: false,
+    logs: [],
+    justAutoCreated: null,
+  };
+
+  function currentTabs() {
+    const sc = scenarios[state.scenario];
+    return ['App.jsx', 'Counter.jsx', 'styles.css', ...sc.extraTabs];
+  }
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  function fmtAgo(ts) {
+    const diff = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (diff < 3) return '刚刚';
+    if (diff < 60) return `${diff} 秒前`;
+    const m = Math.floor(diff / 60);
+    return `${m} 分钟前`;
+  }
+
+  // ---------------------------------------------------------------
+  // 4. 渲染：场景切换器
+  // ---------------------------------------------------------------
+  function renderScenarioTabs() {
+    $('#scenarioTabs').innerHTML = scenarioOrder.map(key => {
+      const sc = scenarios[key];
+      const active = state.scenario === key;
+      return `
+        <button data-scenario="${key}" aria-pressed="${active}"
+          class="scenario-btn ${sc.cls} h-9 px-3.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 ${active ? '' : 'border-white/10 text-secondary hover:bg-white/5 hover:text-text-primary'}">
+          ${sc.icon}
+          ${sc.label}
+        </button>`;
+    }).join('');
+    $$('#scenarioTabs [data-scenario]').forEach(btn => {
+      btn.addEventListener('click', () => switchScenario(btn.dataset.scenario));
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // 5. 渲染：Tab 栏
+  // ---------------------------------------------------------------
+  function renderTabBar() {
+    const tabs = currentTabs();
+    if (!tabs.includes(state.activeTab)) state.activeTab = scenarios[state.scenario].errorLineFile || 'Counter.jsx';
+    $('#tabBar').innerHTML = tabs.map(name => {
+      const active = state.activeTab === name;
+      const isAuto = name === state.justAutoCreated;
+      return `
+        <button data-tab="${name}" class="ide-tab ${active ? 'is-active' : ''} ${isAuto ? 'is-auto-created' : ''} h-full px-3 flex items-center gap-1.5 text-xs shrink-0 ${active ? '' : 'text-secondary hover:text-text-primary'}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          ${name}
+          ${isAuto ? '<span class="ml-1 text-[9px] px-1 rounded bg-primary-500/25 text-primary-200 font-mono-ui">auto</span>' : ''}
+        </button>`;
+    }).join('');
+    $$('#tabBar [data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => { state.activeTab = btn.dataset.tab; renderAll({ skipLogs: true }); });
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // 6. 渲染：编辑区
+  // ---------------------------------------------------------------
+  function renderEditor() {
+    $('#activeFileLabel').textContent = state.activeTab;
+    const sc = scenarios[state.scenario];
+    const isNewEmptyFile = sc.extraTabs.includes(state.activeTab);
+    if (isNewEmptyFile) {
+      $('#editorBody').innerHTML = `
+        <div class="px-4 py-6 text-center">
+          <p class="text-[11px] text-muted mb-1">空文件 · 由系统静默创建</p>
+          <p class="text-[11px] text-secondary font-mono-ui">// TODO: 在此实现 useCounter 自定义 Hook</p>
+        </div>`;
+      return;
+    }
+    const lines = baseFiles[state.activeTab] || [];
+    const showError = sc.hasError && sc.errorLineFile === state.activeTab;
+    $('#editorBody').innerHTML = lines.map((line, i) => {
+      const isErr = showError && line.isErrorLine;
+      const tokens = isErr ? line.errT : line.t;
+      return `
+        <div class="code-line ${isErr ? 'is-error-line' : ''}">
+          <span class="code-gutter ${isErr ? 'is-error-line' : ''}">${i + 1}</span>
+          <span class="px-3 whitespace-pre ${isErr ? 'err-underline' : ''}">${renderTokens(tokens)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // ---------------------------------------------------------------
+  // 7. 渲染：预览区（核心异常展示）
+  // ---------------------------------------------------------------
+  function renderPreview() {
+    const sc = scenarios[state.scenario];
+    $('#lastRunLabel').textContent = fmtAgo(state.lastRunTimestamp) + ' · ' + fmtTime(state.lastRunTimestamp);
+
+    if (sc.hasError) {
+      $('#previewBody').innerHTML = `
+        <div class="absolute inset-0 bg-[#1A0808] p-4 overflow-y-auto fade-in">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-6 h-6 rounded-md bg-danger/20 text-danger flex items-center justify-center shrink-0">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
+            <span class="text-danger text-sm font-bold">Failed to compile</span>
+          </div>
+          <p class="font-mono-ui text-[12px] text-danger/90 mb-3 leading-relaxed break-words">${escapeHtml(sc.errorMessage)}</p>
+          <div class="rounded-lg bg-black/30 border border-danger/20 p-3 font-mono-ui text-[11.5px] leading-[1.8] text-red-200/80 overflow-x-auto">
+            <div>  2 |</div>
+            <div>  3 | export default function Counter() {</div>
+            <div class="bg-danger/15 text-red-100">&gt; 4 |   const [count, setCount] = useState(0</div>
+            <div class="text-danger">    |                                       ^</div>
+            <div>  5 |</div>
+            <div>  6 |   function handleIncrement() {</div>
+            <div>  7 |     setCount(count + 1)</div>
+          </div>
+          <p class="text-[10px] text-muted mt-3">此堆栈由 Sandpack 原生错误覆盖层提供 · 修复代码后点击 Run 重新编译</p>
+        </div>`;
+      return;
+    }
+
+    // 正常 / 依赖降级 / 离线降级 / 文件缺失：均正常渲染预览内容
+    const cachedBadge = sc.notices.length ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-warning/30 text-warning bg-warning/10">降级渲染</span>` : '';
+    $('#previewBody').innerHTML = `
+      <div class="absolute inset-0 bg-white flex flex-col items-center justify-center gap-3 fade-in">
+        <div class="absolute top-2 right-2">${cachedBadge}</div>
+        <p style="font-family: sans-serif; color:#0A0C10;" class="text-sm">当前计数：<span class="font-semibold">3</span></p>
+        <button style="font-family: sans-serif;" class="px-4 py-1.5 rounded-md bg-[#4C6FFF] text-white text-xs font-medium">+1</button>
+      </div>`;
+  }
+
+  // ---------------------------------------------------------------
+  // 8. 渲染：通知条（依赖失败 / 离线，非阻断）
+  // ---------------------------------------------------------------
+  function renderNotices() {
+    const sc = scenarios[state.scenario];
+    if (!sc.notices.length) { $('#noticeArea').innerHTML = ''; return; }
+    $('#noticeArea').innerHTML = sc.notices.map((n, idx) => {
+      const isDanger = n.type === 'danger';
+      const colorText = isDanger ? 'text-danger' : 'text-warning';
+      const colorBorder = isDanger ? 'border-danger/30' : 'border-warning/30';
+      const colorBg = isDanger ? 'bg-danger/10' : 'bg-warning/10';
+      return `
+        <div class="notice-enter flex items-start gap-2.5 px-3.5 py-2.5 border-b ${colorBorder} ${colorBg}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="${colorText} shrink-0 mt-0.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold ${colorText}">${n.title}</p>
+            <p class="text-[11px] text-secondary mt-0.5 leading-relaxed">${n.desc}</p>
+          </div>
+          ${n.retry ? `<button data-retry-idx="${idx}" class="retry-btn shrink-0 h-7 px-2.5 rounded-md border ${colorBorder} ${colorText} text-[11px] font-medium hover:bg-white/5 flex items-center gap-1.5">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" class="retry-icon"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            重试
+          </button>` : ''}
+        </div>`;
+    }).join('');
+    $$('.retry-btn').forEach(btn => btn.addEventListener('click', () => handleRetry(btn)));
+  }
+
+  function handleRetry(btn) {
+    const icon = btn.querySelector('.retry-icon');
+    icon.classList.add('retry-spin');
+    btn.disabled = true;
+    btn.classList.add('opacity-60');
+    addLog('info', `[sandpack] retrying dependency fetch...`);
+    setTimeout(() => {
+      icon.classList.remove('retry-spin');
+      btn.disabled = false;
+      btn.classList.remove('opacity-60');
+      addLog('warn', `[sandpack] retry failed again · still serving cached snapshot`);
+      renderConsole();
+    }, 1100);
+  }
+
+  // ---------------------------------------------------------------
+  // 9. 渲染：数据字段 / 状态条 / 顶部状态
+  // ---------------------------------------------------------------
+  function renderDataFields() {
+    const sc = scenarios[state.scenario];
+    const dfHasError = $('#dfHasError');
+    dfHasError.textContent = String(sc.hasError);
+    dfHasError.className = 'mt-1 font-mono-ui text-sm font-semibold ' + (sc.hasError ? 'text-danger' : 'text-success');
+    $('#dfErrorMessage').textContent = sc.errorMessage || 'null';
+    $('#dfLastRun').textContent = new Date(state.lastRunTimestamp).toISOString().replace('T', ' ').slice(0, 19);
+
+    $('#hasErrorPill').classList.toggle('hidden', !sc.hasError);
+    $('#statusLine').textContent = sc.status;
+    $('#statusLine').className = 'text-[11px] font-mono-ui truncate pr-2 ' + (sc.hasError ? 'text-danger' : 'text-secondary');
+
+    const liveDot = $('#liveDot');
+    const liveLabel = $('#liveLabel');
+    const offline = state.scenario === 'network-offline';
+    liveDot.classList.toggle('is-off', sc.hasError);
+    liveLabel.textContent = sc.hasError ? 'Compile Error' : (offline ? 'Live (Offline Cache)' : 'Live Preview');
+
+    $('#scenarioDescText').textContent = sc.desc;
+  }
+
+  // ---------------------------------------------------------------
+  // 10. 渲染：控制台
+  // ---------------------------------------------------------------
+  function addLog(level, msg) {
+    state.logs.unshift({ level, msg, ts: Date.now() });
+    if (state.logs.length > 30) state.logs.pop();
+  }
+  function levelMeta(level) {
+    if (level === 'error') return { color: 'text-danger', bg: 'bg-danger/10', label: 'ERROR' };
+    if (level === 'warn') return { color: 'text-warning', bg: 'bg-warning/10', label: 'WARN' };
+    return { color: 'text-accent-400', bg: 'bg-accent-400/10', label: 'INFO' };
+  }
+  function renderConsole() {
+    $('#consoleEntry').classList.toggle('hidden', !state.devMode);
+    const warnCount = state.logs.filter(l => l.level === 'warn' || l.level === 'error').length;
+    const badge = $('#consoleBadge');
+    if (warnCount > 0) { badge.textContent = warnCount; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+
+    $('#consoleLogList').innerHTML = state.logs.map(l => {
+      const m = levelMeta(l.level);
+      return `
+        <div class="flex items-start gap-2 px-3.5 py-2">
+          <span class="text-muted shrink-0">${fmtTime(l.ts)}</span>
+          <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${m.color} ${m.bg}">${m.label}</span>
+          <span class="${m.color === 'text-accent-400' ? 'text-secondary' : m.color} break-all">${escapeHtml(l.msg)}</span>
+        </div>`;
+    }).join('') || `<p class="text-[11px] text-muted px-3.5 py-3">暂无日志</p>`;
+  }
+
+  // ---------------------------------------------------------------
+  // 11. 场景切换 / Run / Reset
+  // ---------------------------------------------------------------
+  function switchScenario(key) {
+    if (state.scenario === key) return;
+    state.scenario = key;
+    const sc = scenarios[key];
+    state.activeTab = sc.errorLineFile || (sc.extraTabs[0] || 'Counter.jsx');
+    state.lastRunTimestamp = Date.now();
+    state.logs = [];
+    sc.logs.forEach(l => addLog(l.level, l.msg));
+    state.justAutoCreated = sc.extraTabs.length ? sc.extraTabs[0] : null;
+    renderAll();
+    if (state.justAutoCreated) {
+      setTimeout(() => { state.justAutoCreated = null; }, 1900);
+    }
+  }
+
+  function handleRun() {
+    const btn = $('#runBtn');
+    btn.classList.add('btn-pulse');
+    setTimeout(() => btn.classList.remove('btn-pulse'), 480);
+    state.lastRunTimestamp = Date.now();
+    const sc = scenarios[state.scenario];
+    addLog('info', '[sandpack] recompiling...');
+    if (sc.hasError) {
+      addLog('error', `[sandpack] ${sc.errorMessage}`);
+    } else {
+      addLog('info', '[sandpack] compiled successfully');
+    }
+    renderPreview();
+    renderDataFields();
+    renderConsole();
+  }
+
+  function handleReset() {
+    addLog('info', `[sandpack] ${state.activeTab} reset to default template`);
+    renderConsole();
+  }
+
+  // ---------------------------------------------------------------
+  // 12. 汇总渲染
+  // ---------------------------------------------------------------
+  function renderAll() {
+    renderScenarioTabs();
+    renderTabBar();
+    renderEditor();
+    renderPreview();
+    renderNotices();
+    renderDataFields();
+    renderConsole();
+  }
+
+  // ---------------------------------------------------------------
+  // 13. 事件绑定
+  // ---------------------------------------------------------------
+  $('#runBtn').addEventListener('click', handleRun);
+  $('#resetBtn').addEventListener('click', handleReset);
+  $('#consoleToggleBtn').addEventListener('click', () => {
+    state.consoleOpen = !state.consoleOpen;
+    $('#consolePanel').classList.toggle('is-open', state.consoleOpen);
+    $('#consoleChevron').style.transform = state.consoleOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+  $('#devModeSwitch').addEventListener('click', () => {
+    state.devMode = !state.devMode;
+    $('#devModeSwitch').classList.toggle('is-on', state.devMode);
+    $('#devModeSwitch').setAttribute('aria-checked', String(state.devMode));
+    renderConsole();
+  });
+
+  // 初始日志
+  scenarios.normal.logs.forEach(l => addLog(l.level, l.msg));
+  renderAll();
+
+  // ---------------------------------------------------------------
+  // 14. 站点地图
+  // ---------------------------------------------------------------
+  const siteMap = [
+    { group: '教程与章节目录', items: [
+      { title: '主题包选择页', href: 'tutorial-catalog__package-selection.html' },
+      { title: '教程详情页（目录树+概览）', href: 'tutorial-catalog__chapter-tree.html' },
+      { title: '我的学习总览页', href: 'tutorial-catalog__learning-progress-overview.html' },
+    ]},
+    { group: '课程讲解与步骤导航', items: [
+      { title: '教程包目录', href: 'lesson-reader__catalog.html' },
+      { title: '课程学习页', href: 'lesson-reader__lesson.html' },
+      { title: '我的学习进度', href: 'lesson-reader__my-progress.html' },
+    ]},
+    { group: '引导引擎', items: [
+      { title: '引导蒙层与聚光灯', href: 'guided-tour__tour-overlay.html' },
+      { title: '教程学习工作台', href: 'guided-tour__tutorial-workspace.html' },
+      { title: '章节/步骤目录树', href: 'guided-tour__chapter-toc.html' },
+      { title: '教程包（主题）选择页', href: 'guided-tour__tutorial-catalog.html' },
+      { title: '我的学习进度页', href: 'guided-tour__my-progress.html' },
+    ]},
+    { group: '代码沙箱', items: [
+      { title: '沙箱主面板', href: 'code-sandbox__sandbox-panel.html' },
+      { title: '移动端沙箱 Tab 视图', href: 'code-sandbox__sandbox-mobile-tab.html' },
+      { title: '沙箱异常态视图', href: 'code-sandbox__sandbox-error-state.html', current: true },
+    ]},
+    { group: '学习进度与账户', items: [
+      { title: '登录入口与登录弹窗', href: 'learning-progress__auth-entry.html' },
+      { title: '我的学习', href: 'learning-progress__my-learning.html' },
+      { title: '进度标记与同步状态', href: 'learning-progress__progress-indicators.html' },
+    ]},
+  ];
+  function renderSiteMap() {
+    $('#siteMapPanel').innerHTML = siteMap.map(g => `
+      <div class="mb-3 last:mb-0">
+        <p class="text-[10px] uppercase tracking-wide text-muted px-2 mb-1">${g.group}</p>
+        ${g.items.map(it => `
+          <a href="${it.href}" class="block px-2 py-1.5 rounded-md text-xs ${it.current ? 'bg-primary-500/15 text-primary-200 font-semibold' : 'text-secondary hover:bg-white/5 hover:text-text-primary'}">${it.title}${it.current ? ' · 当前' : ''}</a>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+  renderSiteMap();
+  $('#siteMapBtn').addEventListener('click', () => $('#siteMapPanel').classList.toggle('hidden'));
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#siteMapBtn') && !e.target.closest('#siteMapPanel')) $('#siteMapPanel').classList.add('hidden');
+  });
+})();
+</script>

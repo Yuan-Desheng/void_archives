@@ -1,0 +1,47 @@
+# === 凭据与环境（红线：公开仓库零明文）===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials.json
+secrets.*
+
+# === 依赖与构建 ===
+node_modules/
+.next/
+out/
+dist/
+build/
+.turbo/
+.vercel/
+
+# === 数据与导出 ===
+*.db
+*.sqlite
+*.sqlite3
+data/
+exports/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# === 调试与诊断产物 ===
+.playwright-mcp/
+playwright-report/
+test-results/
+*.log
+
+# === 编辑器 / 系统 ===
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# === AI 协作私有配置 ===
+CLAUDE.md
+.claude/

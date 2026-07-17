@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>引导蒙层与聚光灯（全局叠加层） · 交互式技术教程引擎</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  /* 暗色滚动条 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* 聚光灯引导遮罩用 */
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+</style>
+
+<!-- 附加:实际可切换的明暗主题变量覆盖(不改动上方共享片段核心配置,仅补充选择器) -->
+<style>
+  :root[data-theme="light"] {
+    --color-bg-base: #F4F6FB;
+    --color-bg-surface: #FFFFFF;
+    --color-bg-surface-2: #F0F2F8;
+    --color-border: rgba(16,18,26,.08);
+    --color-border-strong: rgba(16,18,26,.14);
+    --color-text-primary: #10121A;
+    --color-text-secondary: #575F72;
+    --color-text-muted: #8A93A6;
+  }
+  :root[data-theme="light"] body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.06), transparent);
+    color: var(--color-text-primary);
+  }
+  :root[data-theme="light"] .glass-card:hover { box-shadow: 0 0 24px -6px rgba(76,111,255,.25); }
+  :root[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(16,18,26,.14); }
+  :root[data-theme="light"] .spotlight-mask { background: rgba(10,12,16,.55); }
+
+  .nav-tab { position: relative; }
+  .nav-tab.active::after {
+    content: '';
+    position: absolute; left: 10px; right: 10px; bottom: -13px; height: 2px;
+    background-image: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 2px;
+  }
+  .breathe { animation: breathe 2.2s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 rgba(76,111,255,.5);} 50% { box-shadow: 0 0 0 6px rgba(76,111,255,0);} }
+
+  .site-dropdown { transform-origin: top right; }
+
+  /* ---------- 引导蒙层专属 ---------- */
+  #tourFrames div { position: fixed; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); pointer-events: auto; }
+  :root[data-theme="light"] #tourFrames div { background: rgba(10,12,16,.58); }
+
+  #tourRing {
+    position: fixed; border-radius: 10px; pointer-events: none;
+    box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35);
+    transition: top 260ms var(--ease-standard), left 260ms var(--ease-standard), width 260ms var(--ease-standard), height 260ms var(--ease-standard), box-shadow 200ms var(--ease-standard);
+  }
+  #tourRing.satisfied { box-shadow: 0 0 0 4px var(--color-success), 0 0 32px 10px rgba(16,185,129,.4); }
+  #tourRing.pulse-burst::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 12px;
+    box-shadow: 0 0 0 0 rgba(16,185,129,.55);
+    animation: ringBurst 480ms var(--ease-standard);
+  }
+  @keyframes ringBurst {
+    0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); opacity: 1; }
+    100% { box-shadow: 0 0 0 18px rgba(16,185,129,0); opacity: 0; }
+  }
+
+  #tourCard {
+    position: fixed; z-index: 60; width: 360px; max-width: calc(100vw - 32px);
+    transition: top 260ms var(--ease-standard), left 260ms var(--ease-standard);
+  }
+  .card-pop { animation: cardPop 220ms var(--ease-standard) both; }
+  @keyframes cardPop { from { opacity: 0; transform: translateY(6px) scale(.98);} to { opacity: 1; transform: translateY(0) scale(1);} }
+
+  .waitfor-pulse { animation: waitPulse 1.4s ease-in-out infinite; }
+  @keyframes waitPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  #degradeBanner { transition: transform 260ms var(--ease-standard), opacity 260ms var(--ease-standard); }
+
+  .step-dot-current { animation: breathe 2s ease-in-out infinite; }
+
+  .inspector-collapsed { transform: translateY(calc(100% - 44px)); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== 顶部导航 ===================== -->
+<header class="sticky top-0 z-40 border-b border-white/[.06] bg-[#0A0C10]/85 backdrop-blur-md" style="background-color: color-mix(in srgb, var(--color-bg-base) 85%, transparent);">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8">
+    <div class="h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-8 min-w-0">
+        <a href="guided-tour__tutorial-catalog.html" class="flex items-center gap-2 shrink-0">
+          <span class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shadow-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="font-semibold text-[15px] tracking-tight hidden sm:inline">教程引擎驾驶舱</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-[color:var(--color-text-secondary)] overflow-x-auto">
+          <a href="guided-tour__tour-overlay.html" class="nav-tab active text-[color:var(--color-text-primary)] font-medium pb-1 whitespace-nowrap">引导蒙层与聚光灯</a>
+          <a href="guided-tour__tutorial-workspace.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)] whitespace-nowrap">教程学习工作台</a>
+          <a href="guided-tour__chapter-toc.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)] whitespace-nowrap">章节/步骤目录树</a>
+          <a href="guided-tour__tutorial-catalog.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)] whitespace-nowrap">教程包选择页</a>
+          <a href="guided-tour__my-progress.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)] whitespace-nowrap">我的学习进度</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="relative">
+          <button id="siteMapBtn" class="h-9 px-3 rounded-lg border border-white/10 text-xs text-[color:var(--color-text-secondary)] hover:bg-white/5 hover:text-[color:var(--color-text-primary)] flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span class="hidden sm:inline">全部页面</span>
+          </button>
+          <div id="siteMapMenu" class="site-dropdown hidden absolute right-0 mt-2 w-[560px] max-w-[calc(100vw-2rem)] glass-card p-4 shadow-2xl z-50">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mb-2">教程与章节目录</p>
+                <a href="tutorial-catalog__package-selection.html" class="block py-1.5 hover:text-accent-400">主题包选择页</a>
+                <a href="tutorial-catalog__chapter-tree.html" class="block py-1.5 hover:text-accent-400">教程详情页（目录树+概览）</a>
+                <a href="tutorial-catalog__learning-progress-overview.html" class="block py-1.5 hover:text-accent-400">我的学习总览页</a>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mt-3 mb-2">课程讲解与步骤导航</p>
+                <a href="lesson-reader__catalog.html" class="block py-1.5 hover:text-accent-400">教程包目录</a>
+                <a href="lesson-reader__lesson.html" class="block py-1.5 hover:text-accent-400">课程学习页</a>
+                <a href="lesson-reader__my-progress.html" class="block py-1.5 hover:text-accent-400">我的学习进度</a>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mb-2">引导引擎</p>
+                <a href="guided-tour__tour-overlay.html" class="block py-1.5 text-primary-400 font-medium">引导蒙层与聚光灯 (当前)</a>
+                <a href="guided-tour__tutorial-workspace.html" class="block py-1.5 hover:text-accent-400">教程学习工作台</a>
+                <a href="guided-tour__chapter-toc.html" class="block py-1.5 hover:text-accent-400">章节/步骤目录树</a>
+                <a href="guided-tour__tutorial-catalog.html" class="block py-1.5 hover:text-accent-400">教程包（主题）选择页</a>
+                <a href="guided-tour__my-progress.html" class="block py-1.5 hover:text-accent-400">我的学习进度页</a>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mt-3 mb-2">代码沙箱 / 账户</p>
+                <a href="code-sandbox__sandbox-panel.html" class="block py-1.5 hover:text-accent-400">沙箱主面板</a>
+                <a href="code-sandbox__sandbox-mobile-tab.html" class="block py-1.5 hover:text-accent-400">移动端沙箱 Tab 视图</a>
+                <a href="code-sandbox__sandbox-error-state.html" class="block py-1.5 hover:text-accent-400">沙箱异常态视图</a>
+                <a href="learning-progress__auth-entry.html" class="block py-1.5 hover:text-accent-400">登录入口与登录弹窗</a>
+                <a href="learning-progress__my-learning.html" class="block py-1.5 hover:text-accent-400">我的学习</a>
+                <a href="learning-progress__progress-indicators.html" class="block py-1.5 hover:text-accent-400">进度标记与同步状态</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="themeToggle" aria-label="切换明暗模式" class="h-9 w-9 rounded-lg border border-white/10 flex items-center justify-center hover:bg-white/5">
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <svg id="iconSun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+
+        <a href="learning-progress__auth-entry.html" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          登录
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== 主体内容 ===================== -->
+<main class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10">
+
+  <!-- 页头 -->
+  <section class="mb-6">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[11px] px-2 py-0.5 rounded-full border border-spotlight/40 bg-spotlight/10 text-spotlight font-medium">引导引擎 · 全局叠加层</span>
+        </div>
+        <h1 class="text-2xl md:text-[28px] font-bold tracking-tight">引导蒙层与聚光灯</h1>
+        <p class="mt-2 text-sm text-[color:var(--color-text-secondary)] max-w-2xl">承载聚光灯遮罩、目标元素高亮框与悬浮讲解卡片，是引导引擎最核心的可视化载体，可叠加在任意宿主页面之上。下方是一个模拟的「教程学习工作台」宿主页面，用来演示蒙层如何按 <code class="font-mono-ui text-xs bg-surface-2 px-1.5 py-0.5 rounded">selector</code> 定位、按 <code class="font-mono-ui text-xs bg-surface-2 px-1.5 py-0.5 rounded">waitFor</code> 阻塞与推进。</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-[color:var(--color-text-secondary)]">
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-spotlight"></span>聚光灯琥珀描边</div>
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-success"></span>resize/滚动自动重算</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 演示控制台 -->
+  <section class="glass-card p-4 md:p-5 mb-6">
+    <div class="flex items-center gap-2 mb-3.5">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-primary-400"><path d="M4 6h16M4 12h10M4 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <h2 class="text-sm font-semibold">引导演示控制台</h2>
+      <span class="text-[11px] text-[color:var(--color-text-muted)]">原型专用 · 不属于产品界面</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <button id="btnStartTour" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="white"/></svg>
+        启动引导
+      </button>
+      <button id="btnRestartTour" class="h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-sm flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 15A8 8 0 0019 8.5M18.5 9A8 8 0 005 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        重新开始
+      </button>
+
+      <div class="h-6 w-px bg-white/10 mx-1 hidden sm:block"></div>
+
+      <label class="text-xs text-[color:var(--color-text-secondary)] flex items-center gap-1.5">跳转步骤
+        <select id="stepJump" class="h-9 bg-surface-2 border border-white/10 rounded-lg px-2.5 text-sm text-[color:var(--color-text-primary)] focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30"></select>
+      </label>
+
+      <label class="flex items-center gap-2 text-xs text-[color:var(--color-text-secondary)] cursor-pointer select-none h-9 px-3 rounded-lg border border-dashed border-white/15 hover:border-white/25">
+        <input id="quizExistsToggle" type="checkbox" class="accent-primary-500 w-3.5 h-3.5">
+        渲染「小测验」目标元素（对比降级 / 正常两种路径）
+      </label>
+
+      <button id="btnInspector" class="ml-auto h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-[color:var(--color-text-secondary)] hover:text-primary-100 hover:bg-white/5 text-xs flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        数据检查器
+      </button>
+    </div>
+  </section>
+
+  <!-- ===================== 模拟宿主页面：教程学习工作台 ===================== -->
+  <section class="glass-card p-4 md:p-6 mb-10 relative">
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+      <div>
+        <p class="text-[11px] uppercase tracking-wide text-[color:var(--color-text-muted)]">宿主页面模拟 · React 核心概念与 Hooks 实战</p>
+        <h2 class="text-lg font-semibold mt-0.5">第 3 章 · Hooks 实战 — 自定义 Hook：useFetch</h2>
+      </div>
+      <!-- 进度卡片：聚光灯目标 1 -->
+      <div id="host-progress-card" class="glass-card !bg-surface-2 px-4 py-3 flex items-center gap-3">
+        <div id="progressChart" style="width:52px;height:52px;"></div>
+        <div>
+          <p class="text-sm font-semibold">章节进度 4/6</p>
+          <p class="text-[11px] text-[color:var(--color-text-muted)]">本章已用 12 分钟</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] xl:grid-cols-[220px_1fr_420px] gap-5">
+      <!-- 左：目录树（纯展示） -->
+      <aside class="glass-card !bg-surface-2 p-3 order-3 xl:order-1">
+        <p class="text-[11px] uppercase tracking-wide text-[color:var(--color-text-muted)] mb-2 px-1">本章步骤</p>
+        <ul class="space-y-0.5 text-sm">
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[color:var(--color-text-secondary)]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-accent-400 shrink-0"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>为什么需要自定义 Hook</li>
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[color:var(--color-text-secondary)]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-accent-400 shrink-0"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>提取 useFetch 骨架</li>
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[color:var(--color-text-secondary)]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-accent-400 shrink-0"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>加入 loading / error 状态</li>
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary-500/10 text-primary-200 font-medium"><span class="w-2 h-2 rounded-full bg-primary-500 step-dot-current shrink-0"></span>运行并验证效果</li>
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[color:var(--color-text-muted)]"><span class="w-2 h-2 rounded-full bg-surface-2 border border-white/15 shrink-0"></span>本节小测验</li>
+          <li class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-[color:var(--color-text-muted)]"><span class="w-2 h-2 rounded-full bg-surface-2 border border-white/15 shrink-0"></span>小结与下一章</li>
+        </ul>
+      </aside>
+
+      <!-- 中：讲解内容 -->
+      <div class="order-1 xl:order-2 space-y-4">
+        <div class="glass-card !bg-surface-2 p-4 text-sm leading-relaxed text-[color:var(--color-text-secondary)]">
+          <p class="text-[color:var(--color-text-primary)] font-medium mb-2">当多个组件都需要「发请求 + 记录 loading/error」时，把这段逻辑抽成一个以 <code class="font-mono-ui text-xs bg-white/5 px-1 py-0.5 rounded">use</code> 开头的函数，就是自定义 Hook。</p>
+          <p>下面的 <code class="font-mono-ui text-xs bg-white/5 px-1 py-0.5 rounded">useFetch</code> 内部复用了 <code class="font-mono-ui text-xs bg-white/5 px-1 py-0.5 rounded">useState</code> 和 <code class="font-mono-ui text-xs bg-white/5 px-1 py-0.5 rounded">useEffect</code>，对外只暴露 <code class="font-mono-ui text-xs bg-white/5 px-1 py-0.5 rounded">{ data, loading, error }</code>，调用方完全不用关心请求细节。</p>
+          <pre class="mt-3 rounded-lg bg-[#0B0E14] border border-white/[.06] p-3 text-xs font-mono-ui text-accent-200 overflow-x-auto">function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch(url).then(r => r.json()).then(setData).finally(() => setLoading(false));
+  }, [url]);
+  return { data, loading };
+}</pre>
+        </div>
+        <!-- 小测验目标元素：默认不渲染，用于演示元素缺失降级 -->
+        <div id="host-quiz-panel-slot"></div>
+      </div>
+
+      <!-- 右：代码沙箱模拟 -->
+      <div id="host-sandbox-panel" class="order-2 xl:order-3 rounded-2xl bg-[#0B0E14] border border-white/[.06] overflow-hidden flex flex-col">
+        <div class="h-9 flex items-center justify-between px-2 border-b border-white/[.06] bg-[#0A0C10]">
+          <div class="flex items-center h-full text-xs font-mono-ui">
+            <span class="h-full flex items-center px-3 border-b-2 border-primary-500 text-primary-200">useFetch.js</span>
+            <span class="h-full flex items-center px-3 text-[color:var(--color-text-muted)]">App.jsx</span>
+          </div>
+          <span class="flex items-center gap-1.5 text-[10px] text-success pr-2"><span class="w-1.5 h-1.5 rounded-full bg-success breathe"></span>Live Preview</span>
+        </div>
+        <textarea id="host-code-textarea" spellcheck="false" class="flex-1 min-h-[160px] bg-transparent text-[13px] leading-[1.6] font-mono-ui text-[color:var(--color-text-primary)] p-3 resize-none focus:outline-none" placeholder="// 在这里输入代码，试着改一改 useFetch ...">import { useState, useEffect } from 'react';
+
+function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch(url).then(r => r.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, [url]);
+  return { data, loading };
+}</textarea>
+        <div class="flex items-center justify-between px-3 py-2 border-t border-white/[.06]">
+          <button id="host-run-btn" class="h-8 px-3.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium shadow-glow flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="white"/></svg>
+            运行代码
+          </button>
+          <button class="h-8 w-8 rounded-lg border border-white/10 text-[color:var(--color-text-secondary)] hover:bg-white/5 flex items-center justify-center" title="重置为默认代码模板">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 15A8 8 0 0019 8.5M18.5 9A8 8 0 005 15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：章节导航 -->
+    <div class="mt-6 pt-5 border-t border-white/[.06] flex items-center justify-between flex-wrap gap-3">
+      <button class="h-10 px-4 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-sm flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        上一步
+      </button>
+      <span id="host-finish-badge" class="hidden text-xs px-3 py-1.5 rounded-full bg-success/10 border border-success/40 text-success font-medium items-center gap-1.5">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        本章引导已完成
+      </span>
+      <button id="host-next-chapter-btn" class="h-10 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+        下一章：性能优化基础
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 pb-16 pt-4">
+  <p class="text-xs text-[color:var(--color-text-muted)] text-center">交互式技术教程引擎 · 引导引擎组件原型 —— 内容与引擎分离，蒙层与聚光灯可叠加于任意宿主页面之上</p>
+</footer>
+
+<!-- ===================== 引导蒙层（核心组件） ===================== -->
+<div id="tourFrames" class="hidden">
+  <div id="frameTop"></div>
+  <div id="frameBottom"></div>
+  <div id="frameLeft"></div>
+  <div id="frameRight"></div>
+</div>
+<div id="tourRing" class="hidden spotlight-ring"></div>
+
+<div id="tourCard" class="hidden card-pop">
+  <div class="glass-card !bg-surface p-4 shadow-2xl border-spotlight/30">
+    <div class="flex items-start justify-between gap-3 mb-1">
+      <div class="flex items-center gap-2">
+        <span id="cardStepBadge" class="text-[11px] font-mono-ui px-2 py-0.5 rounded-full bg-spotlight/10 border border-spotlight/40 text-spotlight">1 / 6</span>
+      </div>
+      <button id="btnCloseTour" aria-label="退出引导" class="w-6 h-6 rounded-md flex items-center justify-center text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-primary)] hover:bg-white/5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <h3 id="cardTitle" class="text-[15px] font-semibold mb-1.5"></h3>
+    <p id="cardSummary" class="text-sm text-[color:var(--color-text-secondary)] leading-relaxed mb-3"></p>
+
+    <!-- waitFor 状态提示条 -->
+    <div id="waitStrip" class="rounded-lg border px-3 py-2 mb-3.5 flex items-center gap-2 text-xs"></div>
+
+    <div class="flex items-center justify-between gap-2">
+      <button id="btnPrevStep" class="h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-sm flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        上一步
+      </button>
+      <button id="btnNextStep" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+        <span id="btnNextLabel">下一步</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 元素缺失时的降级提示条（不弹遮罩） -->
+<div id="degradeBanner" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] w-[min(92vw,480px)]">
+  <div class="glass-card !bg-surface border-warning/40 p-3.5 flex items-center gap-3">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-warning shrink-0"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 001.7 3h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-medium text-warning">目标元素未找到，已降级为提示</p>
+      <p class="text-xs text-[color:var(--color-text-secondary)] mt-0.5">selector 在当前视图未命中，聚光灯遮罩已静默跳过，不影响宿主页面正常使用</p>
+    </div>
+    <button id="btnDegradeSkip" class="h-8 px-3 rounded-lg bg-warning/15 border border-warning/40 text-warning text-xs font-medium hover:bg-warning/25 shrink-0">手动跳过</button>
+  </div>
+</div>
+
+<!-- 重新启动引导 · 悬浮入口（退出引导后展示） -->
+<button id="relaunchChip" class="hidden fixed bottom-6 right-6 z-30 h-11 pl-3 pr-4 rounded-full bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-2">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="white"/></svg>
+  重新启动引导
+</button>
+
+<!-- ===================== 数据检查器（原型调试面板） ===================== -->
+<div id="inspectorPanel" class="inspector-collapsed fixed left-0 right-0 bottom-0 z-[70] max-h-[60vh]">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8">
+    <div class="glass-card !bg-[#0B0E14] border-white/10 rounded-b-none">
+      <button id="inspectorHeader" class="w-full h-11 flex items-center justify-between px-4 text-xs text-[color:var(--color-text-secondary)]">
+        <span class="flex items-center gap-2 font-mono-ui">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="text-accent-400"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          当前步骤数据模型（TourStep）
+        </span>
+        <svg id="inspectorChevron" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <pre id="inspectorBody" class="px-4 pb-4 text-[12px] leading-relaxed font-mono-ui text-accent-200 overflow-auto max-h-[46vh]"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- 主题切换 ----------
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const iconMoon = document.getElementById('iconMoon');
+  const iconSun = document.getElementById('iconSun');
+  function applyTheme(t) {
+    root.setAttribute('data-theme', t);
+    if (t === 'light') { root.classList.remove('dark'); iconMoon.classList.add('hidden'); iconSun.classList.remove('hidden'); }
+    else { root.classList.add('dark'); iconMoon.classList.remove('hidden'); iconSun.classList.add('hidden'); }
+  }
+  applyTheme('dark');
+  themeToggle.addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light'));
+
+  // ---------- 站点地图下拉 ----------
+  const siteMapBtn = document.getElementById('siteMapBtn');
+  const siteMapMenu = document.getElementById('siteMapMenu');
+  siteMapBtn.addEventListener('click', (e) => { e.stopPropagation(); siteMapMenu.classList.toggle('hidden'); });
+  document.addEventListener('click', () => siteMapMenu.classList.add('hidden'));
+
+  // ---------- 进度环 ECharts ----------
+  const progressChart = echarts.init(document.getElementById('progressChart'));
+  progressChart.setOption({
+    series: [{
+      type: 'pie', radius: ['70%', '95%'], startAngle: 90, silent: true,
+      label: { show: false }, labelLine: { show: false },
+      data: [
+        { value: 4, itemStyle: { color: { type: 'linear', x:0, y:0, x2:1, y2:1, colorStops: [{offset:0, color:'#4C6FFF'},{offset:1, color:'#22D3EE'}] } } },
+        { value: 2, itemStyle: { color: 'rgba(255,255,255,.08)' } }
+      ]
+    }]
+  });
+  window.addEventListener('resize', () => progressChart.resize());
+
+  // ==================================================================
+  // 引导引擎核心：聚光灯蒙层状态机
+  // ==================================================================
+  const steps = [
+    {
+      stepId: 'welcome', title: '欢迎使用教程学习工作台',
+      summary: '接下来将引导你完成一次 useFetch 自定义 Hook 的实战练习，聚光灯会依次高亮关键区域，跟随提示逐步操作即可。',
+      selector: '#host-progress-card', waitFor: 'none', waitForTarget: null, duration: 0, spotlightPadding: 10
+    },
+    {
+      stepId: 'run-code', title: '运行你的第一段代码',
+      summary: '点击「运行代码」按钮，在右侧沙箱里执行当前的 useFetch 片段，观察实时预览是否正常拉取数据。',
+      selector: '#host-run-btn', waitFor: 'click', waitForTarget: '#host-run-btn', duration: 0, spotlightPadding: 6
+    },
+    {
+      stepId: 'edit-code', title: '动手改一改',
+      summary: '在编辑器里输入任意字符，试着把 url 参数改成你自己的接口地址，实时预览会同步刷新。',
+      selector: '#host-sandbox-panel', waitFor: 'input', waitForTarget: '#host-code-textarea', duration: 0, spotlightPadding: 8
+    },
+    {
+      stepId: 'auto-advance', title: '自动为你计时',
+      summary: '停留几秒后将自动进入下一步，你也可以直接点击「跳过等待」提前继续。',
+      selector: '#host-next-chapter-btn', waitFor: 'timer', waitForTarget: '#host-next-chapter-btn', duration: 5000, spotlightPadding: 6
+    },
+    {
+      stepId: 'degrade-demo', title: '小测验模块',
+      summary: '这一步引导的目标元素默认不在当前视图中，用来演示「元素缺失时降级不崩」——蒙层会静默隐藏，仅保留提示条并允许手动跳过。',
+      selector: '#host-quiz-panel', waitFor: 'click', waitForTarget: '#host-quiz-panel', duration: 0, spotlightPadding: 8
+    },
+    {
+      stepId: 'finish', title: '完成本章引导 🎉',
+      summary: '你已完成本章所有引导步骤，进度已自动记录，可跨端同步查看。',
+      selector: '#host-finish-badge', waitFor: 'none', waitForTarget: null, duration: 0, spotlightPadding: 10
+    }
+  ];
+
+  const state = {
+    active: false,
+    index: 0,
+    waitSatisfied: false,
+    timerHandle: null,
+    timerRemaining: 0,
+    quizExists: false,
+    currentListener: null
+  };
+
+  // ---------- DOM refs ----------
+  const tourFrames = document.getElementById('tourFrames');
+  const frameTop = document.getElementById('frameTop');
+  const frameBottom = document.getElementById('frameBottom');
+  const frameLeft = document.getElementById('frameLeft');
+  const frameRight = document.getElementById('frameRight');
+  const tourRing = document.getElementById('tourRing');
+  const tourCard = document.getElementById('tourCard');
+  const cardStepBadge = document.getElementById('cardStepBadge');
+  const cardTitle = document.getElementById('cardTitle');
+  const cardSummary = document.getElementById('cardSummary');
+  const waitStrip = document.getElementById('waitStrip');
+  const btnPrevStep = document.getElementById('btnPrevStep');
+  const btnNextStep = document.getElementById('btnNextStep');
+  const btnNextLabel = document.getElementById('btnNextLabel');
+  const btnCloseTour = document.getElementById('btnCloseTour');
+  const degradeBanner = document.getElementById('degradeBanner');
+  const btnDegradeSkip = document.getElementById('btnDegradeSkip');
+  const relaunchChip = document.getElementById('relaunchChip');
+  const stepJump = document.getElementById('stepJump');
+  const quizExistsToggle = document.getElementById('quizExistsToggle');
+  const hostQuizSlot = document.getElementById('host-quiz-panel-slot');
+  const hostFinishBadge = document.getElementById('host-finish-badge');
+  const btnStartTour = document.getElementById('btnStartTour');
+  const btnRestartTour = document.getElementById('btnRestartTour');
+
+  // 步骤下拉
+  steps.forEach((s, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${i + 1}. ${s.title}（waitFor: ${s.waitFor}）`;
+    stepJump.appendChild(opt);
+  });
+  stepJump.addEventListener('change', () => { startTour(Number(stepJump.value)); });
+
+  // 小测验目标元素挂载/移除（模拟元素存在 vs 缺失两种降级路径）
+  function renderQuizTarget() {
+    hostQuizSlot.innerHTML = '';
+    if (state.quizExists) {
+      const div = document.createElement('div');
+      div.id = 'host-quiz-panel';
+      div.className = 'glass-card !bg-surface-2 p-4 flex items-center justify-between gap-3';
+      div.innerHTML = `
+        <div>
+          <p class="text-sm font-semibold">本节小测验</p>
+          <p class="text-xs text-[color:var(--color-text-muted)] mt-0.5">3 道选择题，检验 useFetch 的理解程度</p>
+        </div>
+        <span class="text-[11px] px-2.5 py-1 rounded-full bg-primary-500/10 border border-primary-500/30 text-primary-300">3 题</span>`;
+      hostQuizSlot.appendChild(div);
+    }
+  }
+  quizExistsToggle.addEventListener('change', () => {
+    state.quizExists = quizExistsToggle.checked;
+    renderQuizTarget();
+    if (state.active && steps[state.index].stepId === 'degrade-demo') renderStep();
+  });
+  renderQuizTarget();
+
+  // ---------- 工具函数 ----------
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  function getHoleRect(el, padding) {
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    return {
+      left: clamp(r.left - padding, 0, vw),
+      top: clamp(r.top - padding, 0, vh),
+      right: clamp(r.right + padding, 0, vw),
+      bottom: clamp(r.bottom + padding, 0, vh)
+    };
+  }
+
+  function positionFrames(hole) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    frameTop.style.cssText = `left:0;top:0;width:${vw}px;height:${hole.top}px;`;
+    frameBottom.style.cssText = `left:0;top:${hole.bottom}px;width:${vw}px;height:${Math.max(0, vh - hole.bottom)}px;`;
+    frameLeft.style.cssText = `left:0;top:${hole.top}px;width:${hole.left}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+    frameRight.style.cssText = `left:${hole.right}px;top:${hole.top}px;width:${Math.max(0, vw - hole.right)}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+  }
+
+  function positionRing(hole) {
+    tourRing.style.left = hole.left + 'px';
+    tourRing.style.top = hole.top + 'px';
+    tourRing.style.width = Math.max(0, hole.right - hole.left) + 'px';
+    tourRing.style.height = Math.max(0, hole.bottom - hole.top) + 'px';
+  }
+
+  function positionCard(hole) {
+    const cardW = tourCard.offsetWidth || 360;
+    const cardH = tourCard.offsetHeight || 200;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const gap = 16;
+    let top = hole.bottom + gap;
+    if (top + cardH > vh - gap) top = hole.top - cardH - gap;
+    if (top < gap) top = clamp((vh - cardH) / 2, gap, vh - cardH - gap);
+    let left = hole.left;
+    left = clamp(left, gap, vw - cardW - gap);
+    tourCard.style.top = top + 'px';
+    tourCard.style.left = left + 'px';
+  }
+
+  let rafHandle = null;
+  function scheduleRecompute() {
+    if (rafHandle) return;
+    rafHandle = requestAnimationFrame(() => { rafHandle = null; recomputeOverlayGeometry(); });
+  }
+  window.addEventListener('resize', scheduleRecompute);
+  window.addEventListener('scroll', scheduleRecompute, true);
+
+  function recomputeOverlayGeometry() {
+    if (!state.active) return;
+    const step = steps[state.index];
+    const targetEl = document.querySelector(step.selector);
+    if (!targetEl) return; // 缺失态下由 renderStep 统一处理，无需重算几何
+    const hole = getHoleRect(targetEl, step.spotlightPadding || 8);
+    positionFrames(hole);
+    positionRing(hole);
+    positionCard(hole);
+  }
+
+  // ---------- waitFor 监听 ----------
+  function clearWaitListener() {
+    if (state.currentListener) {
+      const { el, type, fn } = state.currentListener;
+      el.removeEventListener(type, fn);
+      state.currentListener = null;
+    }
+    if (state.timerHandle) { clearInterval(state.timerHandle); state.timerHandle = null; }
+  }
+
+  function attachWaitListener(step, targetEl) {
+    if (step.waitFor === 'click' && targetEl) {
+      const fn = () => markSatisfied();
+      targetEl.addEventListener('click', fn, { once: true });
+      state.currentListener = { el: targetEl, type: 'click', fn };
+    } else if (step.waitFor === 'input' && targetEl) {
+      const fn = () => markSatisfied();
+      targetEl.addEventListener('input', fn, { once: true });
+      state.currentListener = { el: targetEl, type: 'input', fn };
+    } else if (step.waitFor === 'timer') {
+      state.timerRemaining = step.duration;
+      updateWaitStrip();
+      state.timerHandle = setInterval(() => {
+        state.timerRemaining -= 100;
+        if (state.timerRemaining <= 0) { clearInterval(state.timerHandle); state.timerHandle = null; markSatisfied(); }
+        else updateWaitStrip();
+      }, 100);
+    }
+  }
+
+  function markSatisfied() {
+    if (state.waitSatisfied) return;
+    state.waitSatisfied = true;
+    clearWaitListener();
+    updateWaitStrip();
+    tourRing.classList.add('satisfied', 'pulse-burst');
+    setTimeout(() => tourRing.classList.remove('pulse-burst'), 500);
+    updateInspector();
+    setTimeout(() => { if (state.active) nextStep(); }, 300);
+  }
+
+  // ---------- 渲染 ----------
+  function renderStep() {
+    const step = steps[state.index];
+    const targetEl = document.querySelector(step.selector);
+    const elementStatus = targetEl ? 'found' : 'missing';
+    state.waitSatisfied = step.waitFor === 'none';
+    clearWaitListener();
+    tourRing.classList.remove('satisfied', 'pulse-burst');
+
+    cardStepBadge.textContent = `${state.index + 1} / ${steps.length}`;
+    cardTitle.textContent = step.title;
+    cardSummary.textContent = step.summary;
+    btnPrevStep.disabled = state.index === 0;
+    btnPrevStep.classList.toggle('opacity-40', state.index === 0);
+    btnPrevStep.classList.toggle('cursor-not-allowed', state.index === 0);
+    btnNextLabel.textContent = state.index === steps.length - 1 ? '完成引导' : '下一步';
+
+    if (elementStatus === 'missing') {
+      // 降级路径：不弹聚光灯遮罩，隐藏 ring/frames/card，仅展示底部提示条
+      tourFrames.classList.add('hidden');
+      tourRing.classList.add('hidden');
+      tourCard.classList.add('hidden');
+      degradeBanner.classList.remove('hidden');
+    } else {
+      degradeBanner.classList.add('hidden');
+      tourFrames.classList.remove('hidden');
+      tourRing.classList.remove('hidden');
+      tourCard.classList.remove('hidden');
+      recomputeOverlayGeometry();
+      attachWaitListener(step, targetEl);
+    }
+
+    updateWaitStrip();
+    updateNextButtonState();
+    updateInspector();
+  }
+
+  function updateWaitStrip() {
+    const step = steps[state.index];
+    const targetEl = document.querySelector(step.selector);
+    const elementStatus = targetEl ? 'found' : 'missing';
+    waitStrip.className = 'rounded-lg border px-3 py-2 mb-3.5 flex items-center gap-2 text-xs';
+
+    if (elementStatus === 'missing') {
+      waitStrip.classList.add('bg-warning/10', 'border-warning/40', 'text-warning');
+      waitStrip.innerHTML = iconWarning() + `<span>目标元素缺失，已降级为提示条，可在页面底部手动跳过</span>`;
+      return;
+    }
+    if (state.waitSatisfied) {
+      waitStrip.classList.add('bg-success/10', 'border-success/40', 'text-success');
+      waitStrip.innerHTML = iconCheck() + `<span>已完成，即将自动进入下一步…</span>`;
+      return;
+    }
+    if (step.waitFor === 'none') {
+      waitStrip.classList.add('bg-primary-500/10', 'border-primary-500/30', 'text-primary-200');
+      waitStrip.innerHTML = iconInfo() + `<span>无需等待，可随时点击下一步继续</span>`;
+      return;
+    }
+    if (step.waitFor === 'click') {
+      waitStrip.classList.add('bg-warning/10', 'border-warning/40', 'text-warning');
+      waitStrip.innerHTML = iconPulseDot() + `<span>阻塞中：请点击高亮区域内的目标元素以继续</span>`;
+      return;
+    }
+    if (step.waitFor === 'input') {
+      waitStrip.classList.add('bg-warning/10', 'border-warning/40', 'text-warning');
+      waitStrip.innerHTML = iconPulseDot() + `<span>阻塞中：请在高亮的输入框中输入内容以继续</span>`;
+      return;
+    }
+    if (step.waitFor === 'timer') {
+      waitStrip.classList.add('bg-warning/10', 'border-warning/40', 'text-warning');
+      const sec = Math.max(0, Math.ceil(state.timerRemaining / 1000));
+      waitStrip.innerHTML = iconPulseDot() + `<span class="flex-1">自动推进倒计时 00:0${sec}</span>` +
+        `<button id="btnSkipTimer" class="text-[11px] px-2 py-1 rounded-md border border-warning/40 hover:bg-warning/15">跳过等待</button>`;
+      const skipBtn = document.getElementById('btnSkipTimer');
+      if (skipBtn) skipBtn.addEventListener('click', () => markSatisfied());
+    }
+  }
+
+  function iconWarning() { return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 18a2 2 0 001.7 3h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`; }
+  function iconCheck() { return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`; }
+  function iconInfo() { return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="shrink-0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`; }
+  function iconPulseDot() { return `<span class="w-2 h-2 rounded-full bg-warning waitfor-pulse shrink-0"></span>`; }
+
+  function updateNextButtonState() {
+    const step = steps[state.index];
+    const canAdvance = state.waitSatisfied || step.waitFor === 'none';
+    btnNextStep.disabled = !canAdvance;
+    btnNextStep.classList.toggle('opacity-40', !canAdvance);
+    btnNextStep.classList.toggle('cursor-not-allowed', !canAdvance);
+    btnNextStep.title = canAdvance ? '' : '完成当前步骤后可继续';
+  }
+
+  function updateInspector() {
+    const step = steps[state.index];
+    const targetEl = document.querySelector(step.selector);
+    const data = {
+      stepId: step.stepId,
+      selector: step.selector,
+      waitFor: step.waitFor,
+      waitForTarget: step.waitForTarget,
+      duration: step.duration,
+      elementStatus: targetEl ? 'found' : 'missing',
+      waitSatisfied: state.waitSatisfied,
+      spotlightPadding: step.spotlightPadding
+    };
+    document.getElementById('inspectorBody').textContent = JSON.stringify(data, null, 2);
+  }
+
+  // ---------- 步骤导航 ----------
+  function startTour(fromIndex = 0) {
+    state.active = true;
+    state.index = fromIndex;
+    stepJump.value = fromIndex;
+    relaunchChip.classList.add('hidden');
+    renderStep();
+  }
+  function exitTour() {
+    state.active = false;
+    clearWaitListener();
+    tourFrames.classList.add('hidden');
+    tourRing.classList.add('hidden');
+    tourCard.classList.add('hidden');
+    degradeBanner.classList.add('hidden');
+    relaunchChip.classList.remove('hidden');
+  }
+  function nextStep() {
+    if (state.index === steps.length - 1) {
+      hostFinishBadge.classList.remove('hidden');
+      hostFinishBadge.classList.add('flex');
+      exitTour();
+      return;
+    }
+    state.index += 1;
+    stepJump.value = state.index;
+    renderStep();
+  }
+  function prevStep() {
+    if (state.index === 0) return;
+    state.index -= 1;
+    stepJump.value = state.index;
+    renderStep();
+  }
+
+  btnStartTour.addEventListener('click', () => startTour(0));
+  btnRestartTour.addEventListener('click', () => { hostFinishBadge.classList.add('hidden'); startTour(0); });
+  btnNextStep.addEventListener('click', () => { if (!btnNextStep.disabled) nextStep(); });
+  btnPrevStep.addEventListener('click', () => { if (!btnPrevStep.disabled) prevStep(); });
+  btnCloseTour.addEventListener('click', exitTour);
+  btnDegradeSkip.addEventListener('click', () => nextStep());
+  relaunchChip.addEventListener('click', () => startTour(state.index));
+
+  // ---------- 数据检查器折叠面板 ----------
+  const inspectorPanel = document.getElementById('inspectorPanel');
+  const inspectorHeader = document.getElementById('inspectorHeader');
+  const inspectorChevron = document.getElementById('inspectorChevron');
+  const btnInspector = document.getElementById('btnInspector');
+  function toggleInspector(open) {
+    inspectorPanel.classList.toggle('inspector-collapsed', !open);
+    inspectorChevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+  inspectorHeader.addEventListener('click', () => toggleInspector(inspectorPanel.classList.contains('inspector-collapsed')));
+  btnInspector.addEventListener('click', () => toggleInspector(inspectorPanel.classList.contains('inspector-collapsed')));
+
+  // ---------- 初始状态 ----------
+  updateInspector();
+  startTour(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,992 @@
+<title>教程详情页（目录树+概览）· React 互动教程</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+
+  /* 页面专属样式 */
+  .no-hover-lift:hover { transform: none; }
+  .step-row { cursor: pointer; }
+  .step-row.is-locked { cursor: not-allowed; }
+  .step-row:hover:not(.is-locked) .step-title { color: var(--color-accent); }
+  .step-row.is-current .step-dot {
+    animation: breathe 2s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(76,111,255,.55); }
+    50% { box-shadow: 0 0 0 6px rgba(76,111,255,0); }
+  }
+  .chapter-steps { overflow: hidden; max-height: 0; transition: max-height 300ms var(--ease-standard); }
+  .chapter-steps.is-open { max-height: 1200px; }
+  .chevron-icon { transition: transform 200ms var(--ease-standard); }
+  .chevron-icon.is-open { transform: rotate(90deg); }
+  #treePanel {
+    transition: transform 260ms var(--ease-standard);
+  }
+  @media (max-width: 1023px) {
+    #treePanel {
+      position: fixed; inset: 0 20% 0 0; z-index: 60;
+      transform: translateX(-104%);
+      border-radius: 0 16px 16px 0;
+    }
+    #treePanel.drawer-open { transform: translateX(0); }
+  }
+  .fade-in { animation: fadeIn 220ms var(--ease-standard); }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(4px);} to {opacity:1; transform:none;} }
+  .highlight-match { background: rgba(253,186,51,.14); border-radius: 4px; }
+  .toast-enter { animation: toastIn 240ms var(--ease-standard); }
+  @keyframes toastIn { from {opacity:0; transform: translateY(-8px);} to {opacity:1; transform:none;} }
+</style>
+
+<div class="min-h-screen flex flex-col pb-16 lg:pb-0">
+
+  <!-- ===== 顶部统一导航 ===== -->
+  <header class="sticky top-0 z-50 border-b border-white/[.06] bg-base/85 backdrop-blur-md">
+    <div class="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shrink-0 shadow-glow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 L2 7 L12 12 L22 7 Z"/><path d="M2 17 L12 22 L22 17"/><path d="M2 12 L12 17 L22 12"/></svg>
+        </div>
+        <div class="min-w-0 hidden sm:block">
+          <p class="text-[11px] text-muted leading-none">教程与章节目录</p>
+          <p class="text-sm font-semibold leading-tight truncate">教程详情页（目录树 + 概览）</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- 原型演示用身份切换器 -->
+        <div class="hidden md:flex items-center gap-1.5 bg-surface-2 border border-white/10 rounded-lg h-9 px-2.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B93A7" stroke-width="2"><path d="M12 2 L2 7 v6 c0 5 4 8 10 9 6-1 10-4 10-9V7Z"/></svg>
+          <span class="text-[11px] text-secondary whitespace-nowrap">预览身份</span>
+          <select id="roleSwitcher" class="bg-transparent text-xs text-text-primary focus:outline-none cursor-pointer">
+            <option value="guest">游客</option>
+            <option value="loggedIn" selected>登录学习者</option>
+            <option value="author">作者 / Owner</option>
+          </select>
+        </div>
+
+        <div class="relative">
+          <button id="siteMapBtn" class="h-9 px-3 rounded-lg border border-white/10 text-xs text-secondary hover:text-text-primary hover:bg-white/5 flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+            <span class="hidden sm:inline">全部页面</span>
+          </button>
+          <div id="siteMapPanel" class="hidden absolute right-0 mt-2 w-72 glass-card no-hover-lift p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,.6)] z-50 max-h-[70vh] overflow-y-auto">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 教程包信息条 ===== -->
+  <div class="mx-auto max-w-[1440px] w-full px-4 md:px-6 lg:px-8 pt-5 md:pt-6">
+    <div class="glass-card no-hover-lift p-4 md:p-5 lg:p-6">
+      <div class="flex flex-col lg:flex-row lg:items-center gap-5">
+
+        <a href="tutorial-catalog__package-selection.html" class="flex items-center gap-1.5 text-xs text-secondary hover:text-accent-400 shrink-0 lg:order-1 lg:flex-col lg:items-start lg:gap-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>返回主题选择</span>
+        </a>
+
+        <div class="hidden lg:block w-px h-10 bg-white/10 lg:order-2"></div>
+
+        <div class="flex items-center gap-3 min-w-0 flex-1 lg:order-3">
+          <div class="w-11 h-11 rounded-xl grad-primary-accent flex items-center justify-center text-lg font-bold text-white shrink-0 shadow-glow">⚛</div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="text-base md:text-lg font-bold truncate">React 互动教程</h1>
+              <span id="previewBadge" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full bg-spotlight/15 text-spotlight border border-spotlight/40">预览模式 · Owner</span>
+              <span id="guestBadge" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/[.06] text-secondary border border-white/10">游客浏览</span>
+            </div>
+            <p class="text-xs text-secondary mt-0.5 truncate">由 62 篇 React 学习笔记整理而成 · 8 大分类 · 62 个步骤</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 lg:order-4 shrink-0">
+          <div id="syncPill" class="hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border"></div>
+
+          <div class="flex items-center gap-3">
+            <div id="ringChart" class="w-16 h-16 shrink-0"></div>
+            <div class="leading-tight">
+              <p class="text-[11px] text-secondary">教程包完成度</p>
+              <p id="completionText" class="text-lg font-bold font-mono-ui text-grad">--</p>
+            </div>
+          </div>
+
+          <button id="loginCta" class="hidden h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold shadow-glow whitespace-nowrap">登录保存进度</button>
+          <div id="userChip" class="hidden items-center gap-2">
+            <div class="w-8 h-8 rounded-full grad-primary-accent flex items-center justify-center text-xs font-bold text-white">崔</div>
+            <div class="hidden md:block leading-tight">
+              <p class="text-xs font-medium">演示用户</p>
+              <p class="text-[10px] text-muted">已登录</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 主体：目录树 + 概览 ===== -->
+  <div class="mx-auto max-w-[1440px] w-full px-4 md:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5 lg:gap-6 items-start">
+
+    <!-- 左：章节/步骤目录树 -->
+    <aside id="treePanel" class="glass-card no-hover-lift p-0 flex flex-col lg:sticky lg:top-[92px] lg:max-h-[calc(100vh-108px)] bg-surface lg:border lg:border-white/[.06]">
+      <div class="flex items-center justify-between p-4 border-b border-white/[.06]">
+        <h2 class="text-sm font-semibold">目录</h2>
+        <button id="closeDrawerBtn" class="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center text-secondary hover:bg-white/5">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-3 border-b border-white/[.06] space-y-2.5">
+        <div class="relative">
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A6172" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="searchInput" type="text" placeholder="搜索章节 / 步骤关键字" class="w-full bg-surface-2 border border-white/10 rounded-lg h-9 pl-8 pr-3 text-xs placeholder:text-muted focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30" />
+        </div>
+        <div id="categoryChips" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <div id="treeList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+
+      <div class="p-3 border-t border-white/[.06]">
+        <p id="treeEmptyHint" class="hidden text-xs text-muted text-center py-4">未找到匹配的章节或步骤</p>
+        <div class="flex items-center justify-between text-[11px] text-muted">
+          <span>共 8 章节 · 62 步骤</span>
+          <button id="resetFilterBtn" class="text-accent-400 hover:text-accent-300 hidden">清除筛选</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 移动端抽屉遮罩 -->
+    <div id="drawerBackdrop" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"></div>
+
+    <!-- 右：概览主内容 -->
+    <main class="min-w-0 space-y-5 lg:space-y-6">
+
+      <!-- 继续学习卡 -->
+      <section id="continueCard" class="glass-card no-hover-lift p-5 md:p-6 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary-500/10 blur-3xl pointer-events-none"></div>
+        <div class="relative flex flex-col md:flex-row md:items-center gap-5">
+          <div class="flex-1 min-w-0">
+            <p id="continueLabel" class="text-xs text-secondary mb-1.5">当前学习到</p>
+            <h3 id="continueChapterTitle" class="text-sm text-accent-400 font-medium mb-0.5">—</h3>
+            <p id="continueStepTitle" class="text-xl md:text-2xl font-bold mb-3 truncate">—</p>
+            <div class="flex items-center gap-3">
+              <button id="continueBtn" class="h-11 px-5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow flex items-center gap-2">
+                <span id="continueBtnText">继续学习</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              </button>
+              <span id="lastLearnedText" class="text-xs text-muted"></span>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3 md:gap-4 w-full md:w-auto shrink-0">
+            <div class="bg-surface-2 border border-white/10 rounded-xl px-3.5 py-3 text-center min-w-[84px]">
+              <p id="statCompleted" class="text-lg font-bold font-mono-ui text-grad">0</p>
+              <p class="text-[10px] text-secondary mt-0.5 whitespace-nowrap">已完成步数</p>
+            </div>
+            <div class="bg-surface-2 border border-white/10 rounded-xl px-3.5 py-3 text-center min-w-[84px]">
+              <p class="text-lg font-bold font-mono-ui text-text-primary">62</p>
+              <p class="text-[10px] text-secondary mt-0.5 whitespace-nowrap">总步骤数</p>
+            </div>
+            <div class="bg-surface-2 border border-white/10 rounded-xl px-3.5 py-3 text-center min-w-[84px]">
+              <p id="statChapters" class="text-lg font-bold font-mono-ui text-text-primary">0/8</p>
+              <p class="text-[10px] text-secondary mt-0.5 whitespace-nowrap">章节完成</p>
+            </div>
+          </div>
+        </div>
+        <p id="roleNote" class="hidden relative mt-4 text-xs px-3 py-2 rounded-lg border"></p>
+      </section>
+
+      <!-- 章节概览卡片网格 -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold text-text-primary">章节总览</h2>
+          <p class="text-xs text-muted">点击卡片可在左侧目录中定位</p>
+        </div>
+        <div id="chapterCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 移动端悬浮"目录"按钮 -->
+  <button id="openDrawerBtn" class="lg:hidden fixed bottom-5 right-5 z-40 h-12 px-4 rounded-full bg-primary-500 text-white text-sm font-semibold shadow-glow flex items-center gap-2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+    目录
+  </button>
+
+  <!-- 解锁 / 登录提示 弹窗 -->
+  <div id="promptModal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="glass-card no-hover-lift w-full max-w-sm p-5 fade-in">
+      <div id="promptIconWrap" class="w-11 h-11 rounded-xl flex items-center justify-center mb-3"></div>
+      <h3 id="promptTitle" class="text-base font-semibold mb-1.5">—</h3>
+      <p id="promptDesc" class="text-sm text-secondary mb-5 leading-relaxed">—</p>
+      <div class="flex items-center gap-2.5">
+        <button id="promptCancelBtn" class="flex-1 h-10 rounded-lg border border-white/10 text-text-primary text-sm hover:bg-white/5">知道了</button>
+        <button id="promptActionBtn" class="hidden flex-1 h-10 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow">去登录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toastContainer" class="fixed top-16 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+</div>
+
+<script>
+(function () {
+  // ---------------------------------------------------------------
+  // 1. 数据：TutorialPackage 配置（引擎消费的数据源，React 主题包）
+  // ---------------------------------------------------------------
+  const chapters = [
+    { chapterId: 'c1', order: 1, title: 'React 基础与 JSX', steps: [
+      { stepId: 's1-1', order: 1, title: '为什么需要 React', unlockPolicy: 'linear' },
+      { stepId: 's1-2', order: 2, title: 'JSX 语法与表达式嵌入', unlockPolicy: 'linear' },
+      { stepId: 's1-3', order: 3, title: 'JSX 中的条件渲染', unlockPolicy: 'linear' },
+      { stepId: 's1-4', order: 4, title: '列表渲染与 key', unlockPolicy: 'linear' },
+      { stepId: 's1-5', order: 5, title: '事件绑定与合成事件', unlockPolicy: 'linear' },
+      { stepId: 's1-6', order: 6, title: '受控表单元素', unlockPolicy: 'linear' },
+      { stepId: 's1-7', order: 7, title: 'Fragment 与多根节点', unlockPolicy: 'linear' },
+      { stepId: 's1-8', order: 8, title: '严格模式与开发工具', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c2', order: 2, title: '组件与 Props', steps: [
+      { stepId: 's2-1', order: 1, title: '函数组件与类组件', unlockPolicy: 'linear' },
+      { stepId: 's2-2', order: 2, title: 'Props 只读性与默认值', unlockPolicy: 'linear' },
+      { stepId: 's2-3', order: 3, title: 'children 与组合模式', unlockPolicy: 'linear' },
+      { stepId: 's2-4', order: 4, title: '组件拆分原则', unlockPolicy: 'linear' },
+      { stepId: 's2-5', order: 5, title: 'PropTypes 与类型校验', unlockPolicy: 'linear' },
+      { stepId: 's2-6', order: 6, title: '组件通信：父传子 / 子传父', unlockPolicy: 'linear' },
+      { stepId: 's2-7', order: 7, title: '高阶组件（HOC）模式', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c3', order: 3, title: 'State 与生命周期', steps: [
+      { stepId: 's3-1', order: 1, title: 'useState 基础用法', unlockPolicy: 'linear' },
+      { stepId: 's3-2', order: 2, title: '状态更新的异步与批处理', unlockPolicy: 'linear' },
+      { stepId: 's3-3', order: 3, title: '派生状态与惰性初始化', unlockPolicy: 'linear' },
+      { stepId: 's3-4', order: 4, title: '类组件生命周期总览', unlockPolicy: 'linear' },
+      { stepId: 's3-5', order: 5, title: 'componentDidMount 与数据请求', unlockPolicy: 'linear' },
+      { stepId: 's3-6', order: 6, title: 'componentDidUpdate 与副作用', unlockPolicy: 'linear' },
+      { stepId: 's3-7', order: 7, title: '组件卸载与清理', unlockPolicy: 'linear' },
+      { stepId: 's3-8', order: 8, title: '从生命周期到 Hooks 的映射', unlockPolicy: 'free' },
+    ]},
+    { chapterId: 'c4', order: 4, title: 'Hooks 入门', steps: [
+      { stepId: 's4-1', order: 1, title: 'Hooks 心智模型', unlockPolicy: 'linear' },
+      { stepId: 's4-2', order: 2, title: 'useEffect 基础', unlockPolicy: 'linear' },
+      { stepId: 's4-3', order: 3, title: 'useEffect 依赖数组', unlockPolicy: 'linear' },
+      { stepId: 's4-4', order: 4, title: 'useEffect 清理函数', unlockPolicy: 'linear' },
+      { stepId: 's4-5', order: 5, title: 'useRef 与 DOM 引用', unlockPolicy: 'linear' },
+      { stepId: 's4-6', order: 6, title: 'useRef 保存可变值', unlockPolicy: 'linear' },
+      { stepId: 's4-7', order: 7, title: 'useContext 跨层传值', unlockPolicy: 'linear' },
+      { stepId: 's4-8', order: 8, title: '自定义 Hook 抽取逻辑', unlockPolicy: 'linear' },
+      { stepId: 's4-9', order: 9, title: 'Hooks 使用规则与 ESLint', unlockPolicy: 'linear' },
+      { stepId: 's4-10', order: 10, title: '从 class 迁移到 Hooks', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c5', order: 5, title: 'Hooks 进阶', steps: [
+      { stepId: 's5-1', order: 1, title: 'useReducer 管理复杂状态', unlockPolicy: 'linear' },
+      { stepId: 's5-2', order: 2, title: 'useMemo 缓存计算结果', unlockPolicy: 'linear' },
+      { stepId: 's5-3', order: 3, title: 'useCallback 缓存函数引用', unlockPolicy: 'linear' },
+      { stepId: 's5-4', order: 4, title: 'useLayoutEffect 与同步 DOM', unlockPolicy: 'linear' },
+      { stepId: 's5-5', order: 5, title: 'useImperativeHandle 暴露方法', unlockPolicy: 'linear' },
+      { stepId: 's5-6', order: 6, title: 'useTransition 与并发特性', unlockPolicy: 'linear' },
+      { stepId: 's5-7', order: 7, title: 'useDeferredValue 延迟更新', unlockPolicy: 'linear' },
+      { stepId: 's5-8', order: 8, title: 'Hooks 组合实战', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c6', order: 6, title: '状态管理与 Context', steps: [
+      { stepId: 's6-1', order: 1, title: 'Context API 设计模式', unlockPolicy: 'linear' },
+      { stepId: 's6-2', order: 2, title: 'Provider 层级与性能陷阱', unlockPolicy: 'linear' },
+      { stepId: 's6-3', order: 3, title: '全局状态方案选型', unlockPolicy: 'linear' },
+      { stepId: 's6-4', order: 4, title: 'Redux 核心概念', unlockPolicy: 'linear' },
+      { stepId: 's6-5', order: 5, title: 'Redux Toolkit 实践', unlockPolicy: 'linear' },
+      { stepId: 's6-6', order: 6, title: 'Zustand 轻量状态管理', unlockPolicy: 'linear' },
+      { stepId: 's6-7', order: 7, title: '状态管理方案对比总结', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c7', order: 7, title: '性能优化', steps: [
+      { stepId: 's7-1', order: 1, title: 'React.memo 避免重渲染', unlockPolicy: 'linear' },
+      { stepId: 's7-2', order: 2, title: '渲染性能分析工具', unlockPolicy: 'linear' },
+      { stepId: 's7-3', order: 3, title: '长列表虚拟化', unlockPolicy: 'linear' },
+      { stepId: 's7-4', order: 4, title: '代码分割与懒加载', unlockPolicy: 'linear' },
+      { stepId: 's7-5', order: 5, title: '图片与资源优化', unlockPolicy: 'linear' },
+      { stepId: 's7-6', order: 6, title: '避免不必要的状态提升', unlockPolicy: 'linear' },
+      { stepId: 's7-7', order: 7, title: '性能优化 checklist', unlockPolicy: 'linear' },
+    ]},
+    { chapterId: 'c8', order: 8, title: '生态与工程化', steps: [
+      { stepId: 's8-1', order: 1, title: 'Create React App 到 Vite', unlockPolicy: 'linear' },
+      { stepId: 's8-2', order: 2, title: 'React Router 路由基础', unlockPolicy: 'linear' },
+      { stepId: 's8-3', order: 3, title: '单元测试与 Testing Library', unlockPolicy: 'linear' },
+      { stepId: 's8-4', order: 4, title: 'ESLint 与代码规范', unlockPolicy: 'linear' },
+      { stepId: 's8-5', order: 5, title: 'TypeScript 与 React 结合', unlockPolicy: 'linear' },
+      { stepId: 's8-6', order: 6, title: '组件库与设计系统', unlockPolicy: 'linear' },
+      { stepId: 's8-7', order: 7, title: '部署与生产环境优化', unlockPolicy: 'linear' },
+    ]},
+  ];
+
+  const TOTAL_STEPS = chapters.reduce((n, c) => n + c.steps.length, 0);
+
+  // UserProgress（登录学习者示例进度）
+  const loggedInProgress = {
+    completedStepIds: new Set([
+      's1-1','s1-2','s1-3','s1-4','s1-5','s1-6','s1-7','s1-8',
+      's2-1','s2-2','s2-3','s2-4','s2-5','s2-6','s2-7',
+      's3-1','s3-2',
+    ]),
+    currentStepId: 's3-3',
+    lastLearnedAt: '2026-07-16 21:42',
+    syncStatus: 'synced',
+  };
+
+  // ---------------------------------------------------------------
+  // 2. 状态
+  // ---------------------------------------------------------------
+  const state = {
+    role: 'loggedIn', // guest | loggedIn | author
+    searchKeyword: '',
+    activeCategory: 'all',
+    openChapters: new Set(),
+  };
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  // ---------------------------------------------------------------
+  // 3. 解锁状态计算（数据驱动，无主题分支）
+  // ---------------------------------------------------------------
+  function getFlatSteps() {
+    const flat = [];
+    chapters.forEach((ch, ci) => ch.steps.forEach((st, si) => flat.push({ ch, st, ci, si })));
+    return flat;
+  }
+
+  function computeUnlockState(step, prevStep, completedSet, role) {
+    const isCompleted = completedSet.has(step.stepId);
+    const isCurrent = role === 'loggedIn' && step.stepId === loggedInProgress.currentStepId;
+
+    if (role === 'author') {
+      // 作者预览模式：全部可点击，但仍如实展示真实完成态供自查
+      if (isCompleted) return 'completed';
+      return 'preview-unlocked';
+    }
+
+    if (isCompleted) return 'completed';
+    if (isCurrent) return 'current';
+
+    if (role === 'guest') {
+      const isFirstOfAll = !prevStep;
+      return isFirstOfAll ? 'unlocked' : 'locked-guest';
+    }
+
+    // loggedIn 线性解锁
+    if (step.unlockPolicy === 'free') return 'unlocked';
+    if (!prevStep) return 'unlocked';
+    return completedSet.has(prevStep.stepId) ? 'unlocked' : 'locked';
+  }
+
+  function buildDerivedTree() {
+    const completedSet = state.role === 'loggedIn' ? loggedInProgress.completedStepIds : new Set();
+    const flat = getFlatSteps();
+    return chapters.map((ch, ci) => {
+      const steps = ch.steps.map((st, si) => {
+        const prev = si === 0 ? (ci === 0 ? null : chapters[ci - 1].steps[chapters[ci - 1].steps.length - 1]) : ch.steps[si - 1];
+        const unlockState = computeUnlockState(st, prev, completedSet, state.role);
+        return { ...st, unlockState };
+      });
+      const completedCount = steps.filter(s => s.unlockState === 'completed').length;
+      const progressPercent = ch.steps.length ? Math.round((completedCount / ch.steps.length) * 100) : 0;
+      return { ...ch, steps, completedCount, progressPercent };
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // 4. 渲染：图标
+  // ---------------------------------------------------------------
+  const ICONS = {
+    lock: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>`,
+    circle: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8"/></svg>`,
+    check: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+    eye: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    chevron: `<svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>`,
+  };
+
+  function stepIconHtml(unlockState) {
+    switch (unlockState) {
+      case 'completed':
+        return `<span class="w-4 h-4 rounded-full bg-accent-400/15 border border-accent-400 text-accent-400 flex items-center justify-center shrink-0">${ICONS.check}</span>`;
+      case 'current':
+        return `<span class="step-dot w-4 h-4 rounded-full bg-primary-500 shadow-glow flex items-center justify-center shrink-0"></span>`;
+      case 'preview-unlocked':
+        return `<span class="w-4 h-4 rounded-full bg-spotlight/15 border border-spotlight/60 text-spotlight flex items-center justify-center shrink-0">${ICONS.eye}</span>`;
+      case 'unlocked':
+        return `<span class="w-4 h-4 rounded-full border border-white/25 text-text-secondary flex items-center justify-center shrink-0">${ICONS.circle}</span>`;
+      case 'locked-guest':
+      case 'locked':
+      default:
+        return `<span class="w-4 h-4 rounded-full bg-surface-2 border border-white/10 text-muted opacity-40 flex items-center justify-center shrink-0">${ICONS.lock}</span>`;
+    }
+  }
+
+  function isClickable(unlockState) {
+    return unlockState === 'completed' || unlockState === 'current' || unlockState === 'unlocked' || unlockState === 'preview-unlocked';
+  }
+
+  // ---------------------------------------------------------------
+  // 5. 渲染：目录树
+  // ---------------------------------------------------------------
+  function matchesKeyword(text, kw) {
+    if (!kw) return true;
+    return text.toLowerCase().includes(kw.toLowerCase());
+  }
+
+  function renderTree() {
+    const derived = buildDerivedTree();
+    const kw = state.searchKeyword.trim();
+    const treeList = $('#treeList');
+    treeList.innerHTML = '';
+
+    let anyMatch = false;
+
+    derived.forEach((ch) => {
+      const chapterMatches = matchesKeyword(ch.title, kw);
+      const stepsFiltered = ch.steps.filter(st => chapterMatches || matchesKeyword(st.title, kw));
+      const catFilterPass = state.activeCategory === 'all' || state.activeCategory === ch.chapterId;
+      if (!catFilterPass) return;
+      if (kw && stepsFiltered.length === 0 && !chapterMatches) return;
+      anyMatch = true;
+
+      const isOpen = state.openChapters.has(ch.chapterId);
+      const chapterEl = document.createElement('div');
+      chapterEl.className = 'rounded-lg overflow-hidden';
+
+      const barColor = ch.progressPercent === 100 ? 'bg-accent-400' : 'bg-gradient-to-r from-primary-500 to-accent-400';
+
+      chapterEl.innerHTML = `
+        <button data-chapter="${ch.chapterId}" class="chapter-toggle w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-white/[.04] text-left">
+          <span class="chevron-icon ${isOpen ? 'is-open' : ''}">${ICONS.chevron}</span>
+          <span class="flex-1 min-w-0">
+            <span class="text-xs font-semibold block truncate">${ch.order}. ${ch.title}</span>
+            <span class="flex items-center gap-1.5 mt-1">
+              <span class="flex-1 h-1 rounded-full bg-white/[.08] overflow-hidden max-w-[110px]">
+                <span class="block h-full ${barColor} rounded-full" style="width:${ch.progressPercent}%"></span>
+              </span>
+              <span class="text-[10px] font-mono-ui text-muted whitespace-nowrap">${ch.completedCount}/${ch.steps.length}</span>
+            </span>
+          </span>
+        </button>
+        <div class="chapter-steps ${isOpen ? 'is-open' : ''}" data-chapter-body="${ch.chapterId}">
+          <div class="pl-6 pr-1 pb-1.5 pt-0.5 space-y-0.5">
+            ${(kw ? stepsFiltered : ch.steps).map(st => stepRowHtml(st, ch, kw)).join('')}
+          </div>
+        </div>
+      `;
+      treeList.appendChild(chapterEl);
+    });
+
+    $('#treeEmptyHint').classList.toggle('hidden', anyMatch);
+    $('#resetFilterBtn').classList.toggle('hidden', !(kw || state.activeCategory !== 'all'));
+
+    // 绑定折叠事件
+    $$('.chapter-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.chapter;
+        if (state.openChapters.has(id)) state.openChapters.delete(id);
+        else state.openChapters.add(id);
+        renderTree();
+      });
+    });
+
+    // 绑定步骤点击
+    $$('.step-row').forEach(row => {
+      row.addEventListener('click', () => onStepClick(row.dataset.stepId));
+    });
+  }
+
+  function highlightText(text, kw) {
+    if (!kw) return text;
+    const idx = text.toLowerCase().indexOf(kw.toLowerCase());
+    if (idx === -1) return text;
+    return text.slice(0, idx) + `<span class="highlight-match">${text.slice(idx, idx + kw.length)}</span>` + text.slice(idx + kw.length);
+  }
+
+  function stepRowHtml(st, ch, kw) {
+    const clickable = isClickable(st.unlockState);
+    const isCurrent = st.unlockState === 'current';
+    const textColor = st.unlockState === 'locked' || st.unlockState === 'locked-guest' ? 'text-muted' : (isCurrent ? 'text-text-primary' : 'text-text-secondary');
+    return `
+      <div id="tree-${st.stepId}" data-step-id="${st.stepId}" class="step-row ${clickable ? '' : 'is-locked'} ${isCurrent ? 'is-current' : ''} flex items-center gap-2 px-2 py-1.5 rounded-md ${isCurrent ? 'bg-primary-500/10 ring-1 ring-primary-500/40' : ''}">
+        ${stepIconHtml(st.unlockState)}
+        <span class="step-title text-xs ${textColor} truncate flex-1">${st.order}. ${highlightText(st.title, kw)}</span>
+        ${isCurrent ? '<span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary-500 text-white shrink-0">当前</span>' : ''}
+      </div>
+    `;
+  }
+
+  // ---------------------------------------------------------------
+  // 6. 渲染：章节卡片网格
+  // ---------------------------------------------------------------
+  function renderChapterCards() {
+    const derived = buildDerivedTree();
+    const grid = $('#chapterCardsGrid');
+    grid.innerHTML = derived.map(ch => {
+      const isCurrentChapter = ch.steps.some(s => s.unlockState === 'current');
+      const isDone = ch.progressPercent === 100;
+      const stateLabel = isDone ? '已完成' : (isCurrentChapter ? '进行中' : (ch.completedCount > 0 ? '部分完成' : '未开始'));
+      const stateColor = isDone ? 'text-accent-400 bg-accent-400/10 border-accent-400/30'
+        : isCurrentChapter ? 'text-primary-300 bg-primary-500/10 border-primary-500/30'
+        : ch.completedCount > 0 ? 'text-secondary bg-white/[.05] border-white/10'
+        : 'text-muted bg-white/[.03] border-white/10';
+      return `
+        <button data-jump-chapter="${ch.chapterId}" class="glass-card no-hover-lift hover:!border-primary-500/40 hover:!shadow-glow hover:!-translate-y-0.5 text-left p-4 group">
+          <div class="flex items-start justify-between mb-2.5">
+            <span class="text-[10px] font-mono-ui text-muted">CH.${String(ch.order).padStart(2,'0')}</span>
+            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${stateColor}">${stateLabel}</span>
+          </div>
+          <h3 class="text-sm font-semibold mb-2.5 truncate group-hover:text-accent-400">${ch.title}</h3>
+          <div class="flex items-center gap-2">
+            <span class="flex-1 h-1.5 rounded-full bg-white/[.08] overflow-hidden">
+              <span class="block h-full grad-primary-accent rounded-full" style="width:${ch.progressPercent}%"></span>
+            </span>
+            <span class="text-[11px] font-mono-ui text-secondary whitespace-nowrap">${ch.completedCount}/${ch.steps.length}</span>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    $$('[data-jump-chapter]').forEach(btn => {
+      btn.addEventListener('click', () => jumpToChapter(btn.dataset.jumpChapter));
+    });
+  }
+
+  function jumpToChapter(chapterId) {
+    state.openChapters.add(chapterId);
+    renderTree();
+    openDrawerIfMobile();
+    requestAnimationFrame(() => {
+      const el = $(`[data-chapter-body="${chapterId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // 7. 分类筛选 chips
+  // ---------------------------------------------------------------
+  function renderCategoryChips() {
+    const wrap = $('#categoryChips');
+    const items = [{ id: 'all', title: '全部' }, ...chapters.map(c => ({ id: c.chapterId, title: c.title }))];
+    wrap.innerHTML = items.map(c => `
+      <button data-cat="${c.id}" class="cat-chip text-[11px] px-2.5 py-1 rounded-full border transition-colors ${state.activeCategory === c.id ? 'bg-primary-500/15 border-primary-500/50 text-primary-200' : 'border-white/10 text-secondary hover:bg-white/5'}">${c.title}</button>
+    `).join('');
+    $$('.cat-chip').forEach(btn => btn.addEventListener('click', () => {
+      state.activeCategory = btn.dataset.cat;
+      if (state.activeCategory !== 'all') state.openChapters.add(state.activeCategory);
+      renderCategoryChips();
+      renderTree();
+    }));
+  }
+
+  // ---------------------------------------------------------------
+  // 8. 顶部信息条：完成度环、角色态、同步状态
+  // ---------------------------------------------------------------
+  let ringChartInstance = null;
+  function renderTopBar() {
+    const completedSet = state.role === 'loggedIn' ? loggedInProgress.completedStepIds : new Set();
+    const completedCount = completedSet.size;
+    const percent = state.role === 'author' ? 0 : Math.round((completedCount / TOTAL_STEPS) * 100);
+
+    $('#completionText').textContent = state.role === 'author' ? '预览' : `${percent}%`;
+    $('#previewBadge').classList.toggle('hidden', state.role !== 'author');
+    $('#guestBadge').classList.toggle('hidden', state.role !== 'guest');
+
+    // 环形图
+    const el = $('#ringChart');
+    if (!ringChartInstance) ringChartInstance = echarts.init(el, null, { renderer: 'svg' });
+    const ringPercent = state.role === 'author' ? 100 : percent;
+    const ringColor = state.role === 'author' ? '#FDBA33' : undefined;
+    ringChartInstance.setOption({
+      backgroundColor: 'transparent',
+      series: [{
+        type: 'pie',
+        radius: ['70%', '92%'],
+        startAngle: 90,
+        silent: true,
+        label: { show: false },
+        labelLine: { show: false },
+        data: [
+          { value: ringPercent, itemStyle: { color: ringColor || { type: 'linear', x:0,y:0,x2:1,y2:1, colorStops: [{offset:0,color:'#4C6FFF'},{offset:1,color:'#22D3EE'}] } } },
+          { value: 100 - ringPercent, itemStyle: { color: 'rgba(255,255,255,.08)' }, emphasis: { disabled: true } },
+        ],
+      }],
+    });
+
+    // 登录/角色相关按钮
+    $('#loginCta').classList.toggle('hidden', state.role !== 'guest');
+    $('#userChip').classList.toggle('hidden', state.role === 'guest');
+    $('#userChip').classList.toggle('flex', state.role !== 'guest');
+
+    // 同步状态 pill
+    const syncEl = $('#syncPill');
+    syncEl.classList.remove('hidden');
+    if (state.role === 'loggedIn') {
+      syncEl.className = 'hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-success/30 bg-success/10 text-success';
+      syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-success"></span>已同步`;
+    } else if (state.role === 'guest') {
+      syncEl.className = 'hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-white/10 bg-white/[.04] text-secondary';
+      syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-muted"></span>本地保存`;
+    } else {
+      syncEl.className = 'hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-spotlight/30 bg-spotlight/10 text-spotlight';
+      syncEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-spotlight"></span>不写入进度`;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // 9. 继续学习卡 / 统计
+  // ---------------------------------------------------------------
+  function renderContinueCard() {
+    const derived = buildDerivedTree();
+    const completedSet = state.role === 'loggedIn' ? loggedInProgress.completedStepIds : new Set();
+    const completedCount = completedSet.size;
+    const doneChapters = derived.filter(c => c.progressPercent === 100).length;
+
+    $('#statCompleted').textContent = completedCount;
+    $('#statChapters').textContent = `${doneChapters}/8`;
+
+    const roleNote = $('#roleNote');
+
+    if (state.role === 'guest') {
+      const first = chapters[0].steps[0];
+      $('#continueLabel').textContent = '开始你的第一步';
+      $('#continueChapterTitle').textContent = chapters[0].title;
+      $('#continueStepTitle').textContent = first.title;
+      $('#continueBtnText').textContent = '开始学习';
+      $('#lastLearnedText').textContent = '游客模式 · 进度仅保存在本机';
+      roleNote.className = 'relative mt-4 text-xs px-3 py-2 rounded-lg border border-white/10 bg-white/[.03] text-secondary';
+      roleNote.textContent = '游客仅可进入第一章第一步，其余步骤登录后解锁；本地进度登录后将与账号进度自动合并。';
+      roleNote.classList.remove('hidden');
+      $('#continueBtn').onclick = () => onStepClick(first.stepId);
+    } else if (state.role === 'author') {
+      const first = chapters[0].steps[0];
+      $('#continueLabel').textContent = '预览模式';
+      $('#continueChapterTitle').textContent = chapters[0].title;
+      $('#continueStepTitle').textContent = first.title;
+      $('#continueBtnText').textContent = '进入预览';
+      $('#lastLearnedText').textContent = '内容自查模式';
+      roleNote.className = 'relative mt-4 text-xs px-3 py-2 rounded-lg border border-spotlight/30 bg-spotlight/10 text-spotlight';
+      roleNote.textContent = '预览模式：所有步骤均可点击跳转，用于内容自查；本次浏览不计入学习进度，不写入 UserProgress。';
+      roleNote.classList.remove('hidden');
+      $('#continueBtn').onclick = () => onStepClick(first.stepId);
+    } else {
+      const curId = loggedInProgress.currentStepId;
+      let curChapter = chapters[0], curStep = chapters[0].steps[0];
+      chapters.forEach(ch => ch.steps.forEach(st => { if (st.stepId === curId) { curChapter = ch; curStep = st; } }));
+      $('#continueLabel').textContent = '当前学习到';
+      $('#continueChapterTitle').textContent = curChapter.title;
+      $('#continueStepTitle').textContent = curStep.title;
+      $('#continueBtnText').textContent = '继续学习';
+      $('#lastLearnedText').textContent = `上次学习：${loggedInProgress.lastLearnedAt}`;
+      roleNote.classList.add('hidden');
+      $('#continueBtn').onclick = () => onStepClick(curId);
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // 10. 步骤点击交互
+  // ---------------------------------------------------------------
+  function onStepClick(stepId) {
+    const derived = buildDerivedTree();
+    let target = null, chapter = null;
+    derived.forEach(ch => ch.steps.forEach(st => { if (st.stepId === stepId) { target = st; chapter = ch; } }));
+    if (!target) return;
+
+    if (isClickable(target.unlockState)) {
+      if (target.unlockState === 'preview-unlocked') {
+        showToast(`预览模式跳转：${chapter.title} · ${target.title}`, 'spotlight');
+      } else {
+        showToast(`进入「${target.title}」`, 'success');
+      }
+      // 真实原型中跳转至引导引擎工作台，携带 stepId
+      window.location.href = `guided-tour__tutorial-workspace.html?packageId=react&stepId=${encodeURIComponent(stepId)}`;
+      return;
+    }
+
+    // 未解锁：弹出提示
+    if (state.role === 'guest') {
+      openPromptModal({
+        icon: 'lock', color: 'spotlight',
+        title: '登录后解锁完整教程',
+        desc: `「${target.title}」尚未解锁。游客仅可体验第一章第一步，登录后即可按顺序解锁全部 ${TOTAL_STEPS} 个步骤，并支持跨端同步学习进度。`,
+        actionText: '去登录', action: () => { window.location.href = 'learning-progress__auth-entry.html'; },
+      });
+    } else {
+      openPromptModal({
+        icon: 'lock', color: 'warning',
+        title: '该步骤尚未解锁',
+        desc: `请先完成「${chapter.title}」中此前的步骤，「${target.title}」将自动解锁。你也可以在目录中查看已解锁的其他步骤。`,
+      });
+    }
+  }
+
+  function openPromptModal({ icon, color, title, desc, actionText, action }) {
+    const modal = $('#promptModal');
+    const iconWrap = $('#promptIconWrap');
+    const colorMap = {
+      spotlight: 'bg-spotlight/15 text-spotlight border border-spotlight/40',
+      warning: 'bg-warning/15 text-warning border border-warning/40',
+    };
+    iconWrap.className = `w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${colorMap[color] || colorMap.warning}`;
+    iconWrap.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>`;
+    $('#promptTitle').textContent = title;
+    $('#promptDesc').textContent = desc;
+    const actionBtn = $('#promptActionBtn');
+    if (actionText) {
+      actionBtn.textContent = actionText;
+      actionBtn.classList.remove('hidden');
+      actionBtn.onclick = () => { closePromptModal(); action && action(); };
+    } else {
+      actionBtn.classList.add('hidden');
+    }
+    modal.classList.remove('hidden');
+  }
+  function closePromptModal() { $('#promptModal').classList.add('hidden'); }
+  $('#promptCancelBtn').addEventListener('click', closePromptModal);
+  $('#promptModal').addEventListener('click', (e) => { if (e.target.id === 'promptModal') closePromptModal(); });
+
+  // ---------------------------------------------------------------
+  // 11. Toast
+  // ---------------------------------------------------------------
+  function showToast(msg, type) {
+    const colorMap = {
+      success: 'border-success/40 bg-success/10 text-success',
+      spotlight: 'border-spotlight/40 bg-spotlight/10 text-spotlight',
+      info: 'border-white/10 bg-surface-2 text-text-primary',
+    };
+    const el = document.createElement('div');
+    el.className = `toast-enter pointer-events-auto text-xs font-medium px-3.5 py-2 rounded-lg border shadow-lg ${colorMap[type] || colorMap.info}`;
+    el.textContent = msg;
+    $('#toastContainer').appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 220); }, 2200);
+  }
+
+  // ---------------------------------------------------------------
+  // 12. 移动端抽屉
+  // ---------------------------------------------------------------
+  function openDrawerIfMobile() {
+    if (window.innerWidth >= 1024) return;
+    $('#treePanel').classList.add('drawer-open');
+    $('#drawerBackdrop').classList.remove('hidden');
+  }
+  function closeDrawer() {
+    $('#treePanel').classList.remove('drawer-open');
+    $('#drawerBackdrop').classList.add('hidden');
+  }
+  $('#openDrawerBtn').addEventListener('click', openDrawerIfMobile);
+  $('#closeDrawerBtn').addEventListener('click', closeDrawer);
+  $('#drawerBackdrop').addEventListener('click', closeDrawer);
+
+  // ---------------------------------------------------------------
+  // 13. 搜索
+  // ---------------------------------------------------------------
+  $('#searchInput').addEventListener('input', (e) => {
+    state.searchKeyword = e.target.value;
+    if (state.searchKeyword.trim()) {
+      chapters.forEach(c => state.openChapters.add(c.chapterId));
+    }
+    renderTree();
+  });
+  $('#resetFilterBtn').addEventListener('click', () => {
+    state.searchKeyword = '';
+    state.activeCategory = 'all';
+    $('#searchInput').value = '';
+    renderCategoryChips();
+    renderTree();
+  });
+
+  // ---------------------------------------------------------------
+  // 14. 角色切换
+  // ---------------------------------------------------------------
+  $('#roleSwitcher').addEventListener('change', (e) => {
+    state.role = e.target.value;
+    state.openChapters = new Set();
+    autoExpandCurrent();
+    renderAll();
+    showToast(
+      state.role === 'guest' ? '已切换为「游客」视角' : state.role === 'author' ? '已切换为「作者预览」视角' : '已切换为「登录学习者」视角',
+      'info'
+    );
+  });
+
+  // ---------------------------------------------------------------
+  // 15. 站点地图下拉
+  // ---------------------------------------------------------------
+  const siteMap = [
+    { group: '教程与章节目录', items: [
+      { title: '主题包选择页', href: 'tutorial-catalog__package-selection.html' },
+      { title: '教程详情页（目录树+概览）', href: 'tutorial-catalog__chapter-tree.html', current: true },
+      { title: '我的学习总览页', href: 'tutorial-catalog__learning-progress-overview.html' },
+    ]},
+    { group: '课程讲解与步骤导航', items: [
+      { title: '教程包目录', href: 'lesson-reader__catalog.html' },
+      { title: '课程学习页', href: 'lesson-reader__lesson.html' },
+      { title: '我的学习进度', href: 'lesson-reader__my-progress.html' },
+    ]},
+    { group: '引导引擎', items: [
+      { title: '引导蒙层与聚光灯', href: 'guided-tour__tour-overlay.html' },
+      { title: '教程学习工作台', href: 'guided-tour__tutorial-workspace.html' },
+      { title: '章节/步骤目录树', href: 'guided-tour__chapter-toc.html' },
+      { title: '教程包（主题）选择页', href: 'guided-tour__tutorial-catalog.html' },
+      { title: '我的学习进度页', href: 'guided-tour__my-progress.html' },
+    ]},
+    { group: '代码沙箱', items: [
+      { title: '沙箱主面板', href: 'code-sandbox__sandbox-panel.html' },
+      { title: '移动端沙箱 Tab 视图', href: 'code-sandbox__sandbox-mobile-tab.html' },
+      { title: '沙箱异常态视图', href: 'code-sandbox__sandbox-error-state.html' },
+    ]},
+    { group: '学习进度与账户', items: [
+      { title: '登录入口与登录弹窗', href: 'learning-progress__auth-entry.html' },
+      { title: '我的学习', href: 'learning-progress__my-learning.html' },
+      { title: '进度标记与同步状态', href: 'learning-progress__progress-indicators.html' },
+    ]},
+  ];
+  function renderSiteMap() {
+    $('#siteMapPanel').innerHTML = siteMap.map(g => `
+      <div class="mb-3 last:mb-0">
+        <p class="text-[10px] uppercase tracking-wide text-muted px-2 mb-1">${g.group}</p>
+        ${g.items.map(it => `
+          <a href="${it.href}" class="block px-2 py-1.5 rounded-md text-xs ${it.current ? 'bg-primary-500/15 text-primary-200 font-semibold' : 'text-secondary hover:bg-white/5 hover:text-text-primary'}">${it.title}${it.current ? ' · 当前' : ''}</a>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+  $('#siteMapBtn').addEventListener('click', () => $('#siteMapPanel').classList.toggle('hidden'));
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#siteMapBtn') && !e.target.closest('#siteMapPanel')) $('#siteMapPanel').classList.add('hidden');
+  });
+
+  // ---------------------------------------------------------------
+  // 16. 初始化：自动展开并滚动到当前步骤
+  // ---------------------------------------------------------------
+  function autoExpandCurrent() {
+    if (state.role === 'loggedIn') {
+      const curId = loggedInProgress.currentStepId;
+      chapters.forEach(ch => { if (ch.steps.some(s => s.stepId === curId)) state.openChapters.add(ch.chapterId); });
+    } else {
+      state.openChapters.add(chapters[0].chapterId);
+    }
+  }
+
+  function renderAll() {
+    renderTopBar();
+    renderCategoryChips();
+    renderTree();
+    renderChapterCards();
+    renderContinueCard();
+  }
+
+  window.addEventListener('resize', () => { if (ringChartInstance) ringChartInstance.resize(); });
+
+  renderSiteMap();
+  autoExpandCurrent();
+  renderAll();
+
+  requestAnimationFrame(() => {
+    const curEl = document.querySelector('.step-row.is-current');
+    if (curEl) curEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+})();
+</script>

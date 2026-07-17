@@ -1,0 +1,911 @@
+<!-- 登录入口与登录弹窗 | 学习进度与账户 -->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录入口与登录弹窗 · TutorEngine</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+
+  /* page-specific */
+  .nav-link { color: var(--color-text-secondary); }
+  .nav-link:hover { color: var(--color-text-primary); }
+  .nav-link.active { color: var(--color-text-primary); }
+  .breath { animation: breathe 2.2s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+  .fade-in { animation: fadeIn .25s var(--ease-standard); }
+  @keyframes fadeIn { from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform: translateY(0);} }
+  .shake { animation: shake .38s var(--ease-standard); }
+  @keyframes shake { 10%,90%{transform:translateX(-1px)} 20%,80%{transform:translateX(2px)} 30%,50%,70%{transform:translateX(-4px)} 40%,60%{transform:translateX(4px)} }
+  .toast-in { animation: toastIn .22s var(--ease-standard); }
+  @keyframes toastIn { from{ opacity:0; transform: translateX(16px) scale(.98);} to{ opacity:1; transform: translateX(0) scale(1);} }
+  .toast-out { animation: toastOut .18s ease-in forwards; }
+  @keyframes toastOut { to{ opacity:0; transform: translateX(16px) scale(.98);} }
+  .pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
+  @keyframes pulseDot { 0%,100%{ box-shadow: 0 0 0 0 rgba(253,186,51,.55);} 50%{ box-shadow: 0 0 0 6px rgba(253,186,51,0);} }
+  .spin { animation: spin .7s linear infinite; }
+  @keyframes spin { to{ transform: rotate(360deg); } }
+  .step-badge { font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===================== 顶部导航 ===================== -->
+  <header class="sticky top-0 z-40 border-b border-white/[.06] bg-base/85 backdrop-blur-md">
+    <div class="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
+      <div class="h-16 flex items-center justify-between gap-4">
+        <!-- Logo -->
+        <a href="tutorial-catalog__package-selection.html" class="flex items-center gap-2.5 shrink-0">
+          <span class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shadow-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.4" fill="white"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6" transform="rotate(120 12 12)"/></svg>
+          </span>
+          <span class="text-sm font-bold tracking-wide hidden sm:block">TutorEngine <span class="text-text-muted font-normal">引导引擎</span></span>
+        </a>
+
+        <!-- 主导航 -->
+        <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
+          <a href="tutorial-catalog__package-selection.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">主题包选择</a>
+          <a href="tutorial-catalog__chapter-tree.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">教程详情</a>
+          <a href="guided-tour__tutorial-workspace.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">学习工作台</a>
+          <a href="learning-progress__my-learning.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">我的学习</a>
+
+          <!-- 站点地图下拉 -->
+          <div class="relative" id="sitemapWrap">
+            <button id="sitemapBtn" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04] flex items-center gap-1">
+              全部页面
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="sitemapMenu" class="hidden absolute left-0 mt-2 w-[560px] max-w-[90vw] glass-card !bg-[#12151C] border border-white/10 rounded-2xl shadow-[0_16px_48px_-12px_rgba(0,0,0,.6)] p-4 grid grid-cols-2 gap-x-6 gap-y-4 z-50">
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">教程与章节目录</p>
+                <a href="tutorial-catalog__package-selection.html" class="block py-1 text-sm nav-link">主题包选择页</a>
+                <a href="tutorial-catalog__chapter-tree.html" class="block py-1 text-sm nav-link">教程详情页（目录树+概览）</a>
+                <a href="tutorial-catalog__learning-progress-overview.html" class="block py-1 text-sm nav-link">我的学习总览页</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">课程讲解与步骤导航</p>
+                <a href="lesson-reader__catalog.html" class="block py-1 text-sm nav-link">教程包目录</a>
+                <a href="lesson-reader__lesson.html" class="block py-1 text-sm nav-link">课程学习页</a>
+                <a href="lesson-reader__my-progress.html" class="block py-1 text-sm nav-link">我的学习进度</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">引导引擎</p>
+                <a href="guided-tour__tour-overlay.html" class="block py-1 text-sm nav-link">引导蒙层与聚光灯</a>
+                <a href="guided-tour__tutorial-workspace.html" class="block py-1 text-sm nav-link">教程学习工作台</a>
+                <a href="guided-tour__chapter-toc.html" class="block py-1 text-sm nav-link">章节/步骤目录树</a>
+                <a href="guided-tour__tutorial-catalog.html" class="block py-1 text-sm nav-link">教程包（主题）选择页</a>
+                <a href="guided-tour__my-progress.html" class="block py-1 text-sm nav-link">我的学习进度页</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">代码沙箱</p>
+                <a href="code-sandbox__sandbox-panel.html" class="block py-1 text-sm nav-link">沙箱主面板</a>
+                <a href="code-sandbox__sandbox-mobile-tab.html" class="block py-1 text-sm nav-link">移动端沙箱 Tab 视图</a>
+                <a href="code-sandbox__sandbox-error-state.html" class="block py-1 text-sm nav-link">沙箱异常态视图</a>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2 mt-3">学习进度与账户</p>
+                <a href="learning-progress__auth-entry.html" class="block py-1 text-sm text-primary-300 font-medium flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-primary-400"></span>登录入口与登录弹窗</a>
+                <a href="learning-progress__my-learning.html" class="block py-1 text-sm nav-link">我的学习</a>
+                <a href="learning-progress__progress-indicators.html" class="block py-1 text-sm nav-link">进度标记与同步状态</a>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <!-- 右侧用户区：本页核心组件 -->
+        <div class="flex items-center gap-3">
+          <!-- 游客态：登录入口 -->
+          <button id="guestEntry" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+            登录
+          </button>
+
+          <!-- 登录态：用户信息 -->
+          <div id="userEntry" class="hidden relative">
+            <button id="userBtn" class="flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-lg border border-white/10 hover:bg-white/[.05]">
+              <span id="userAvatar" class="w-6 h-6 rounded-full grad-primary-accent flex items-center justify-center text-[11px] font-bold text-white">满</span>
+              <span id="userNameLabel" class="text-sm hidden sm:block">小满</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="userMenu" class="hidden absolute right-0 mt-2 w-64 glass-card !bg-[#12151C] border border-white/10 rounded-xl p-2 shadow-[0_16px_48px_-12px_rgba(0,0,0,.6)] z-50">
+              <div class="px-3 py-2.5 border-b border-white/[.06] mb-1">
+                <p id="userMenuName" class="text-sm font-medium">小满</p>
+                <p id="userMenuEmail" class="text-xs text-text-muted font-mono-ui">xiaoman@example.com</p>
+                <p id="userMenuLoginAt" class="text-[11px] text-text-muted mt-1">登录于 --</p>
+              </div>
+              <a href="learning-progress__my-learning.html" class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-white/[.05] text-text-secondary hover:text-text-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 4 4 5-6"/></svg>
+                我的学习
+              </a>
+              <button id="logoutBtn" class="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-danger/10 text-danger">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                退出登录
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== 主体 ===================== -->
+  <main class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10">
+
+    <!-- Hero -->
+    <section class="mb-8 md:mb-10">
+      <p class="text-xs uppercase tracking-wide text-accent-400 font-semibold mb-2 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-accent-400 breath"></span>
+        学习进度与账户 · 登录入口与登录弹窗
+      </p>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">登录入口与登录弹窗</h1>
+      <p class="text-sm text-text-secondary mt-2 max-w-2xl leading-relaxed">承载顶部导航的用户态展示、邮箱验证码登录、本地游客进度合并提示与退出登录。登录成功后原地刷新用户态，不跳转、不丢失当前学习上下文。</p>
+    </section>
+
+    <!-- 使用说明 -->
+    <section class="glass-card p-5 md:p-6 mb-8 flex flex-col md:flex-row items-start gap-4 md:gap-6">
+      <div class="w-11 h-11 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.8"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+      </div>
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-text-primary mb-1">如何体验完整流程</p>
+        <p class="text-xs text-text-secondary leading-relaxed">点击右上角「登录」按钮，依次体验：输入邮箱 → 发送验证码（60 秒倒计时）→ 输入验证码提交 → 登录成功原地刷新导航 → 若检测到本地游客进度将弹出合并提示。登录后可在头像下拉菜单点击「退出登录」体验二次确认。</p>
+        <p class="text-xs text-spotlight/90 leading-relaxed mt-2 flex items-center gap-1.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          演示提示：验证码输入 <code class="font-mono-ui bg-white/[.06] px-1 py-0.5 rounded">000000</code> 触发失败反馈，其余任意 6 位数字均视为验证成功。
+        </p>
+      </div>
+      <div class="flex flex-col gap-2 w-full md:w-auto shrink-0">
+        <button id="qaResetFirst" class="h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-xs font-medium whitespace-nowrap">重置为「首次登录」演示态</button>
+        <button id="qaResetGuest" class="h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-xs font-medium whitespace-nowrap">重置为游客态</button>
+      </div>
+    </section>
+
+    <!-- 状态速览 -->
+    <section class="mb-10">
+      <h2 class="text-base font-bold mb-1">组件状态速览</h2>
+      <p class="text-xs text-text-secondary mb-4">每张卡片直达对应状态的真实交互层，便于设计走查与联调核对，而非静态截图。</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-primary-500/10 border border-primary-500/20 flex items-center justify-center text-primary-300 shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            </span>
+            <p class="text-sm font-semibold">邮箱输入态</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">登录弹窗初始态，等待输入邮箱并发送验证码。</p>
+          <button onclick="previewEmailStep()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-accent-500/10 border border-accent-500/20 flex items-center justify-center text-accent-300 shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+            </span>
+            <p class="text-sm font-semibold">验证码倒计时态</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">验证码已发送，「发送验证码」按钮进入 60 秒禁用倒计时。</p>
+          <button onclick="previewCountdownStep()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+            </span>
+            <p class="text-sm font-semibold">验证码校验失败</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">提交错误验证码后的行内错误反馈与输入抖动提示。</p>
+          <button onclick="previewErrorState()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-spotlight/10 border border-spotlight/25 flex items-center justify-center text-spotlight shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/></svg>
+            </span>
+            <p class="text-sm font-semibold">本地进度合并提示</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">首次登录检测到本地游客进度时的合并选择弹窗。</p>
+          <button onclick="previewMergeModal()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5"/></svg>
+            </span>
+            <p class="text-sm font-semibold">登录成功轻提示</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">非阻断气泡，右下角出现，可手动关闭或自动消失。</p>
+          <button onclick="previewSuccessToast()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+        <article class="glass-card p-5 flex flex-col">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            </span>
+            <p class="text-sm font-semibold">退出登录确认</p>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed flex-1">下拉菜单「退出登录」触发的二次确认弹窗。</p>
+          <button onclick="previewLogoutConfirm()" class="mt-4 h-9 rounded-lg border border-white/10 hover:bg-white/5 text-xs font-medium text-primary-100">打开此状态</button>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- 关键交互清单 -->
+    <section class="mb-10">
+      <h2 class="text-base font-bold mb-4">关键交互清单</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">1</span>
+          <p class="text-xs text-text-secondary leading-relaxed">点击顶部导航「登录」按钮，弹出登录弹窗。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">2</span>
+          <p class="text-xs text-text-secondary leading-relaxed">输入邮箱并点击「发送验证码」，按钮进入 60 秒倒计时禁用态。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">3</span>
+          <p class="text-xs text-text-secondary leading-relaxed">输入验证码并提交，校验成功/失败均有明确反馈。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">4</span>
+          <p class="text-xs text-text-secondary leading-relaxed">登录成功后弹窗关闭，顶部导航原地刷新为头像+昵称，不跳转、不丢失当前学习上下文。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">5</span>
+          <p class="text-xs text-text-secondary leading-relaxed">首次登录若检测到本地游客学习进度，弹出合并提示，可选择「合并进度」或「仅保留账户记录」。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">6</span>
+          <p class="text-xs text-text-secondary leading-relaxed">登录完成后展示非阻断轻提示气泡，可手动关闭，也会自动消失。</p>
+        </div>
+        <div class="glass-card p-4 flex items-start gap-3 md:col-span-2">
+          <span class="step-badge shrink-0 w-6 h-6 rounded-full bg-primary-500/15 border border-primary-500/30 text-primary-300 text-[11px] flex items-center justify-center font-bold">7</span>
+          <p class="text-xs text-text-secondary leading-relaxed">点击头像下拉菜单中的「退出登录」，二次确认后清空用户态，回到游客态。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 数据字段 -->
+    <section class="mb-4">
+      <h2 class="text-base font-bold mb-1">数据字段</h2>
+      <p class="text-xs text-text-secondary mb-4">登录入口与登录弹窗涉及的核心数据字段定义。</p>
+      <div class="glass-card overflow-x-auto">
+        <table class="w-full text-sm min-w-[640px]">
+          <thead class="sticky top-0 bg-surface border-b border-white/10 text-xs uppercase text-text-secondary">
+            <tr>
+              <th class="text-left font-medium px-4 py-3">字段</th>
+              <th class="text-left font-medium px-4 py-3">类型</th>
+              <th class="text-left font-medium px-4 py-3">说明</th>
+              <th class="text-left font-medium px-4 py-3">示例值</th>
+            </tr>
+          </thead>
+          <tbody id="fieldTableBody" class="text-text-secondary"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== 登录弹窗 ===================== -->
+  <div id="loginModalWrap" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="loginBackdrop" class="absolute inset-0 spotlight-mask"></div>
+    <div class="relative w-full max-w-sm glass-card !bg-[#12151C] border border-white/10 p-6 fade-in">
+      <button id="closeLoginModal" class="absolute top-4 right-4 text-text-muted hover:text-text-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="w-10 h-10 rounded-xl grad-primary-accent flex items-center justify-center shadow-glow mb-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      </div>
+      <h3 class="text-lg font-bold mb-1">登录 TutorEngine</h3>
+      <p class="text-xs text-text-secondary mb-5">登录后学习进度将跨端同步，断点续学不丢失。</p>
+
+      <!-- 步骤1：邮箱 -->
+      <div id="emailStepBlock">
+        <label class="block text-xs uppercase tracking-wide text-text-secondary mb-1.5">邮箱</label>
+        <input id="emailInput" type="email" placeholder="you@example.com" autocomplete="email"
+          class="w-full h-10 px-3 rounded-lg bg-surface-2 border border-white/10 text-sm placeholder:text-text-muted focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+        <p id="emailError" class="hidden text-xs text-danger mt-1.5">请输入有效的邮箱地址</p>
+
+        <button id="sendCodeBtn" class="w-full h-10 mt-3.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow flex items-center justify-center gap-2">
+          <svg id="sendCodeSpinner" class="hidden spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9" stroke-opacity=".25"/><path d="M21 12a9 9 0 00-9-9"/></svg>
+          <span id="sendCodeBtnText">发送验证码</span>
+        </button>
+      </div>
+
+      <!-- 步骤2：验证码 -->
+      <div id="codeStepBlock" class="hidden mt-4 fade-in">
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs uppercase tracking-wide text-text-secondary">验证码</label>
+          <button id="backToEmailBtn" class="text-[11px] text-primary-300 hover:text-primary-200">邮箱不对？重新输入</button>
+        </div>
+        <p id="codeSentHint" class="text-xs text-text-secondary mb-2">验证码已发送至 <span id="codeSentEmail" class="text-text-primary font-mono-ui">--</span>，5 分钟内有效</p>
+        <input id="codeInput" type="text" inputmode="numeric" maxlength="6" placeholder="6 位数字验证码" autocomplete="one-time-code"
+          class="w-full h-10 px-3 rounded-lg bg-surface-2 border border-white/10 text-sm tracking-[0.3em] font-mono-ui placeholder:tracking-normal placeholder:text-text-muted focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30">
+        <p id="codeError" class="hidden text-xs text-danger mt-1.5">验证码错误，请重新输入</p>
+
+        <button id="submitCodeBtn" class="w-full h-11 mt-3.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow flex items-center justify-center gap-2">
+          <svg id="submitCodeSpinner" class="hidden spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9" stroke-opacity=".25"/><path d="M21 12a9 9 0 00-9-9"/></svg>
+          <span id="submitCodeBtnText">登录</span>
+        </button>
+      </div>
+
+      <p class="text-[11px] text-text-muted text-center mt-4">游客数据将在登录后询问是否合并，不会静默丢失</p>
+    </div>
+  </div>
+
+  <!-- ===================== 本地进度合并提示弹窗 ===================== -->
+  <div id="mergeModalWrap" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="mergeBackdrop" class="absolute inset-0 spotlight-mask"></div>
+    <div class="relative w-full max-w-md glass-card !bg-[#12151C] border border-spotlight/25 p-6 fade-in">
+      <div class="w-10 h-10 rounded-xl bg-spotlight/15 border border-spotlight/30 flex items-center justify-center mb-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-spotlight)" stroke-width="1.8"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/></svg>
+      </div>
+      <h3 class="text-lg font-bold mb-1">检测到本地游客学习进度</h3>
+      <p class="text-xs text-text-secondary leading-relaxed mb-4">登录前你在此设备上已有未同步的学习记录，是否合并到当前账户？</p>
+
+      <div class="rounded-lg bg-surface-2 border border-white/10 p-3.5 mb-5">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span class="text-text-secondary">来源标识</span>
+          <span class="font-mono-ui text-text-primary" id="mergeGuestId">guest_8f3a2b91</span>
+        </div>
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span class="text-text-secondary">涉及教程</span>
+          <span class="text-text-primary">React 交互式实战教程</span>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-text-secondary">已完成步骤</span>
+          <span class="font-mono-ui font-semibold text-grad">12 / 62 步</span>
+        </div>
+      </div>
+
+      <button id="mergeConfirmBtn" class="w-full h-11 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow mb-2.5 flex items-center justify-center gap-2">
+        合并进度到账户
+        <span class="text-[10px] font-normal bg-white/15 px-1.5 py-0.5 rounded">推荐</span>
+      </button>
+      <button id="mergeDiscardBtn" class="w-full h-10 rounded-lg bg-transparent border border-white/10 text-text-secondary hover:bg-white/5 text-sm">仅保留账户记录</button>
+      <p class="text-[11px] text-text-muted text-center mt-3.5">选择「仅保留账户记录」将不再合并本机这份游客进度</p>
+    </div>
+  </div>
+
+  <!-- ===================== 退出登录确认弹窗 ===================== -->
+  <div id="logoutModalWrap" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="logoutBackdrop" class="absolute inset-0 spotlight-mask"></div>
+    <div class="relative w-full max-w-sm glass-card !bg-[#12151C] border border-danger/25 p-6 fade-in">
+      <div class="w-10 h-10 rounded-xl bg-danger/10 border border-danger/25 flex items-center justify-center mb-4">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="1.8"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </div>
+      <h3 class="text-lg font-bold mb-1">确定要退出登录吗？</h3>
+      <p class="text-xs text-text-secondary leading-relaxed mb-5">退出后将回到游客模式。已同步至账户的学习进度不会丢失，下次登录可继续学习。</p>
+      <div class="flex items-center gap-3">
+        <button id="logoutCancelBtn" class="flex-1 h-10 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-sm">取消</button>
+        <button id="logoutConfirmBtn" class="flex-1 h-10 rounded-lg border border-danger/40 text-danger hover:bg-danger/10 text-sm font-semibold">确定退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 轻提示气泡容器 ===================== -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col gap-2.5 items-end w-[calc(100%-2rem)] sm:w-auto max-w-sm"></div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // 状态
+    // ------------------------------------------------------------------
+    const appState = {
+      loggedIn: false,
+      isFirstLoginPending: true,   // 是否仍需在下一次登录成功后弹出合并提示
+      hasLocalGuestProgress: true, // 本机是否存在待合并的游客进度
+      guestId: 'guest_8f3a2b91',
+      userId: 'usr_5f2a91c3',
+      displayName: '小满',
+      avatarInitial: '满',
+      avatarUrl: null,
+      email: '',
+      loginTimestamp: null
+    };
+    let countdownTimer = null;
+
+    // ------------------------------------------------------------------
+    // 数据字段表
+    // ------------------------------------------------------------------
+    const fields = [
+      { name: 'email', type: 'string', desc: '登录邮箱地址，作为账户唯一标识之一', example: 'xiaoman@example.com' },
+      { name: 'verificationCode', type: 'string(6位数字)', desc: '邮箱验证码，5 分钟内有效，一次性使用', example: '482913' },
+      { name: 'userId', type: 'string', desc: '登录成功后颁发的账户唯一 ID', example: 'usr_5f2a91c3' },
+      { name: 'displayName', type: 'string', desc: '账户展示昵称，默认取邮箱前缀，可后续修改', example: '小满' },
+      { name: 'avatarUrl', type: 'string | null', desc: '头像图片地址；未上传时使用昵称首字生成的渐变头像', example: 'null（使用首字头像）' },
+      { name: 'loginTimestamp', type: 'ISO8601 string', desc: '本次登录成功时间，用于会话展示与安全审计', example: '2026-07-17T14:32:08+08:00' },
+      { name: 'hasLocalGuestProgress', type: 'boolean', desc: '登录前本机浏览器是否存在游客学习进度，决定是否弹出合并提示', example: 'true' },
+      { name: 'guestId', type: 'string', desc: '登录前本地游客态生成的匿名标识，用于定位待合并的进度记录', example: 'guest_8f3a2b91' }
+    ];
+    document.getElementById('fieldTableBody').innerHTML = fields.map((f, i) => `
+      <tr class="border-b border-white/[.05] last:border-0 ${i % 2 === 1 ? 'bg-white/[.015]' : ''} hover:bg-white/[.03]">
+        <td class="px-4 py-3 font-mono-ui text-accent-300">${f.name}</td>
+        <td class="px-4 py-3 font-mono-ui text-xs text-text-muted whitespace-nowrap">${f.type}</td>
+        <td class="px-4 py-3 text-xs leading-relaxed">${f.desc}</td>
+        <td class="px-4 py-3 font-mono-ui text-xs text-text-primary whitespace-nowrap">${f.example}</td>
+      </tr>`).join('');
+
+    // ------------------------------------------------------------------
+    // 顶部导航用户态渲染
+    // ------------------------------------------------------------------
+    function fmtTime(iso) {
+      const d = new Date(iso);
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function renderNav() {
+      const guestEntry = document.getElementById('guestEntry');
+      const userEntry = document.getElementById('userEntry');
+      if (appState.loggedIn) {
+        guestEntry.classList.add('hidden');
+        userEntry.classList.remove('hidden');
+        document.getElementById('userAvatar').textContent = appState.avatarInitial;
+        document.getElementById('userNameLabel').textContent = appState.displayName;
+        document.getElementById('userMenuName').textContent = appState.displayName;
+        document.getElementById('userMenuEmail').textContent = appState.email || 'xiaoman@example.com';
+        document.getElementById('userMenuLoginAt').textContent = appState.loginTimestamp
+          ? `登录于 ${fmtTime(appState.loginTimestamp)}` : '登录于 --';
+      } else {
+        guestEntry.classList.remove('hidden');
+        userEntry.classList.add('hidden');
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 登录弹窗：步骤控制
+    // ------------------------------------------------------------------
+    function resetLoginModal() {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      document.getElementById('emailStepBlock').classList.remove('hidden');
+      document.getElementById('codeStepBlock').classList.add('hidden');
+      document.getElementById('emailInput').value = '';
+      document.getElementById('emailError').classList.add('hidden');
+      document.getElementById('codeInput').value = '';
+      document.getElementById('codeError').classList.add('hidden');
+      document.getElementById('codeInput').classList.remove('border-danger');
+      resetSendCodeBtn();
+    }
+
+    function openLoginModal() {
+      resetLoginModal();
+      document.getElementById('loginModalWrap').classList.remove('hidden');
+      setTimeout(() => document.getElementById('emailInput').focus(), 60);
+    }
+    function closeLoginModal() {
+      document.getElementById('loginModalWrap').classList.add('hidden');
+    }
+
+    function showCodeStep(email) {
+      document.getElementById('codeSentEmail').textContent = email;
+      document.getElementById('emailStepBlock').classList.add('hidden');
+      document.getElementById('codeStepBlock').classList.remove('hidden');
+      setTimeout(() => document.getElementById('codeInput').focus(), 60);
+    }
+
+    document.getElementById('backToEmailBtn').addEventListener('click', () => {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      resetSendCodeBtn();
+      document.getElementById('codeStepBlock').classList.add('hidden');
+      document.getElementById('emailStepBlock').classList.remove('hidden');
+      setTimeout(() => document.getElementById('emailInput').focus(), 60);
+    });
+
+    // ------------------------------------------------------------------
+    // 发送验证码 + 60 秒倒计时
+    // ------------------------------------------------------------------
+    function resetSendCodeBtn() {
+      const btn = document.getElementById('sendCodeBtn');
+      btn.disabled = false;
+      btn.classList.remove('opacity-40', 'cursor-not-allowed', 'bg-primary-600');
+      btn.classList.add('bg-primary-500');
+      document.getElementById('sendCodeBtnText').textContent = '发送验证码';
+      document.getElementById('sendCodeSpinner').classList.add('hidden');
+    }
+
+    function startCountdown(seconds) {
+      let remaining = seconds;
+      const btn = document.getElementById('sendCodeBtn');
+      const label = document.getElementById('sendCodeBtnText');
+      btn.disabled = true;
+      btn.classList.add('opacity-40', 'cursor-not-allowed');
+      label.textContent = `重新发送（${remaining}s）`;
+      countdownTimer = setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+          resetSendCodeBtn();
+        } else {
+          label.textContent = `重新发送（${remaining}s）`;
+        }
+      }, 1000);
+    }
+
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    document.getElementById('sendCodeBtn').addEventListener('click', () => {
+      const emailInput = document.getElementById('emailInput');
+      const email = emailInput.value.trim();
+      const errEl = document.getElementById('emailError');
+      if (!emailRe.test(email)) {
+        errEl.classList.remove('hidden');
+        emailInput.classList.add('border-danger');
+        emailInput.classList.add('shake');
+        setTimeout(() => emailInput.classList.remove('shake'), 400);
+        return;
+      }
+      errEl.classList.add('hidden');
+      emailInput.classList.remove('border-danger');
+
+      // 发送中
+      const spinner = document.getElementById('sendCodeSpinner');
+      const label = document.getElementById('sendCodeBtnText');
+      document.getElementById('sendCodeBtn').disabled = true;
+      spinner.classList.remove('hidden');
+      label.textContent = '发送中…';
+
+      setTimeout(() => {
+        spinner.classList.add('hidden');
+        appState.email = email;
+        showCodeStep(email);
+        startCountdown(60);
+        showToast('info', `验证码已发送至 ${email}`);
+      }, 550);
+    });
+
+    // ------------------------------------------------------------------
+    // 提交验证码
+    // ------------------------------------------------------------------
+    document.getElementById('submitCodeBtn').addEventListener('click', () => {
+      const codeInput = document.getElementById('codeInput');
+      const code = codeInput.value.trim();
+      const errEl = document.getElementById('codeError');
+
+      if (!/^\d{6}$/.test(code)) {
+        errEl.textContent = '请输入 6 位数字验证码';
+        errEl.classList.remove('hidden');
+        codeInput.classList.add('border-danger');
+        codeInput.classList.add('shake');
+        setTimeout(() => codeInput.classList.remove('shake'), 400);
+        return;
+      }
+
+      const spinner = document.getElementById('submitCodeSpinner');
+      const label = document.getElementById('submitCodeBtnText');
+      document.getElementById('submitCodeBtn').disabled = true;
+      spinner.classList.remove('hidden');
+      label.textContent = '校验中…';
+
+      setTimeout(() => {
+        spinner.classList.add('hidden');
+        label.textContent = '登录';
+        document.getElementById('submitCodeBtn').disabled = false;
+
+        if (code === '000000') {
+          errEl.textContent = '验证码错误，请重新输入';
+          errEl.classList.remove('hidden');
+          codeInput.classList.add('border-danger');
+          codeInput.classList.add('shake');
+          codeInput.value = '';
+          codeInput.focus();
+          setTimeout(() => codeInput.classList.remove('shake'), 400);
+          return;
+        }
+
+        errEl.classList.add('hidden');
+        codeInput.classList.remove('border-danger');
+        completeLogin();
+      }, 600);
+    });
+
+    // 回车快捷提交
+    document.getElementById('emailInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('sendCodeBtn').click();
+    });
+    document.getElementById('codeInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('submitCodeBtn').click();
+    });
+    document.getElementById('codeInput').addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    });
+
+    // ------------------------------------------------------------------
+    // 登录成功 → 合并检测 → 轻提示
+    // ------------------------------------------------------------------
+    function completeLogin() {
+      appState.loggedIn = true;
+      appState.loginTimestamp = new Date().toISOString();
+      renderNav();
+      closeLoginModal();
+
+      if (appState.isFirstLoginPending && appState.hasLocalGuestProgress) {
+        setTimeout(() => openMergeModal(), 200);
+      } else {
+        showToast('success', `登录成功，欢迎回来 ${appState.displayName}`);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 本地进度合并弹窗
+    // ------------------------------------------------------------------
+    function openMergeModal() {
+      document.getElementById('mergeModalWrap').classList.remove('hidden');
+    }
+    function closeMergeModal() {
+      document.getElementById('mergeModalWrap').classList.add('hidden');
+    }
+    document.getElementById('mergeConfirmBtn').addEventListener('click', () => {
+      appState.isFirstLoginPending = false;
+      appState.hasLocalGuestProgress = false;
+      closeMergeModal();
+      showToast('success', '本地学习进度已合并到账户，共同步 12 个步骤');
+    });
+    document.getElementById('mergeDiscardBtn').addEventListener('click', () => {
+      appState.isFirstLoginPending = false;
+      appState.hasLocalGuestProgress = false;
+      closeMergeModal();
+      showToast('info', '已保留账户记录，本机游客进度未合并');
+    });
+
+    // ------------------------------------------------------------------
+    // 退出登录确认
+    // ------------------------------------------------------------------
+    function openLogoutModal() {
+      document.getElementById('logoutModalWrap').classList.remove('hidden');
+    }
+    function closeLogoutModal() {
+      document.getElementById('logoutModalWrap').classList.add('hidden');
+    }
+    document.getElementById('logoutCancelBtn').addEventListener('click', closeLogoutModal);
+    document.getElementById('logoutConfirmBtn').addEventListener('click', () => {
+      appState.loggedIn = false;
+      appState.loginTimestamp = null;
+      renderNav();
+      closeLogoutModal();
+      document.getElementById('userMenu').classList.add('hidden');
+      showToast('info', '已退出登录，欢迎再次登录继续学习');
+    });
+
+    // ------------------------------------------------------------------
+    // 轻提示气泡（非阻断，可关闭）
+    // ------------------------------------------------------------------
+    const toastMeta = {
+      success: {
+        border: 'border-success/30', bg: 'bg-success/[.10]', text: 'text-success',
+        icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>'
+      },
+      info: {
+        border: 'border-primary-500/30', bg: 'bg-primary-500/[.10]', text: 'text-primary-200',
+        icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
+      }
+    };
+
+    function showToast(type, message) {
+      const meta = toastMeta[type] || toastMeta.info;
+      const id = 't' + Date.now() + Math.random().toString(16).slice(2);
+      const el = document.createElement('div');
+      el.id = id;
+      el.className = `toast-in flex items-start gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-[0_16px_40px_-8px_rgba(0,0,0,.6)] bg-[#1A1E27] ${meta.border} ${meta.bg} ${meta.text} pointer-events-auto`;
+      el.innerHTML = `
+        <span class="shrink-0 mt-0.5">${meta.icon}</span>
+        <span class="flex-1 leading-relaxed">${message}</span>
+        <button class="shrink-0 text-text-muted hover:text-text-primary" onclick="dismissToast('${id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>`;
+      document.getElementById('toastContainer').appendChild(el);
+      setTimeout(() => dismissToast(id), 4200);
+    }
+    function dismissToast(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('toast-in');
+      el.classList.add('toast-out');
+      setTimeout(() => el.remove(), 200);
+    }
+
+    // ------------------------------------------------------------------
+    // 状态速览：预览触发
+    // ------------------------------------------------------------------
+    function previewEmailStep() {
+      openLoginModal();
+    }
+    function previewCountdownStep() {
+      openLoginModal();
+      document.getElementById('emailInput').value = 'xiaoman@example.com';
+      appState.email = 'xiaoman@example.com';
+      showCodeStep('xiaoman@example.com');
+      startCountdown(45);
+    }
+    function previewErrorState() {
+      openLoginModal();
+      document.getElementById('emailInput').value = 'xiaoman@example.com';
+      showCodeStep('xiaoman@example.com');
+      startCountdown(52);
+      const codeInput = document.getElementById('codeInput');
+      const errEl = document.getElementById('codeError');
+      codeInput.value = '000000';
+      codeInput.classList.add('border-danger');
+      errEl.textContent = '验证码错误，请重新输入';
+      errEl.classList.remove('hidden');
+    }
+    function previewMergeModal() {
+      openMergeModal();
+    }
+    function previewSuccessToast() {
+      showToast('success', `登录成功，欢迎回来 ${appState.displayName}`);
+    }
+    function previewLogoutConfirm() {
+      openLogoutModal();
+    }
+
+    // ------------------------------------------------------------------
+    // 用户菜单 / 弹窗关闭交互
+    // ------------------------------------------------------------------
+    document.getElementById('guestEntry').addEventListener('click', openLoginModal);
+    document.getElementById('closeLoginModal').addEventListener('click', closeLoginModal);
+    document.getElementById('loginBackdrop').addEventListener('click', closeLoginModal);
+    document.getElementById('mergeBackdrop').addEventListener('click', () => {}); // 强引导：需显式选择，不点击遮罩关闭
+    document.getElementById('logoutBackdrop').addEventListener('click', closeLogoutModal);
+
+    const userBtn = document.getElementById('userBtn');
+    const userMenu = document.getElementById('userMenu');
+    userBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userMenu.classList.toggle('hidden');
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      userMenu.classList.add('hidden');
+      openLogoutModal();
+    });
+
+    const sitemapBtn = document.getElementById('sitemapBtn');
+    const sitemapMenu = document.getElementById('sitemapMenu');
+    sitemapBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sitemapMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+      userMenu.classList.add('hidden');
+      sitemapMenu.classList.add('hidden');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      closeLoginModal();
+      closeLogoutModal();
+      userMenu.classList.add('hidden');
+      sitemapMenu.classList.add('hidden');
+    });
+
+    // ------------------------------------------------------------------
+    // QA 演示工具
+    // ------------------------------------------------------------------
+    document.getElementById('qaResetFirst').addEventListener('click', () => {
+      appState.loggedIn = false;
+      appState.loginTimestamp = null;
+      appState.isFirstLoginPending = true;
+      appState.hasLocalGuestProgress = true;
+      renderNav();
+      showToast('info', '已重置为「首次登录」演示状态：登录成功后将出现合并提示');
+    });
+    document.getElementById('qaResetGuest').addEventListener('click', () => {
+      appState.loggedIn = false;
+      appState.loginTimestamp = null;
+      renderNav();
+      showToast('info', '已重置为游客态');
+    });
+
+    // ------------------------------------------------------------------
+    // 初始化
+    // ------------------------------------------------------------------
+    renderNav();
+  </script>
+</body>

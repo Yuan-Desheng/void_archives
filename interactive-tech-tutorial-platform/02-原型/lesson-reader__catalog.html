@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教程包目录 · 交互式技术教程引擎</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  /* 暗色滚动条 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* 聚光灯引导遮罩用 */
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+</style>
+
+<!-- 附加:实际可切换的明暗主题变量覆盖(不改动上方共享片段核心配置,仅补充选择器) -->
+<style>
+  :root[data-theme="light"] {
+    --color-bg-base: #F4F6FB;
+    --color-bg-surface: #FFFFFF;
+    --color-bg-surface-2: #F0F2F8;
+    --color-border: rgba(16,18,26,.08);
+    --color-border-strong: rgba(16,18,26,.14);
+    --color-text-primary: #10121A;
+    --color-text-secondary: #575F72;
+    --color-text-muted: #8A93A6;
+  }
+  :root[data-theme="light"] body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.06), transparent);
+    color: var(--color-text-primary);
+  }
+  :root[data-theme="light"] .glass-card:hover { box-shadow: 0 0 24px -6px rgba(76,111,255,.25); }
+  :root[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(16,18,26,.14); }
+
+  .nav-tab { position: relative; }
+  .nav-tab.active::after {
+    content: '';
+    position: absolute; left: 10px; right: 10px; bottom: -13px; height: 2px;
+    background-image: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 2px;
+  }
+  .topic-chip[data-active="true"] {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 0 20px -4px rgba(76,111,255,.55);
+  }
+  .breathe { animation: breathe 2.2s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { box-shadow: 0 0 0 0 rgba(76,111,255,.5);} 50% { box-shadow: 0 0 0 6px rgba(76,111,255,0);} }
+
+  .pkg-card { animation: fadeUp .38s var(--ease-standard) both; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px);} to { opacity:1; transform: translateY(0);} }
+
+  .site-dropdown { transform-origin: top right; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== 顶部导航 ===================== -->
+<header class="sticky top-0 z-40 border-b border-white/[.06] bg-[#0A0C10]/85 backdrop-blur-md" style="background-color: color-mix(in srgb, var(--color-bg-base) 85%, transparent);">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8">
+    <div class="h-16 flex items-center justify-between gap-4">
+      <!-- Logo + 模块 tab -->
+      <div class="flex items-center gap-8 min-w-0">
+        <a href="lesson-reader__catalog.html" class="flex items-center gap-2 shrink-0">
+          <span class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shadow-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="font-semibold text-[15px] tracking-tight hidden sm:inline">教程引擎驾驶舱</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-6 text-sm text-[color:var(--color-text-secondary)]">
+          <a href="lesson-reader__catalog.html" class="nav-tab active text-[color:var(--color-text-primary)] font-medium pb-1">教程包目录</a>
+          <a href="lesson-reader__lesson.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)]">课程学习页</a>
+          <a href="lesson-reader__my-progress.html" class="nav-tab pb-1 hover:text-[color:var(--color-text-primary)]">我的学习进度</a>
+        </nav>
+      </div>
+
+      <!-- 右侧操作区 -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- 站点地图 -->
+        <div class="relative">
+          <button id="siteMapBtn" class="h-9 px-3 rounded-lg border border-white/10 text-xs text-[color:var(--color-text-secondary)] hover:bg-white/5 hover:text-[color:var(--color-text-primary)] flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+            <span class="hidden sm:inline">全部页面</span>
+          </button>
+          <div id="siteMapMenu" class="site-dropdown hidden absolute right-0 mt-2 w-[560px] max-w-[calc(100vw-2rem)] glass-card p-4 shadow-2xl z-50">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mb-2">教程与章节目录</p>
+                <a href="tutorial-catalog__package-selection.html" class="block py-1.5 hover:text-accent-400">主题包选择页</a>
+                <a href="tutorial-catalog__chapter-tree.html" class="block py-1.5 hover:text-accent-400">教程详情页（目录树+概览）</a>
+                <a href="tutorial-catalog__learning-progress-overview.html" class="block py-1.5 hover:text-accent-400">我的学习总览页</a>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mt-3 mb-2">课程讲解与步骤导航</p>
+                <a href="lesson-reader__catalog.html" class="block py-1.5 text-primary-400 font-medium">教程包目录 (当前)</a>
+                <a href="lesson-reader__lesson.html" class="block py-1.5 hover:text-accent-400">课程学习页</a>
+                <a href="lesson-reader__my-progress.html" class="block py-1.5 hover:text-accent-400">我的学习进度</a>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mb-2">引导引擎</p>
+                <a href="guided-tour__tour-overlay.html" class="block py-1.5 hover:text-accent-400">引导蒙层与聚光灯</a>
+                <a href="guided-tour__tutorial-workspace.html" class="block py-1.5 hover:text-accent-400">教程学习工作台</a>
+                <a href="guided-tour__chapter-toc.html" class="block py-1.5 hover:text-accent-400">章节/步骤目录树</a>
+                <a href="guided-tour__tutorial-catalog.html" class="block py-1.5 hover:text-accent-400">教程包（主题）选择页</a>
+                <a href="guided-tour__my-progress.html" class="block py-1.5 hover:text-accent-400">我的学习进度页</a>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--color-text-muted)] mt-3 mb-2">代码沙箱 / 账户</p>
+                <a href="code-sandbox__sandbox-panel.html" class="block py-1.5 hover:text-accent-400">沙箱主面板</a>
+                <a href="code-sandbox__sandbox-mobile-tab.html" class="block py-1.5 hover:text-accent-400">移动端沙箱 Tab 视图</a>
+                <a href="code-sandbox__sandbox-error-state.html" class="block py-1.5 hover:text-accent-400">沙箱异常态视图</a>
+                <a href="learning-progress__auth-entry.html" class="block py-1.5 hover:text-accent-400">登录入口与登录弹窗</a>
+                <a href="learning-progress__my-learning.html" class="block py-1.5 hover:text-accent-400">我的学习</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 明暗切换 -->
+        <button id="themeToggle" aria-label="切换明暗模式" class="h-9 w-9 rounded-lg border border-white/10 flex items-center justify-center hover:bg-white/5">
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <svg id="iconSun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+
+        <!-- 登录态 demo 开关(原型演示用,切换查看游客/登录两种顶导状态) -->
+        <button id="authDemoToggle" class="hidden lg:flex h-9 px-2.5 rounded-lg border border-dashed border-white/15 text-[11px] text-[color:var(--color-text-muted)] items-center gap-1.5 hover:text-[color:var(--color-text-secondary)]" title="原型演示:切换登录态">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.4"/></svg>
+          预览登录态
+        </button>
+
+        <!-- 登录入口 / 用户态 -->
+        <div id="guestEntry">
+          <a href="learning-progress__auth-entry.html" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            登录
+          </a>
+        </div>
+        <div id="userEntry" class="hidden relative">
+          <button id="userMenuBtn" class="flex items-center gap-2 h-9 pl-1 pr-3 rounded-lg border border-white/10 hover:bg-white/5">
+            <span class="w-7 h-7 rounded-full grad-primary-accent flex items-center justify-center text-[11px] font-semibold text-white">崔</span>
+            <span class="text-sm hidden sm:inline">演示用户</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+          <div id="userMenu" class="hidden absolute right-0 mt-2 w-56 glass-card p-2 shadow-2xl z-50 text-sm">
+            <div class="px-3 py-2 border-b border-white/[.06] mb-1">
+              <p class="font-medium">演示用户</p>
+              <p class="text-xs text-[color:var(--color-text-muted)]">demo@example.com</p>
+            </div>
+            <a href="lesson-reader__my-progress.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20V10M18 20V4M6 20v-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              我的学习进度
+            </a>
+            <a href="learning-progress__my-learning.html" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c1.2-3.6 4-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              账户中心
+            </a>
+            <button id="logoutBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-danger hover:bg-danger/10 text-left">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              退出登录
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== 主体内容 ===================== -->
+<main class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-10">
+
+  <!-- 页头 -->
+  <section class="mb-8">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl md:text-[28px] font-bold tracking-tight">教程包目录</h1>
+        <p class="mt-2 text-sm text-[color:var(--color-text-secondary)] max-w-xl">内容与引擎分离 —— 每个教程包都是一份独立配置，选择一个开始边讲边练。已完成度、章节数据均实时统计，帮你判断值不值得投入时间。</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-[color:var(--color-text-secondary)]">
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-success"></span>沙箱可实时运行</div>
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-accent-400"></span>跨端进度同步</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 主题筛选 -->
+  <section class="mb-6">
+    <div id="topicFilter" class="flex flex-wrap items-center gap-2">
+      <button data-topic="all" data-active="true" class="topic-chip h-9 px-4 rounded-lg border border-white/10 text-sm font-medium text-[color:var(--color-text-primary)] flex items-center gap-1.5 bg-white/[.03]">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+        全部
+      </button>
+      <button data-topic="react" data-active="false" class="topic-chip h-9 px-4 rounded-lg border border-white/10 text-sm font-medium text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)] hover:bg-white/5 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.2" fill="currentColor"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="currentColor" stroke-width="1.5"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="currentColor" stroke-width="1.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="currentColor" stroke-width="1.5" transform="rotate(120 12 12)"/></svg>
+        React
+      </button>
+      <button data-topic="vue" data-active="false" class="topic-chip h-9 px-4 rounded-lg border border-white/10 text-sm font-medium text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)] hover:bg-white/5 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M2 4h4l6 10 6-10h4L12 21 2 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        Vue
+      </button>
+      <button data-topic="javascript" data-active="false" class="topic-chip h-9 px-4 rounded-lg border border-white/10 text-sm font-medium text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)] hover:bg-white/5 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 16.2c.3.5.9.9 1.6.9.9 0 1.4-.5 1.4-1.4v-4.7M14.3 15.7c.3.6 1 1 1.8 1 1.1 0 1.7-.6 1.7-1.4 0-2-3.3-1.3-3.3-3.3 0-.8.6-1.4 1.6-1.4.7 0 1.2.3 1.5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        JavaScript
+      </button>
+      <button data-topic="algorithm" data-active="false" class="topic-chip h-9 px-4 rounded-lg border border-white/10 text-sm font-medium text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)] hover:bg-white/5 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="6" r="2.4" stroke="currentColor" stroke-width="1.6"/><circle cx="5" cy="18" r="2.4" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="12" r="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M7.2 6.8L15.8 11M7.2 17.2L15.8 13" stroke="currentColor" stroke-width="1.6"/></svg>
+        算法
+      </button>
+
+      <div class="ml-auto text-xs text-[color:var(--color-text-muted)]" id="resultCount">共 3 个教程包</div>
+    </div>
+  </section>
+
+  <!-- 教程包卡片列表 -->
+  <section id="packageGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></section>
+
+  <!-- 空态 -->
+  <section id="emptyState" class="hidden py-20 flex flex-col items-center justify-center text-center">
+    <div class="w-20 h-20 rounded-2xl border border-white/10 bg-surface-2 flex items-center justify-center mb-5">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#5A6172" stroke-width="1.6"/><path d="M8 14l3-3 2 2 4-4" stroke="#5A6172" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="8" r="1.2" fill="#5A6172"/></svg>
+    </div>
+    <h3 class="text-base font-semibold mb-1.5">暂无教程包</h3>
+    <p class="text-sm text-[color:var(--color-text-secondary)] max-w-sm mb-5" id="emptyStateDesc">该主题内容正在筹备中，引擎已就绪，等新的 TutorialPackage 接入即可直接上线，无需改动引擎代码。</p>
+    <button onclick="setTopic('react')" class="h-10 px-5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-medium shadow-glow">
+      先去看看 React 教程 →
+    </button>
+  </section>
+
+</main>
+
+<footer class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 pb-10 pt-4">
+  <p class="text-xs text-[color:var(--color-text-muted)] text-center">交互式技术教程引擎 · 内容与引擎分离，一次做对引导体验，任意主题即插即用</p>
+</footer>
+
+<script>
+  // ---------- 主题切换 ----------
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const iconMoon = document.getElementById('iconMoon');
+  const iconSun = document.getElementById('iconSun');
+  function applyTheme(t) {
+    root.setAttribute('data-theme', t);
+    if (t === 'light') { root.classList.remove('dark'); iconMoon.classList.add('hidden'); iconSun.classList.remove('hidden'); }
+    else { root.classList.add('dark'); iconMoon.classList.remove('hidden'); iconSun.classList.add('hidden'); }
+  }
+  applyTheme('dark');
+  themeToggle.addEventListener('click', () => {
+    applyTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+  });
+
+  // ---------- 站点地图下拉 ----------
+  const siteMapBtn = document.getElementById('siteMapBtn');
+  const siteMapMenu = document.getElementById('siteMapMenu');
+  siteMapBtn.addEventListener('click', (e) => { e.stopPropagation(); siteMapMenu.classList.toggle('hidden'); userMenu.classList.add('hidden'); });
+
+  // ---------- 登录态 demo ----------
+  const guestEntry = document.getElementById('guestEntry');
+  const userEntry = document.getElementById('userEntry');
+  const userMenuBtn = document.getElementById('userMenuBtn');
+  const userMenu = document.getElementById('userMenu');
+  const authDemoToggle = document.getElementById('authDemoToggle');
+  let isLoggedIn = false;
+  function renderAuthState() {
+    guestEntry.classList.toggle('hidden', isLoggedIn);
+    userEntry.classList.toggle('hidden', !isLoggedIn);
+    authDemoToggle.textContent = isLoggedIn ? '预览游客态' : '预览登录态';
+    renderPackages();
+  }
+  authDemoToggle.addEventListener('click', () => { isLoggedIn = !isLoggedIn; renderAuthState(); });
+  userMenuBtn.addEventListener('click', (e) => { e.stopPropagation(); userMenu.classList.toggle('hidden'); siteMapMenu.classList.add('hidden'); });
+  document.getElementById('logoutBtn').addEventListener('click', () => { isLoggedIn = false; userMenu.classList.add('hidden'); renderAuthState(); });
+  document.addEventListener('click', () => { siteMapMenu.classList.add('hidden'); userMenu.classList.add('hidden'); });
+
+  // ---------- 数据 ----------
+  const packages = [
+    {
+      packageId: 'pkg-react-core',
+      title: 'React 核心概念与 Hooks 实战',
+      description: '从组件渲染机制、Fiber 调度到 useState / useEffect / 自定义 Hook，12 个可运行示例吃透 React 心智模型，改自小满 zs-react 笔记「核心概念」「Hooks」两大分类。',
+      topic: 'react',
+      difficulty: '入门',
+      chapterCount: 6,
+      totalStepCount: 42,
+      author: '演示用户',
+      updatedAt: '2026-07-12',
+      guestCompletion: 0,
+      userCompletion: 68,
+      lastStep: '第 4 章 · 自定义 Hook 封装数据请求',
+      status: 'live'
+    },
+    {
+      packageId: 'pkg-react-perf',
+      title: 'React 状态管理与性能优化',
+      description: 'Context / Redux / Zustand 三种状态方案怎么选，配合 useMemo / useCallback / React.memo 实战调优，告别不必要的重渲染，来自「状态管理」「性能优化」两大分类共 18 篇笔记。',
+      topic: 'react',
+      difficulty: '进阶',
+      chapterCount: 5,
+      totalStepCount: 28,
+      author: '演示用户',
+      updatedAt: '2026-07-15',
+      guestCompletion: 0,
+      userCompletion: 15,
+      lastStep: '第 2 章 · Context 的性能陷阱',
+      status: 'live'
+    },
+    {
+      packageId: 'pkg-react-pattern',
+      title: 'React 组件设计模式与工程化',
+      description: '复合组件、Render Props、TypeScript 类型收敛，以及测试与工程化实践 —— 内容正在从「组件模式」「测试工程化」分类整理中，步骤引导脚本尚未完成。',
+      topic: 'react',
+      difficulty: '进阶',
+      chapterCount: 4,
+      totalStepCount: 0,
+      author: '演示用户',
+      updatedAt: '2026-07-16',
+      guestCompletion: 0,
+      userCompletion: 0,
+      lastStep: '',
+      status: 'draft'
+    }
+  ];
+
+  const grid = document.getElementById('packageGrid');
+  const emptyState = document.getElementById('emptyState');
+  const emptyStateDesc = document.getElementById('emptyStateDesc');
+  const resultCount = document.getElementById('resultCount');
+  let currentTopic = 'all';
+
+  const topicLabel = { react: 'React', vue: 'Vue', javascript: 'JavaScript', algorithm: '算法' };
+  const topicEmptyCopy = {
+    vue: 'Vue 教程包正在筹备中：引擎的步骤引导、聚光灯、沙箱能力与主题无关，只需接入一份新的 TutorialPackage 配置即可上线。',
+    javascript: 'JavaScript 基础教程包正在筹备中，敬请期待。你也可以先在 React 教程里体验完整的引导式学习闭环。',
+    algorithm: '算法教程包正在筹备中，敬请期待。数据结构与算法的可视化步骤讲解正在设计。'
+  };
+
+  function ringSVG(pct, size = 56) {
+    const stroke = 5;
+    const r = (size - stroke) / 2;
+    const c = 2 * Math.PI * r;
+    const offset = c * (1 - pct / 100);
+    const gid = 'ring-grad-' + Math.random().toString(36).slice(2, 8);
+    return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="shrink-0">
+      <defs>
+        <linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4C6FFF"/>
+          <stop offset="100%" stop-color="#22D3EE"/>
+        </linearGradient>
+      </defs>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="url(#${gid})" stroke-width="${stroke}" stroke-linecap="round"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" transform="rotate(-90 ${size/2} ${size/2})"/>
+      <text x="50%" y="53%" text-anchor="middle" dominant-baseline="middle" font-family="Inter" font-weight="700" font-size="13" fill="currentColor">${pct}%</text>
+    </svg>`;
+  }
+
+  function difficultyBadge(level) {
+    const map = {
+      '入门': 'text-success border-success/30 bg-success/10',
+      '进阶': 'text-spotlight border-spotlight/30 bg-spotlight/10',
+      '高阶': 'text-danger border-danger/30 bg-danger/10'
+    };
+    return `<span class="text-[11px] px-2 py-0.5 rounded-full border ${map[level] || 'text-secondary border-white/10'}">${level}</span>`;
+  }
+
+  function cardHTML(pkg, idx) {
+    const completion = isLoggedIn ? pkg.userCompletion : pkg.guestCompletion;
+    const isDraft = pkg.status === 'draft';
+    const started = completion > 0;
+
+    const cta = isDraft
+      ? `<button disabled class="w-full h-10 rounded-lg border border-white/10 text-[color:var(--color-text-muted)] text-sm font-medium cursor-not-allowed flex items-center justify-center gap-1.5">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6"/></svg>
+           内容筹备中
+         </button>`
+      : `<a href="lesson-reader__lesson.html?package=${pkg.packageId}" class="pkg-cta w-full h-10 rounded-lg text-white text-sm font-medium flex items-center justify-center gap-1.5 ${started ? 'bg-primary-500 hover:bg-primary-600 shadow-glow' : 'bg-primary-500/90 hover:bg-primary-600'}">
+           ${started
+              ? `继续学习 · 断点续学`
+              : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="white"/></svg>开始学习`}
+         </a>`;
+
+    const meta = started && !isDraft
+      ? `<p class="mt-2 text-[11px] text-[color:var(--color-text-muted)] truncate">上次学到：${pkg.lastStep}</p>`
+      : (isDraft ? `<p class="mt-2 text-[11px] text-[color:var(--color-text-muted)]">目录树已搭建，步骤脚本未接入引擎</p>` : `<p class="mt-2 text-[11px] text-[color:var(--color-text-muted)]">尚未开始 · 共 ${pkg.totalStepCount} 步</p>`);
+
+    const syncBadge = isLoggedIn && !isDraft
+      ? `<span class="inline-flex items-center gap-1 text-[10px] text-accent-400"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6M5 15a8 8 0 0013.9 3.5M19 9A8 8 0 005.1 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>已同步</span>`
+      : (!isDraft ? `<span class="inline-flex items-center gap-1 text-[10px] text-[color:var(--color-text-muted)]"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><rect x="4" y="10" width="16" height="9" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 10V7a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.6"/></svg>本地记录</span>` : '');
+
+    return `
+    <article class="pkg-card glass-card p-5 flex flex-col ${isDraft ? 'opacity-80' : ''}" style="animation-delay:${idx * 60}ms">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] px-2 py-0.5 rounded-full border border-primary-500/30 bg-primary-500/10 text-primary-300 font-medium">${topicLabel[pkg.topic]}</span>
+          ${difficultyBadge(pkg.difficulty)}
+        </div>
+        ${!isDraft ? ringSVG(completion) : `<span class="text-[11px] px-2 py-1 rounded-full border border-white/10 text-[color:var(--color-text-muted)]">草稿</span>`}
+      </div>
+
+      <h3 class="text-[15px] font-semibold leading-snug mb-1.5">${pkg.title}</h3>
+      <p class="text-[13px] text-[color:var(--color-text-secondary)] leading-relaxed line-clamp-3 mb-4 flex-1">${pkg.description}</p>
+
+      <div class="flex items-center gap-4 text-xs text-[color:var(--color-text-secondary)] mb-1 font-mono-ui">
+        <span class="flex items-center gap-1">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          ${pkg.chapterCount} 章节
+        </span>
+        <span class="flex items-center gap-1">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          ${pkg.totalStepCount} 步
+        </span>
+        <span class="ml-auto">${syncBadge}</span>
+      </div>
+      ${meta}
+
+      <div class="mt-4">${cta}</div>
+      <p class="mt-3 text-[10px] text-[color:var(--color-text-muted)] flex items-center justify-between">
+        <span>作者 · ${pkg.author}</span>
+        <span>更新于 ${pkg.updatedAt}</span>
+      </p>
+    </article>`;
+  }
+
+  function renderPackages() {
+    const filtered = currentTopic === 'all' ? packages : packages.filter(p => p.topic === currentTopic);
+    resultCount.textContent = `共 ${filtered.length} 个教程包`;
+
+    if (filtered.length === 0) {
+      grid.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+      emptyStateDesc.textContent = topicEmptyCopy[currentTopic] || '该主题暂无教程包，敬请期待。';
+    } else {
+      emptyState.classList.add('hidden');
+      grid.classList.remove('hidden');
+      grid.innerHTML = filtered.map((p, i) => cardHTML(p, i)).join('');
+    }
+  }
+
+  function setTopic(topic) {
+    currentTopic = topic;
+    document.querySelectorAll('.topic-chip').forEach(btn => {
+      const active = btn.dataset.topic === topic;
+      btn.dataset.active = active ? 'true' : 'false';
+      btn.classList.toggle('text-[color:var(--color-text-secondary)]', !active);
+      btn.classList.toggle('text-[color:var(--color-text-primary)]', active);
+    });
+    renderPackages();
+  }
+
+  document.getElementById('topicFilter').addEventListener('click', (e) => {
+    const btn = e.target.closest('.topic-chip');
+    if (!btn) return;
+    setTopic(btn.dataset.topic);
+  });
+
+  renderPackages();
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+{
+  "createdAt": "2026-07-17T19:11:36+08:00",
+  "stage": "proto",
+  "workflow": "req-to-proto",
+  "product": "一个内容与引擎分离的交互式技术教程平台：教程以 TutorialPackage 配置驱动，引擎负责步骤引导、聚光灯高亮与等待用户操作，配合可真实运行的 Sandpack 代码沙箱，让学习者边读边动手；首个主题为 React，结构预留 Vue / JavaScript / 算法扩展。",
+  "inputs": {
+    "reqFiles": [
+      "{\"reqFile\": \"/Users/cuizhanwei/yuandesheng/interactive-tech-tutorial-platform/01-需求/原始需求.md\"",
+      "\"outDir\": \"/Users/cuizhanwei/yuandesheng/interactive-tech-tutorial-platform/02-原型\"",
+      "\"style\": \"auto\"}"
+    ],
+    "style": "auto"
+  },
+  "outputs": {
+    "dir": "prototype",
+    "specs": [
+      "prototype/specs/00-需求提取与范围界定.md",
+      "prototype/specs/tutorial-catalog.md",
+      "prototype/specs/lesson-reader.md",
+      "prototype/specs/guided-tour.md",
+      "prototype/specs/code-sandbox.md",
+      "prototype/specs/learning-progress.md"
+    ],
+    "pages": [
+      "prototype/tutorial-catalog__package-selection.html",
+      "prototype/tutorial-catalog__chapter-tree.html",
+      "prototype/tutorial-catalog__learning-progress-overview.html",
+      "prototype/lesson-reader__catalog.html",
+      "prototype/lesson-reader__lesson.html",
+      "prototype/lesson-reader__my-progress.html",
+      "prototype/guided-tour__tour-overlay.html",
+      "prototype/guided-tour__tutorial-workspace.html",
+      "prototype/guided-tour__chapter-toc.html",
+      "prototype/guided-tour__tutorial-catalog.html",
+      "prototype/guided-tour__my-progress.html",
+      "prototype/code-sandbox__sandbox-panel.html",
+      "prototype/code-sandbox__sandbox-mobile-tab.html",
+      "prototype/code-sandbox__sandbox-error-state.html",
+      "prototype/learning-progress__auth-entry.html",
+      "prototype/learning-progress__my-learning.html",
+      "prototype/learning-progress__progress-indicators.html"
+    ],
+    "entry": "prototype/index.html"
+  },
+  "handoff": {
+    "styleKey": "dashboard",
+    "modules": [
+      {
+        "key": "tutorial-catalog",
+        "name": "教程与章节目录",
+        "pages": 3
+      },
+      {
+        "key": "lesson-reader",
+        "name": "课程讲解与步骤导航",
+        "pages": 3
+      },
+      {
+        "key": "guided-tour",
+        "name": "引导引擎",
+        "pages": 5
+      },
+      {
+        "key": "code-sandbox",
+        "name": "代码沙箱",
+        "pages": 3
+      },
+      {
+        "key": "learning-progress",
+        "name": "学习进度与账户",
+        "pages": 3
+      }
+    ],
+    "inScope": [
+      "主题（教程包）选择与切换，展示标题/描述/章节数/完成度",
+      "章节 / 步骤目录树，可跳转任意已解锁步骤",
+      "MDX / Markdown 讲解内容渲染，含代码块语法高亮",
+      "上一步 / 下一步导航 + 进度指示（当前步/总步数、章节进度条）",
+      "按 selector 高亮定位平台自身 UI 元素，元素不存在时降级不崩",
+      "聚光灯遮罩：模糊背景、目标元素清晰可见、resize 后位置重算",
+      "等待机制：waitFor = click / input / timer / none，未完成动作阻塞、完成后自动推进",
+      "代码沙箱：Sandpack 多文件切换、编辑、Run、实时预览、语言模式随主题切换",
+      "步骤代码片段 codeSnippet 注入沙箱 / 重置为默认代码模板",
+      "响应式布局三档（375 / 768 / 1440），移动端讲解与沙箱可切换",
+      "视觉主题（参考 Vue3 教程 + aura.build docs），含明暗模式",
+      "登录入口 / 用户态展示、我的学习进度页、跨端进度同步的界面表达",
+      "学习进度记录：步骤完成标记、断点续学、章节完成率"
+    ],
+    "outOfScope": [
+      "技术选型本身（Next.js 15 / TypeScript / Tailwind v4 / shadcn / Drizzle / Vercel）——实现层决策，非界面",
+      "PostgreSQL 表结构、Route Handler 接口契约、Clerk 接入配置——后端契约，属设计阶段",
+      "Sandpack bundle 体积、首屏性能、移动端运行时开销——非功能性指标，无法落地为界面",
+      "iframe 探针注入 / postMessage 双向通信 / 跨域坐标换算——D2 已砍，引导只作用于 host 平台 UI",
+      "Schema 的 scope 字段——D2 明确不加，保持提示词原样",
+      "62 篇笔记的全量搬运——原型只需样本章节",
+      "Vue / JavaScript / 算法主题的实际内容——只保证结构可扩展，不产出内容",
+      "62 篇笔记 → steps 的转换工艺（Q3 未决）——不阻塞原型，阻塞开发",
+      "章节顺序最终排定（Q4 未决）——原型自行给一版合理顺序作拟真数据，不作结论",
+      "教程包作者后台（在线编辑/导入/校验）——需求未提，单人自用直接改 JSON，属过度设计",
+      "用户管理、权限、审核流、评论/社区——需求未提，内部自用无此场景",
+      "立项与评审流程、规范章节引用、工期与人力——项目管理叙述，非产品功能"
+    ]
+  }
+}

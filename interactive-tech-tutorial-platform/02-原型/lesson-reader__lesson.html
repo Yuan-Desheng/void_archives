@@ -1,0 +1,1247 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>课程学习页 · TutorLab</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  /* 暗色滚动条 */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  /* 聚光灯引导遮罩用 */
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+</style>
+<style>
+  /* ===== 页面专属样式：布局骨架 / 目录树 / 讲解区 / 沙箱IDE / 聚光灯 / waitFor ===== */
+
+  html[data-theme="light"] body{
+    background-color:#F4F6FB; color:#10121A;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.06), transparent);
+  }
+  html[data-theme="light"] .glass-card{ background:#FFFFFF; border-color:rgba(16,18,26,.08); }
+  html[data-theme="light"] .bg-surface{ background:#FFFFFF !important; }
+  html[data-theme="light"] .bg-surface-2{ background:#EEF0F5 !important; }
+  html[data-theme="light"] .text-tprimary{ color:#10121A !important; }
+  html[data-theme="light"] .text-tsecondary{ color:#5B6478 !important; }
+  html[data-theme="light"] .text-tmuted{ color:#8A93A6 !important; }
+  html[data-theme="light"] .border-hair{ border-color:rgba(16,18,26,.10) !important; }
+  html[data-theme="light"] header.topbar{ background:rgba(255,255,255,.78); }
+  html[data-theme="light"] .ide-panel{ background:#0B0E14 !important; } /* IDE 始终暗色，保持代码可读性 */
+
+  .text-tprimary{ color:var(--color-text-primary); }
+  .text-tsecondary{ color:var(--color-text-secondary); }
+  .text-tmuted{ color:var(--color-text-muted); }
+  .bg-surface{ background:var(--color-bg-surface); }
+  .bg-surface-2{ background:var(--color-bg-surface-2); }
+  .border-hair{ border-color:var(--color-border); }
+
+  .topbar{ background:rgba(10,12,16,.72); backdrop-filter:blur(10px); border-bottom:1px solid var(--color-border); }
+
+  .lesson-shell{ max-width:1440px; margin:0 auto; padding:16px; }
+  @media (min-width:768px){ .lesson-shell{ padding:24px; } }
+  @media (min-width:1440px){ .lesson-shell{ padding:32px 48px; } }
+
+  .lesson-body{ display:flex; flex-direction:column; gap:16px; }
+  @media (min-width:1440px){
+    .lesson-body{ display:grid; grid-template-columns:240px minmax(0,1fr) 520px; gap:24px; align-items:start; }
+  }
+
+  /* 目录树：桌面常驻侧栏，<1440 收进抽屉 */
+  .tree-sidebar{ display:none; }
+  @media (min-width:1440px){ .tree-sidebar{ display:flex; position:sticky; top:96px; } }
+  .drawer-toggle{ display:inline-flex; }
+  @media (min-width:1440px){ .drawer-toggle{ display:none; } }
+
+  /* 讲解/沙箱 tab 切换：<1440 生效 */
+  .view-tabs{ display:flex; }
+  @media (min-width:1440px){ .view-tabs{ display:none; } }
+  .content-pane, .sandbox-pane{ display:none; }
+  .lesson-main[data-active-tab="content"] .content-pane{ display:flex; }
+  .lesson-main[data-active-tab="sandbox"] .sandbox-pane{ display:flex; }
+  @media (min-width:1440px){
+    .content-pane, .sandbox-pane{ display:flex !important; }
+  }
+
+  .content-pane{ flex-direction:column; min-width:0; }
+  .sandbox-pane{ flex-direction:column; min-width:0; }
+  @media (min-width:1440px){ .sandbox-pane{ height:calc(100vh - 168px); position:sticky; top:96px; } }
+
+  .content-scroll{ max-height:none; overflow:visible; }
+  @media (min-width:1440px){ .content-scroll{ max-height:calc(100vh - 260px); overflow-y:auto; padding-right:4px; } }
+
+  /* 讲解正文排版 */
+  .prose-lesson h2{ font-size:1.125rem; font-weight:700; margin:28px 0 12px; color:var(--color-text-primary); display:flex; align-items:center; gap:8px; }
+  .prose-lesson h2::before{ content:''; width:3px; height:16px; border-radius:2px; background-image:linear-gradient(180deg,var(--color-primary),var(--color-accent)); display:inline-block; }
+  .prose-lesson p{ font-size:.925rem; line-height:1.85; color:var(--color-text-secondary); margin:0 0 14px; }
+  .prose-lesson strong{ color:var(--color-text-primary); font-weight:600; }
+  .prose-lesson ul{ margin:0 0 14px; padding-left:1.3em; }
+  .prose-lesson li{ font-size:.925rem; line-height:1.85; color:var(--color-text-secondary); list-style:disc; margin-bottom:4px; }
+  .prose-lesson li::marker{ color:var(--color-accent); }
+  .prose-lesson code.inline{ font-family:'JetBrains Mono',monospace; font-size:.82em; background:var(--color-bg-surface-2); border:1px solid var(--color-border); padding:1px 6px; border-radius:6px; color:#8FA3FF; }
+  html[data-theme="light"] .prose-lesson code.inline{ color:#3854E0; }
+
+  .code-block{ background:#0B0E14; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin:0 0 16px; }
+  .code-block-head{ display:flex; align-items:center; justify-content:space-between; padding:6px 12px; background:rgba(255,255,255,.03); border-bottom:1px solid rgba(255,255,255,.06); font-size:11px; color:#5A6172; font-family:'JetBrains Mono',monospace; }
+  .code-block pre{ margin:0; padding:14px 16px; overflow-x:auto; font-size:13px; line-height:1.7; }
+  .tok-kw{ color:#8FA3FF; } .tok-str{ color:#67E8F9; } .tok-com{ color:#5A6172; font-style:italic; }
+  .tok-tag{ color:#FDBA33; } .tok-num{ color:#10B981; }
+
+  .callout{ border-left:3px solid; border-radius:8px; padding:12px 14px; margin:0 0 16px; font-size:.85rem; line-height:1.75; display:flex; gap:10px; }
+  .callout-tip{ background:rgba(76,111,255,.08); border-color:var(--color-primary); color:#B9C7FF; }
+  .callout-warning{ background:rgba(245,158,11,.08); border-color:var(--color-warning); color:#FCD34D; }
+  .callout svg{ flex-shrink:0; margin-top:2px; }
+
+  .demo-box{ background:var(--color-bg-surface-2); border:1px solid var(--color-border-strong); border-radius:12px; padding:16px; margin:0 0 18px; }
+
+  /* waitFor 提示条 */
+  .waitfor-bar{ border-radius:12px; border:1px solid; padding:12px 14px; display:flex; align-items:center; gap:10px; font-size:.82rem; margin-top:auto; }
+  .waitfor-pending{ background:rgba(245,158,11,.10); border-color:rgba(245,158,11,.4); color:#FCD34D; }
+  .waitfor-success{ background:rgba(16,185,129,.10); border-color:rgba(16,185,129,.4); color:#6EE7B7; }
+  .pulse-dot{ animation:pulseDot 1.4s ease-in-out infinite; }
+  @keyframes pulseDot{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.5; transform:scale(1.25);} }
+
+  /* 目录树节点 */
+  .tree-item{ display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:8px; cursor:pointer; font-size:.83rem; }
+  .tree-item.state-current{ background:var(--color-bg-surface-2); color:#fff; font-weight:600; box-shadow:inset 2px 0 0 var(--color-primary); }
+  .tree-item.state-completed{ color:var(--color-text-secondary); }
+  .tree-item.state-completed:hover{ background:rgba(255,255,255,.04); color:var(--color-text-primary); }
+  .tree-item.state-unlocked{ color:#67E8F9; }
+  .tree-item.state-unlocked:hover{ background:rgba(34,211,238,.06); }
+  .tree-item.state-locked{ color:var(--color-text-muted); opacity:.45; cursor:not-allowed; }
+
+  .step-dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .step-dot.current{ background:var(--color-primary); box-shadow:0 0 0 3px rgba(76,111,255,.3); animation:breathe 1.8s ease-in-out infinite; }
+  @keyframes breathe{ 0%,100%{ box-shadow:0 0 0 3px rgba(76,111,255,.3);} 50%{ box-shadow:0 0 0 6px rgba(76,111,255,.12);} }
+  .step-dot.unlocked{ background:transparent; border:2px solid var(--color-accent); }
+  .step-dot.locked{ background:var(--color-bg-surface-2); border:2px solid rgba(255,255,255,.1); }
+
+  /* 移动端横向步骤点 */
+  .mobile-stepline{ display:flex; }
+  @media (min-width:1440px){ .mobile-stepline{ display:none; } }
+
+  /* IDE 沙箱面板 */
+  .ide-panel{ background:#0B0E14; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; height:100%; min-height:520px; border:1px solid rgba(255,255,255,.08); }
+  .ide-tabs{ display:flex; align-items:center; height:36px; background:#12151C; border-bottom:1px solid rgba(255,255,255,.06); overflow-x:auto; flex-shrink:0; }
+  .ide-tab{ display:flex; align-items:center; gap:6px; padding:0 14px; height:36px; font-size:12px; font-family:'JetBrains Mono',monospace; color:#5A6172; border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer; flex-shrink:0; }
+  .ide-tab.active{ color:#E6E9F0; border-bottom-color:var(--color-primary); background:#0B0E14; }
+  .ide-editor{ flex:1; min-height:220px; background:#0B0E14; }
+  .ide-editor textarea{ width:100%; height:100%; min-height:220px; resize:none; background:transparent; border:none; outline:none; color:#D7DBE5; font-family:'JetBrains Mono',monospace; font-size:13.5px; line-height:1.6; padding:14px 16px; caret-color:#22D3EE; }
+  .ide-preview-head{ display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#12151C; border-top:1px solid rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0; }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:#10B981; box-shadow:0 0 6px #10B981; animation:pulseDot 1.6s ease-in-out infinite; }
+  .ide-preview{ flex:1; min-height:180px; background:#fff; }
+
+  /* 聚光灯 */
+  .spot-veil{ position:fixed; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); z-index:60; pointer-events:auto; }
+  .spot-ring{ position:fixed; border-radius:10px; box-shadow:0 0 0 4px #FDBA33,0 0 32px 8px rgba(253,186,51,.35); z-index:61; pointer-events:none; }
+  .spot-tip{ position:fixed; z-index:62; background:#1A1E27; border:1px solid rgba(253,186,51,.5); color:#FDBA33; font-size:12px; font-weight:600; padding:6px 10px; border-radius:8px; display:flex; align-items:center; gap:6px; pointer-events:none; box-shadow:0 0 20px rgba(253,186,51,.25); }
+
+  /* 抽屉 */
+  .drawer{ position:fixed; inset:0; z-index:70; display:none; }
+  .drawer.open{ display:block; }
+  .drawer-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(2px); }
+  .drawer-panel{ position:absolute; left:0; top:0; bottom:0; width:280px; max-width:82vw; background:var(--color-bg-surface); border-right:1px solid var(--color-border); padding:16px; overflow-y:auto; transform:translateX(-100%); transition:transform 220ms var(--ease-standard); }
+  .drawer.open .drawer-panel{ transform:translateX(0); }
+
+  /* 登录弹窗 */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(3px); z-index:80; display:none; align-items:center; justify-content:center; padding:16px; }
+  .modal-backdrop.open{ display:flex; }
+
+  .toast-wrap{ position:fixed; top:76px; right:16px; z-index:90; display:flex; flex-direction:column; gap:8px; }
+  .toast{ background:var(--color-bg-surface-2); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px 14px; font-size:.8rem; color:var(--color-text-primary); box-shadow:0 8px 24px rgba(0,0,0,.4); animation:toastIn 200ms var(--ease-standard); display:flex; align-items:center; gap:8px; }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(-6px);} to{ opacity:1; transform:translateY(0);} }
+
+  .skel{ background:linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 37%, rgba(255,255,255,.04) 63%); background-size:400% 100%; animation:skel 1.4s ease infinite; border-radius:8px; }
+  @keyframes skel{ 0%{ background-position:100% 50%;} 100%{ background-position:0 50%; } }
+
+  .nav-dropdown{ display:none; position:absolute; right:0; top:calc(100% + 8px); width:300px; max-height:70vh; overflow-y:auto; background:var(--color-bg-surface); border:1px solid var(--color-border-strong); border-radius:12px; padding:8px; box-shadow:0 16px 40px rgba(0,0,0,.5); z-index:50; }
+  .nav-dropdown.open{ display:block; }
+  .nav-group-label{ font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--color-text-muted); padding:8px 10px 4px; }
+  .nav-link{ display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-radius:8px; font-size:.8rem; color:var(--color-text-secondary); }
+  .nav-link:hover{ background:rgba(255,255,255,.05); color:#fff; }
+  .nav-link.current{ color:var(--color-accent); font-weight:600; background:rgba(34,211,238,.08); }
+
+  .user-menu{ display:none; position:absolute; right:0; top:calc(100% + 8px); width:200px; background:var(--color-bg-surface); border:1px solid var(--color-border-strong); border-radius:12px; padding:6px; box-shadow:0 16px 40px rgba(0,0,0,.5); z-index:50; }
+  .user-menu.open{ display:block; }
+</style>
+
+<body class="min-h-screen flex flex-col">
+
+<!-- ============ 顶部导航栏 ============ -->
+<header class="topbar sticky top-0 z-40">
+  <div class="lesson-shell !py-0">
+    <div class="h-14 flex items-center gap-3">
+      <button id="drawerBtn" class="drawer-toggle w-9 h-9 rounded-lg border border-white/10 items-center justify-center text-tsecondary hover:bg-white/5 hover:text-white flex-shrink-0" aria-label="打开章节目录">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg>
+      </button>
+
+      <a href="tutorial-catalog__package-selection.html" class="flex items-center gap-2 flex-shrink-0">
+        <span class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shadow-glow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </span>
+        <span class="hidden sm:inline font-extrabold tracking-tight text-tprimary">TutorLab</span>
+      </a>
+
+      <div class="hidden md:flex items-center gap-1.5 text-xs text-tmuted min-w-0 truncate">
+        <span class="text-tmuted">/</span>
+        <a href="lesson-reader__catalog.html" class="hover:text-accent-400 text-tsecondary whitespace-nowrap">教程包目录</a>
+        <span class="text-tmuted">/</span>
+        <span class="text-tprimary font-medium truncate">React 从笔记到实战</span>
+      </div>
+
+      <div class="flex-1"></div>
+
+      <!-- 进度胶囊 -->
+      <div class="hidden sm:flex items-center gap-2 px-3 h-8 rounded-full bg-surface-2 border border-white/10 text-xs font-mono-ui flex-shrink-0">
+        <span class="text-tsecondary">第</span>
+        <span id="hdrCurrentStep" class="text-white font-semibold">3</span>
+        <span class="text-tsecondary">/</span>
+        <span id="hdrTotalStep" class="text-tsecondary">9</span>
+        <span class="text-tsecondary">步</span>
+        <span class="w-1 h-1 rounded-full bg-white/15 mx-0.5"></span>
+        <span id="hdrChapterName" class="text-accent-300">第一章</span>
+      </div>
+
+      <!-- 主题切换 -->
+      <button id="themeBtn" class="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-tsecondary hover:bg-white/5 hover:text-white flex-shrink-0" aria-label="切换主题">
+        <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      </button>
+
+      <!-- 站点导航 -->
+      <div class="relative flex-shrink-0">
+        <button id="navBtn" class="w-9 h-9 rounded-lg border border-white/10 flex items-center justify-center text-tsecondary hover:bg-white/5 hover:text-white" aria-label="站点导航">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <div id="navDropdown" class="nav-dropdown"></div>
+      </div>
+
+      <!-- 登录 / 用户态 -->
+      <div id="authArea" class="relative flex-shrink-0"></div>
+    </div>
+  </div>
+
+  <!-- 移动端横向步骤点 + 章节进度条 -->
+  <div class="mobile-stepline lesson-shell !py-0 !pt-0">
+    <div class="w-full pb-2.5 -mt-0.5">
+      <div class="flex items-center justify-between mb-1.5">
+        <span id="mChapterTitle" class="text-[11px] font-semibold text-tsecondary truncate"></span>
+        <span id="mChapterPct" class="text-[11px] font-mono-ui text-accent-400"></span>
+      </div>
+      <div id="mobileDots" class="flex items-center gap-1.5 overflow-x-auto pb-0.5"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 讲解/沙箱 Tab（<1440） ============ -->
+<div class="lesson-shell !py-0 !pt-3">
+  <div class="view-tabs gap-1 p-1 bg-surface-2 rounded-lg border border-white/10 w-full sm:w-72">
+    <button data-tab="content" class="tab-btn flex-1 h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      讲解
+    </button>
+    <button data-tab="sandbox" class="tab-btn flex-1 h-8 rounded-md text-xs font-medium flex items-center justify-center gap-1.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      沙箱
+      <span id="tabSandboxDot" class="w-1.5 h-1.5 rounded-full bg-success ml-0.5"></span>
+    </button>
+  </div>
+</div>
+
+<!-- ============ 主体 ============ -->
+<main class="lesson-shell flex-1 !pt-3">
+  <div class="lesson-body">
+
+    <!-- ===== 左：目录树（桌面常驻） ===== -->
+    <aside class="tree-sidebar flex-col w-full max-h-[calc(100vh-96px)]">
+      <div class="glass-card p-4 flex flex-col gap-4 w-full overflow-hidden hover:!translate-y-0 hover:!shadow-none hover:!border-white/[.06]">
+        <div>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-500/15 text-primary-300 border border-primary-500/30">REACT</span>
+            <span class="text-[10px] text-tmuted">教程包</span>
+          </div>
+          <h1 class="text-sm font-bold text-tprimary leading-snug">React 从笔记到实战</h1>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between text-[11px] text-tsecondary mb-1">
+            <span>整体完成度</span>
+            <span id="sideOverallPct" class="font-mono-ui text-accent-400 font-semibold">22%</span>
+          </div>
+          <div id="sideGauge" class="w-full h-[92px] -my-2"></div>
+        </div>
+
+        <div class="h-px bg-white/[.06]"></div>
+
+        <div id="treeDesktop" class="flex flex-col gap-3 overflow-y-auto pr-1 -mr-1" style="max-height:calc(100vh - 360px);"></div>
+
+        <div class="h-px bg-white/[.06]"></div>
+        <a href="lesson-reader__my-progress.html" class="flex items-center justify-between text-xs text-tsecondary hover:text-accent-400 group">
+          <span>查看我的学习进度</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-0.5 transition-transform"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ===== 中/右容器（受 tab 控制） ===== -->
+    <div id="lessonMain" class="lesson-main contents" data-active-tab="content">
+
+      <!-- ===== 中：讲解内容 ===== -->
+      <section class="content-pane" data-pane="content">
+        <div class="glass-card p-5 sm:p-6 flex flex-col flex-1 hover:!translate-y-0 hover:!shadow-none hover:!border-white/[.06]">
+
+          <!-- 章节进度条 -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 min-w-0">
+                <span id="chapterEyebrow" class="text-[11px] font-semibold uppercase tracking-wide text-primary-300 whitespace-nowrap"></span>
+              </div>
+              <span id="chapterProgressLabel" class="text-[11px] font-mono-ui text-tsecondary whitespace-nowrap"></span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-white/[.08] overflow-hidden">
+              <div id="chapterProgressBar" class="h-full rounded-full grad-primary-accent transition-all" style="width:0%"></div>
+            </div>
+          </div>
+
+          <h2 id="stepTitle" class="text-xl sm:text-2xl font-extrabold text-tprimary mb-4 leading-tight"></h2>
+
+          <div class="content-scroll flex-1">
+            <div id="stepBody" class="prose-lesson"></div>
+          </div>
+
+          <!-- waitFor 提示条 -->
+          <div id="waitforBar" class="waitfor-bar hidden mt-4"></div>
+
+          <!-- 上一步/下一步 -->
+          <div class="flex items-center gap-3 mt-5 pt-4 border-t border-white/[.06]">
+            <button id="prevBtn" class="h-10 px-4 rounded-lg border border-white/10 text-primary-100 text-sm font-medium flex items-center gap-1.5 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              上一步
+            </button>
+            <div class="flex-1"></div>
+            <span id="nextHint" class="text-[11px] text-tmuted hidden sm:inline"></span>
+            <button id="nextBtn" class="h-10 px-5 rounded-lg bg-primary-500 text-white text-sm font-semibold flex items-center gap-1.5 hover:bg-primary-600 shadow-glow disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+              <span id="nextBtnLabel">下一步</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 右：代码沙箱 ===== -->
+      <section class="sandbox-pane" data-pane="sandbox">
+        <div class="ide-panel shadow-2xl">
+          <!-- 文件 tab 栏 -->
+          <div class="ide-tabs px-1">
+            <div id="ideTabs" class="flex items-center flex-1"></div>
+            <button id="resetBtn" title="重置为默认代码" class="ml-auto mr-1.5 w-7 h-7 rounded-md flex items-center justify-center text-tmuted hover:text-warning hover:bg-white/5 flex-shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+          </div>
+
+          <!-- 编辑器（含加载骨架） -->
+          <div class="ide-editor relative">
+            <div id="ideSkeleton" class="absolute inset-0 p-4 flex flex-col gap-2.5">
+              <div class="skel h-3 w-1/3"></div>
+              <div class="skel h-3 w-2/3"></div>
+              <div class="skel h-3 w-1/2"></div>
+              <div class="skel h-3 w-3/5"></div>
+              <div class="skel h-3 w-1/4"></div>
+            </div>
+            <textarea id="codeEditor" spellcheck="false" class="hidden"></textarea>
+          </div>
+
+          <!-- 预览头 -->
+          <div class="ide-preview-head">
+            <div class="flex items-center gap-2">
+              <span class="live-dot"></span>
+              <span class="text-[11px] font-mono-ui text-tsecondary">Live Preview</span>
+              <span id="compileMsg" class="text-[11px] font-mono-ui text-tmuted"></span>
+            </div>
+            <button id="runBtn" class="h-7 px-3 rounded-md bg-primary-500 hover:bg-primary-600 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-glow">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              Run
+            </button>
+          </div>
+
+          <!-- 预览 iframe -->
+          <iframe id="previewFrame" class="ide-preview" title="沙箱实时预览" sandbox="allow-scripts"></iframe>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<footer class="lesson-shell !pt-2 pb-6">
+  <p class="text-[11px] text-tmuted text-center">内容改编自 62 篇 React 学习笔记（小满 zs-react.canvas）· 引擎与内容分离，新增主题无需改动本页面逻辑</p>
+</footer>
+
+<!-- ============ 抽屉：目录树（<1440） ============ -->
+<div id="drawer" class="drawer">
+  <div class="drawer-backdrop" data-close-drawer></div>
+  <div class="drawer-panel">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-bold text-tprimary">章节目录</h3>
+      <button data-close-drawer class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-tsecondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="mb-4">
+      <div class="flex items-center justify-between text-[11px] text-tsecondary mb-1">
+        <span>整体完成度</span>
+        <span id="drawerOverallPct" class="font-mono-ui text-accent-400 font-semibold">22%</span>
+      </div>
+      <div class="w-full h-1.5 rounded-full bg-white/[.08] overflow-hidden">
+        <div id="drawerOverallBar" class="h-full rounded-full grad-primary-accent" style="width:0%"></div>
+      </div>
+    </div>
+    <div id="treeDrawer" class="flex flex-col gap-3"></div>
+  </div>
+</div>
+
+<!-- ============ 聚光灯遮罩层 ============ -->
+<div id="spotlightLayer" class="hidden"></div>
+
+<!-- ============ 登录弹窗 ============ -->
+<div id="loginModal" class="modal-backdrop">
+  <div class="glass-card w-full max-w-sm p-6 hover:!translate-y-0 hover:!shadow-none hover:!border-white/[.06]">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="text-base font-bold text-tprimary">登录 TutorLab</h3>
+      <button id="closeLogin" class="w-8 h-8 rounded-lg hover:bg-white/5 flex items-center justify-center text-tsecondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p class="text-xs text-tsecondary mb-5">登录后学习进度将跨设备同步，游客本地进度将自动合并</p>
+    <form id="loginForm" class="flex flex-col gap-3.5">
+      <div>
+        <label class="text-xs uppercase tracking-wide text-tsecondary mb-1.5 block">邮箱</label>
+        <input type="email" required value="demo@example.com" class="w-full bg-surface-2 border border-white/10 rounded-lg h-10 px-3 text-sm text-tprimary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 outline-none">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wide text-tsecondary mb-1.5 block">密码</label>
+        <input type="password" required value="••••••••" class="w-full bg-surface-2 border border-white/10 rounded-lg h-10 px-3 text-sm text-tprimary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 outline-none">
+      </div>
+      <button type="submit" class="h-10 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold shadow-glow mt-1">登录</button>
+      <p class="text-[11px] text-tmuted text-center">这是原型演示，任意内容均可登录</p>
+    </form>
+  </div>
+</div>
+
+<div id="toastWrap" class="toast-wrap"></div>
+
+<script>
+(function(){
+  /* ================= 主题切换 ================= */
+  var root = document.documentElement;
+  var saved = localStorage.getItem('tl-theme') || 'dark';
+  root.setAttribute('data-theme', saved);
+  function syncThemeIcon(){
+    var isLight = root.getAttribute('data-theme') === 'light';
+    document.getElementById('iconMoon').classList.toggle('hidden', isLight);
+    document.getElementById('iconSun').classList.toggle('hidden', !isLight);
+  }
+  syncThemeIcon();
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('tl-theme', next);
+    syncThemeIcon();
+  });
+
+  /* ================= 站点导航 ================= */
+  var SITE_MAP = [
+    { group:'教程与章节目录', links:[
+      ['tutorial-catalog__package-selection.html','主题包选择页'],
+      ['tutorial-catalog__chapter-tree.html','教程详情页'],
+      ['tutorial-catalog__learning-progress-overview.html','我的学习总览页'],
+    ]},
+    { group:'课程讲解与步骤导航', links:[
+      ['lesson-reader__catalog.html','教程包目录'],
+      ['lesson-reader__lesson.html','课程学习页','current'],
+      ['lesson-reader__my-progress.html','我的学习进度'],
+    ]},
+    { group:'引导引擎', links:[
+      ['guided-tour__tour-overlay.html','引导蒙层与聚光灯'],
+      ['guided-tour__tutorial-workspace.html','教程学习工作台'],
+      ['guided-tour__chapter-toc.html','章节/步骤目录树'],
+      ['guided-tour__tutorial-catalog.html','教程包（主题）选择页'],
+      ['guided-tour__my-progress.html','我的学习进度页'],
+    ]},
+    { group:'代码沙箱', links:[
+      ['code-sandbox__sandbox-panel.html','沙箱主面板'],
+      ['code-sandbox__sandbox-mobile-tab.html','移动端沙箱 Tab 视图'],
+      ['code-sandbox__sandbox-error-state.html','沙箱异常态视图'],
+    ]},
+    { group:'学习进度与账户', links:[
+      ['learning-progress__auth-entry.html','登录入口与登录弹窗'],
+      ['learning-progress__my-learning.html','我的学习'],
+      ['learning-progress__progress-indicators.html','进度标记与同步状态'],
+    ]},
+  ];
+  var navDropdown = document.getElementById('navDropdown');
+  navDropdown.innerHTML = SITE_MAP.map(function(g){
+    return '<div class="nav-group-label">'+g.group+'</div>' + g.links.map(function(l){
+      return '<a href="'+l[0]+'" class="nav-link'+(l[2]==='current'?' current':'')+'"><span>'+l[1]+'</span>'+(l[2]==='current'?'<span>●</span>':'')+'</a>';
+    }).join('');
+  }).join('<div class="h-px bg-white/[.06] my-1"></div>');
+
+  var navBtn = document.getElementById('navBtn');
+  navBtn.addEventListener('click', function(e){ e.stopPropagation(); navDropdown.classList.toggle('open'); userMenu.classList.remove('open'); });
+
+  /* ================= 登录 / 用户态 ================= */
+  var authArea = document.getElementById('authArea');
+  var isLoggedIn = false;
+  var userMenu;
+  function renderAuth(){
+    if(!isLoggedIn){
+      authArea.innerHTML = '<button id="loginBtn" class="h-9 px-3.5 rounded-lg border border-white/10 text-primary-100 text-xs font-medium hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap">'+
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>'+
+        '<span class="hidden sm:inline">登录</span></button>';
+      document.getElementById('loginBtn').addEventListener('click', openLogin);
+    } else {
+      authArea.innerHTML =
+        '<button id="userBtn" class="flex items-center gap-2 h-9 pl-1 pr-2.5 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10">'+
+          '<span class="w-7 h-7 rounded-full grad-primary-accent flex items-center justify-center text-[11px] font-bold text-white">崔</span>'+
+          '<span class="hidden sm:inline text-xs font-medium text-tprimary">崔学员</span>'+
+        '</button>'+
+        '<div id="userMenu" class="user-menu">'+
+          '<a href="lesson-reader__my-progress.html" class="nav-link"><span>我的学习进度</span></a>'+
+          '<a href="learning-progress__my-learning.html" class="nav-link"><span>我的学习</span></a>'+
+          '<div class="h-px bg-white/[.06] my-1"></div>'+
+          '<button id="logoutBtn" class="nav-link w-full text-left text-danger"><span>退出登录</span></button>'+
+        '</div>';
+      userMenu = document.getElementById('userMenu');
+      document.getElementById('userBtn').addEventListener('click', function(e){ e.stopPropagation(); userMenu.classList.toggle('open'); navDropdown.classList.remove('open'); });
+      document.getElementById('logoutBtn').addEventListener('click', function(){ isLoggedIn=false; renderAuth(); showToast('已退出登录'); });
+    }
+  }
+  renderAuth();
+
+  document.addEventListener('click', function(){
+    navDropdown.classList.remove('open');
+    if(userMenu) userMenu.classList.remove('open');
+  });
+
+  var loginModal = document.getElementById('loginModal');
+  function openLogin(){ loginModal.classList.add('open'); }
+  function closeLogin(){ loginModal.classList.remove('open'); }
+  document.getElementById('closeLogin').addEventListener('click', closeLogin);
+  loginModal.addEventListener('click', function(e){ if(e.target===loginModal) closeLogin(); });
+  document.getElementById('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    isLoggedIn = true; renderAuth(); closeLogin();
+    showToast('登录成功，本地进度已合并到账户');
+  });
+
+  /* ================= Toast ================= */
+  function showToast(msg, tone){
+    var wrap = document.getElementById('toastWrap');
+    var el = document.createElement('div');
+    el.className = 'toast';
+    var color = tone==='success' ? '#10B981' : tone==='warning' ? '#F59E0B' : '#22D3EE';
+    el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:'+color+';flex-shrink:0;"></span><span>'+msg+'</span>';
+    wrap.appendChild(el);
+    setTimeout(function(){ el.style.opacity='0'; el.style.transform='translateY(-6px)'; setTimeout(function(){ el.remove(); }, 200); }, 2600);
+  }
+
+  /* ================= 语法高亮（简易 tokenizer） ================= */
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(code){
+    code = escapeHtml(code);
+    var KW = 'const|let|var|function|return|import|from|export|default|if|else|for|while|new|this|of|in|typeof|async|await|true|false|null|undefined';
+    var re = new RegExp('(//.*$)|(`(?:[^`\\\\]|\\\\.)*`|\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*")|\\b('+KW+')\\b|(</?[A-Za-z][\\w.]*)|\\b(\\d+(?:\\.\\d+)?)\\b', 'gm');
+    return code.replace(re, function(m,cm,str,kw,tag,num){
+      if(cm) return '<span class="tok-com">'+cm+'</span>';
+      if(str) return '<span class="tok-str">'+str+'</span>';
+      if(kw) return '<span class="tok-kw">'+kw+'</span>';
+      if(tag) return '<span class="tok-tag">'+tag+'</span>';
+      if(num) return '<span class="tok-num">'+num+'</span>';
+      return m;
+    });
+  }
+
+  /* ================= 教程数据 ================= */
+  var DEFAULT_APP = 'export default function App() {\n  return (\n    <div className="card">\n      <h3>Hello, TutorLab</h3>\n    </div>\n  );\n}\n';
+  var DEFAULT_INDEX = 'import React from "react";\nimport { createRoot } from "react-dom/client";\nimport App from "./App";\n\ncreateRoot(document.getElementById("root")).render(<App />);\n';
+  var DEFAULT_CSS = '.card {\n  font-family: Inter, sans-serif;\n  padding: 24px;\n  border-radius: 12px;\n  background: #f4f6fb;\n}\n';
+
+  var STEPS = [
+    { id:'c1s1', chapterId:'c1', chapterTitle:'第一章 · React 快速上手', order:1,
+      title:'认识 JSX：用 JS 描述 UI',
+      waitFor:'none', waitForTarget:null, selector:'',
+      body:
+        '<p>JSX 是 React 里用来描述界面结构的语法糖——本质上是 <code class="inline">React.createElement()</code> 的语法糖，让你能像写 HTML 一样在 JS 里描述 UI，同时保留 JS 的全部能力（变量、表达式、条件、循环）。</p>'+
+        '<div class="callout callout-tip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>JSX 中用 <code class="inline">{ }</code> 包裹任意 JS 表达式，比如 <code class="inline">{user.name}</code>，但不能直接写 <code class="inline">if</code> 语句（可用三元表达式代替）。</span></div>'+
+        '<h2>一个最小的组件</h2>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('function Greeting({ name }) {\n  const isVip = name === "演示用户";\n  return (\n    <div className="card">\n      <h3>Hello, {name}!</h3>\n      {isVip && <span className="badge">VIP</span>}\n    </div>\n  );\n}')+'</code></pre></div>'+
+        '<figure class="demo-box">'+
+          '<svg viewBox="0 0 340 96" class="w-full h-auto"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4C6FFF"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs>'+
+          '<rect x="4" y="30" width="90" height="36" rx="8" fill="none" stroke="#8FA3FF" stroke-width="1.5"/><text x="49" y="53" fill="#B9C7FF" font-size="11" text-anchor="middle" font-family="JetBrains Mono">JSX</text>'+
+          '<path d="M98 48 H150" stroke="url(#g1)" stroke-width="2" marker-end="url(#arrow)"/>'+
+          '<rect x="154" y="30" width="90" height="36" rx="8" fill="none" stroke="#67E8F9" stroke-width="1.5"/><text x="199" y="53" fill="#A5F3FC" font-size="10.5" text-anchor="middle" font-family="JetBrains Mono">createElement</text>'+
+          '<path d="M248 48 H300" stroke="url(#g1)" stroke-width="2" marker-end="url(#arrow)"/>'+
+          '<rect x="250" y="30" width="86" height="36" rx="8" fill="none" stroke="#FDBA33" stroke-width="1.5"/><text x="293" y="53" fill="#FDBA33" font-size="11" text-anchor="middle" font-family="JetBrains Mono">真实 DOM</text>'+
+          '<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#22D3EE" stroke-width="1.4"/></marker></defs></svg>'+
+          '<figcaption class="text-[11px] text-tmuted mt-1.5 text-center">图 1-1：JSX 经编译 → createElement 调用 → React 渲染为真实 DOM</figcaption>'+
+        '</figure>'+
+        '<p>本步骤无需任何操作，直接点击右下角<strong>「下一步」</strong>继续。</p>',
+      code:{ file:'src/App.jsx', content:'export default function Greeting({ name = "同学" }) {\n  const isVip = name === "演示用户";\n  return (\n    <div className="card">\n      <h3>Hello, {name}!</h3>\n      {isVip && <span className="badge">VIP</span>}\n    </div>\n  );\n}\n' } },
+
+    { id:'c1s2', chapterId:'c1', chapterTitle:'第一章 · React 快速上手', order:2,
+      title:'useState：让组件拥有记忆',
+      waitFor:'click', waitForTarget:'#runBtn', selector:'#runBtn',
+      body:
+        '<p><code class="inline">useState</code> 是 React 最常用的 Hook：调用后返回一个 <strong>状态值</strong> 和一个 <strong>更新函数</strong>。每次调用更新函数，React 都会用新值重新渲染组件。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('import { useState } from "react";\n\nexport default function App() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <button onClick={() => setCount(count + 1)}>\n      点击了 {count} 次\n    </button>\n  );\n}')+'</code></pre></div>'+
+        '<div class="callout callout-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>不要直接修改 <code class="inline">count</code>，React 无法感知直接赋值，必须通过 <code class="inline">setCount</code> 触发重新渲染。</span></div>'+
+        '<p>右侧沙箱里已经放好了一份计数器代码，点击右下角的 <strong>「Run」</strong> 按钮运行代码，在预览区亲手点几下按钮，感受状态驱动界面更新。</p>',
+      code:{ file:'src/App.jsx', content:'import { useState } from "react";\n\nexport default function App() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div className="card">\n      <button onClick={() => setCount(count + 1)}>\n        点击了 {count} 次\n      </button>\n    </div>\n  );\n}\n' } },
+
+    { id:'c1s3', chapterId:'c1', chapterTitle:'第一章 · React 快速上手', order:3,
+      title:'事件处理与受控输入',
+      waitFor:'input', waitForTarget:'#controlledDemoInput', selector:'#controlledDemoInput',
+      body:
+        '<p>「受控组件」指表单元素的值完全由 React 状态驱动：<code class="inline">value</code> 绑定 state，<code class="inline">onChange</code> 更新 state，二者构成单向数据流的闭环。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('const [name, setName] = useState("");\n\n<input\n  value={name}\n  onChange={(e) => setName(e.target.value)}\n  placeholder="输入你的名字"\n/>\n<p>你好，{name || "陌生人"}！</p>')+'</code></pre></div>'+
+        '<div class="demo-box">'+
+          '<label class="text-xs text-tsecondary mb-1.5 block">试一试：这是讲解区里的一个真实输入框（selector 高亮目标）</label>'+
+          '<input id="controlledDemoInput" type="text" placeholder="输入你的名字…" class="w-full bg-surface-2 border border-white/10 rounded-lg h-10 px-3 text-sm text-tprimary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 outline-none">'+
+          '<p id="controlledEcho" class="text-xs text-tsecondary mt-2">你好，<span class="text-accent-400 font-medium">陌生人</span>！开始输入试试 →</p>'+
+        '</div>'+
+        '<div class="callout callout-tip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>聚光灯已经帮你圈出了上面这个输入框——在里面输入任意内容即可解锁下一步。</span></div>',
+      code:{ file:'src/App.jsx', content:'import { useState } from "react";\n\nexport default function App() {\n  const [name, setName] = useState("");\n\n  return (\n    <div className="card">\n      <input\n        value={name}\n        onChange={(e) => setName(e.target.value)}\n        placeholder="输入你的名字"\n      />\n      <p>你好，{name || "陌生人"}！</p>\n    </div>\n  );\n}\n' } },
+
+    { id:'c1s4', chapterId:'c1', chapterTitle:'第一章 · React 快速上手', order:4,
+      title:'useEffect：处理副作用',
+      waitFor:'timer', waitForTarget:8, selector:'',
+      body:
+        '<p><code class="inline">useEffect</code> 用来处理「渲染之外」的副作用：发请求、订阅事件、操作 DOM、设置定时器等。它在渲染完成后执行，并支持返回一个清理函数。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('useEffect(() => {\n  const timer = setInterval(() => {\n    setSeconds((s) => s + 1);\n  }, 1000);\n\n  // 清理函数：组件卸载或依赖变化时执行\n  return () => clearInterval(timer);\n}, []); // 空依赖数组 = 只在挂载时执行一次')+'</code></pre></div>'+
+        '<div class="callout callout-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>忘记清理定时器/订阅是最常见的内存泄漏来源之一——组件卸载后 <code class="inline">setState</code> 仍被调用会触发 React 警告。</span></div>'+
+        '<p>本步骤是一段纯阅读内容，没有可点击的高亮目标：请花几秒钟读完上面的代码与提示，系统会在阅读计时结束后自动为你解锁下一步。</p>',
+      code:{ file:'src/App.jsx', content:'import { useState, useEffect } from "react";\n\nexport default function App() {\n  const [seconds, setSeconds] = useState(0);\n\n  useEffect(() => {\n    const timer = setInterval(() => {\n      setSeconds((s) => s + 1);\n    }, 1000);\n    return () => clearInterval(timer);\n  }, []);\n\n  return <div className="card">已运行 {seconds} 秒</div>;\n}\n' } },
+
+    { id:'c1s5', chapterId:'c1', chapterTitle:'第一章 · React 快速上手', order:5,
+      title:'组件拆分与 Props 传递',
+      waitFor:'none', waitForTarget:null, selector:'',
+      body:
+        '<p>把界面拆成小而专一的组件，通过 <code class="inline">props</code> 自上而下传递数据，是 React 应用可维护性的基石。一个组件只做一件事，越小越容易复用与测试。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('function StatCard({ label, value, accent }) {\n  return (\n    <div className="stat-card" style={{ borderColor: accent }}>\n      <p className="label">{label}</p>\n      <p className="value">{value}</p>\n    </div>\n  );\n}\n\nexport default function App() {\n  return (\n    <div className="grid">\n      <StatCard label="已完成" value="2/9" accent="#4C6FFF" />\n      <StatCard label="完成度" value="22%" accent="#22D3EE" />\n    </div>\n  );\n}')+'</code></pre></div>'+
+        '<p>至此，第一章「React 快速上手」的核心概念已经全部覆盖：JSX、useState、受控输入、useEffect、组件拆分。点击下一步进入第二章「Hooks 进阶」。</p>',
+      code:{ file:'src/App.jsx', content:'function StatCard({ label, value, accent }) {\n  return (\n    <div className="stat-card" style={{ borderColor: accent }}>\n      <p className="label">{label}</p>\n      <p className="value">{value}</p>\n    </div>\n  );\n}\n\nexport default function App() {\n  return (\n    <div className="grid">\n      <StatCard label="已完成" value="2/9" accent="#4C6FFF" />\n      <StatCard label="完成度" value="22%" accent="#22D3EE" />\n    </div>\n  );\n}\n' } },
+
+    { id:'c2s1', chapterId:'c2', chapterTitle:'第二章 · Hooks 进阶', order:1,
+      title:'useMemo 与 useCallback：按需优化',
+      waitFor:'none', waitForTarget:null, selector:'',
+      body:
+        '<p><code class="inline">useMemo</code> 缓存计算结果，<code class="inline">useCallback</code> 缓存函数引用，二者都是为了避免子组件因「引用变化」而不必要地重新渲染——但优化前先测量，不要一上来就无脑包裹所有值。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('const sorted = useMemo(\n  () => list.sort((a, b) => a.order - b.order),\n  [list]\n);\n\nconst handleClick = useCallback(\n  (id) => setActiveId(id),\n  []\n);')+'</code></pre></div>'+
+        '<div class="callout callout-tip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>先用 React DevTools Profiler 确认真的存在性能问题，再决定是否值得引入 <code class="inline">useMemo</code>/<code class="inline">useCallback</code> 的额外心智负担。</span></div>',
+      code:{ file:'src/App.jsx', content:'import { useMemo, useState } from "react";\n\nexport default function App() {\n  const [list] = useState([3, 1, 2]);\n  const sorted = useMemo(() => [...list].sort(), [list]);\n  return <div className="card">{sorted.join(", ")}</div>;\n}\n' } },
+
+    { id:'c2s2', chapterId:'c2', chapterTitle:'第二章 · Hooks 进阶', order:2,
+      title:'自定义 Hook：提炼可复用逻辑',
+      waitFor:'click', waitForTarget:'#ideTabs [data-file="src/styles.css"]', selector:'#ideTabs [data-file="src/styles.css"]',
+      body:
+        '<p>自定义 Hook 本质就是一个以 <code class="inline">use</code> 开头、内部调用了其他 Hook 的普通函数——把重复的状态逻辑（如「监听窗口宽度」）提炼出来，多个组件共享。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>useWindowWidth.js</span><span>JS</span></div><pre><code>'+hl('function useWindowWidth() {\n  const [w, setW] = useState(window.innerWidth);\n  useEffect(() => {\n    const onResize = () => setW(window.innerWidth);\n    window.addEventListener("resize", onResize);\n    return () => window.removeEventListener("resize", onResize);\n  }, []);\n  return w;\n}')+'</code></pre></div>'+
+        '<p>本步骤演示「聚光灯高亮跨面板 UI 元素」——点击右侧代码沙箱文件栏中的 <code class="inline">styles.css</code> 标签页以完成本步。若你在移动端，请先切换到「沙箱」视图。</p>',
+      code:{ file:'src/App.jsx', content:'import { useEffect, useState } from "react";\n\nfunction useWindowWidth() {\n  const [w, setW] = useState(window.innerWidth);\n  useEffect(() => {\n    const onResize = () => setW(window.innerWidth);\n    window.addEventListener("resize", onResize);\n    return () => window.removeEventListener("resize", onResize);\n  }, []);\n  return w;\n}\n\nexport default function App() {\n  const width = useWindowWidth();\n  return <div className="card">窗口宽度：{width}px</div>;\n}\n' } },
+
+    { id:'c2s3', chapterId:'c2', chapterTitle:'第二章 · Hooks 进阶', order:3,
+      title:'useRef：直接操作 DOM',
+      waitFor:'input', waitForTarget:'#refDemoInput', selector:'#refDemoInput',
+      body:
+        '<p><code class="inline">useRef</code> 创建一个在组件生命周期内保持不变的可变容器，最常见用途是拿到真实 DOM 节点的引用（如聚焦输入框），也可用于保存不触发重渲染的可变值。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>App.jsx</span><span>JSX</span></div><pre><code>'+hl('const inputRef = useRef(null);\n\nfunction focusInput() {\n  inputRef.current.focus();\n}\n\n<input ref={inputRef} />\n<button onClick={focusInput}>聚焦输入框</button>')+'</code></pre></div>'+
+        '<div class="demo-box">'+
+          '<label class="text-xs text-tsecondary mb-1.5 block">试一试：在下方输入任意内容</label>'+
+          '<input id="refDemoInput" type="text" placeholder="模拟 ref 绑定的输入框…" class="w-full bg-surface-2 border border-white/10 rounded-lg h-10 px-3 text-sm text-tprimary focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 outline-none">'+
+        '</div>',
+      code:{ file:'src/App.jsx', content:'import { useRef } from "react";\n\nexport default function App() {\n  const inputRef = useRef(null);\n  return (\n    <div className="card">\n      <input ref={inputRef} placeholder="点我试试" />\n      <button onClick={() => inputRef.current.focus()}>聚焦</button>\n    </div>\n  );\n}\n' } },
+
+    { id:'c2s4', chapterId:'c2', chapterTitle:'第二章 · Hooks 进阶', order:4,
+      title:'Context：跨层级传值',
+      waitFor:'none', waitForTarget:null, selector:'',
+      body:
+        '<p>当数据需要穿透好几层组件时，逐层传 props（俗称「prop drilling」）会让代码难以维护。<code class="inline">Context</code> 提供了一种在组件树中共享数据的方式，无需每层手动透传。</p>'+
+        '<div class="code-block"><div class="code-block-head"><span>ThemeContext.jsx</span><span>JSX</span></div><pre><code>'+hl('const ThemeContext = createContext("dark");\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value="dark">\n      <Toolbar />\n    </ThemeContext.Provider>\n  );\n}\n\nfunction Toolbar() {\n  const theme = useContext(ThemeContext);\n  return <div className={theme}>工具栏</div>;\n}')+'</code></pre></div>'+
+        '<div class="callout callout-tip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>恭喜，你已经完成「React 从笔记到实战」教程包的两个章节、全部 9 个步骤！点击下方按钮标记教程完成。</span></div>',
+      code:{ file:'src/App.jsx', content:'import { createContext, useContext } from "react";\n\nconst ThemeContext = createContext("dark");\n\nfunction Toolbar() {\n  const theme = useContext(ThemeContext);\n  return <div className={"toolbar " + theme}>工具栏（{theme}）</div>;\n}\n\nexport default function App() {\n  return (\n    <ThemeContext.Provider value="dark">\n      <Toolbar />\n    </ThemeContext.Provider>\n  );\n}\n' } },
+  ];
+
+  /* ================= 状态 ================= */
+  var completed = { c1s1:true, c1s2:true };
+  var frontierIndex = 2; // c1s3
+  var viewingIndex = 2;
+  var waitSatisfied = {};
+  var sandboxFiles = { 'src/App.jsx': DEFAULT_APP, 'src/index.js': DEFAULT_INDEX, 'src/styles.css': DEFAULT_CSS };
+  var activeFile = 'src/App.jsx';
+  var timerHandle = null;
+
+  function idx(id){ for(var i=0;i<STEPS.length;i++) if(STEPS[i].id===id) return i; return -1; }
+  function chapterSteps(chapterId){ return STEPS.filter(function(s){ return s.chapterId===chapterId; }); }
+  var CHAPTERS = ['c1','c2'];
+
+  function overallRate(){ return Math.round(Object.keys(completed).length / STEPS.length * 100); }
+  function chapterRate(chapterId){
+    var steps = chapterSteps(chapterId);
+    var done = steps.filter(function(s){ return completed[s.id]; }).length;
+    return { done: done, total: steps.length, pct: Math.round(done/steps.length*100) };
+  }
+
+  /* ================= 目录树渲染 ================= */
+  function stateOf(i){
+    if(i === viewingIndex) return 'current';
+    if(completed[STEPS[i].id]) return 'completed';
+    if(i === frontierIndex) return 'unlocked';
+    return 'locked';
+  }
+
+  function renderTreeInto(containerId){
+    var el = document.getElementById(containerId);
+    var html = '';
+    CHAPTERS.forEach(function(cid){
+      var steps = chapterSteps(cid);
+      var rate = chapterRate(cid);
+      html += '<div>'+
+        '<div class="flex items-center justify-between mb-1.5 px-1">'+
+          '<span class="text-[11px] font-semibold text-tsecondary">'+steps[0].chapterTitle+'</span>'+
+          '<span class="text-[10px] font-mono-ui text-tmuted">'+rate.done+'/'+rate.total+'</span>'+
+        '</div>'+
+        '<div class="w-full h-1 rounded-full bg-white/[.06] overflow-hidden mb-2 mx-1" style="width:calc(100% - 8px)">'+
+          '<div class="h-full rounded-full grad-primary-accent" style="width:'+rate.pct+'%"></div>'+
+        '</div>'+
+        '<div class="flex flex-col gap-0.5">';
+      steps.forEach(function(s){
+        var i = idx(s.id);
+        var st = stateOf(i);
+        var dotCls = st==='current' ? 'current' : st==='completed' ? '' : st==='unlocked' ? 'unlocked' : 'locked';
+        var icon = '';
+        if(st==='completed'){
+          icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        } else if(st==='locked'){
+          icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+        } else {
+          icon = '<span class="step-dot '+dotCls+'"></span>';
+        }
+        html += '<div class="tree-item state-'+st+'" data-goto="'+i+'">'+
+          '<span class="w-4 flex items-center justify-center flex-shrink-0">'+icon+'</span>'+
+          '<span class="truncate flex-1">'+s.order+'. '+s.title+'</span>'+
+        '</div>';
+      });
+      html += '</div></div>';
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('[data-goto]').forEach(function(node){
+      node.addEventListener('click', function(){
+        var i = parseInt(node.getAttribute('data-goto'), 10);
+        goto(i);
+      });
+    });
+  }
+
+  function goto(i){
+    var st = stateOf(i);
+    if(st === 'locked'){ showToast('请先完成前面的步骤解锁', 'warning'); return; }
+    viewingIndex = i;
+    render();
+    closeDrawer();
+  }
+
+  /* ================= 移动端横向步骤点 ================= */
+  function renderMobileDots(){
+    var wrap = document.getElementById('mobileDots');
+    wrap.innerHTML = STEPS.map(function(s,i){
+      var st = stateOf(i);
+      var cls = st==='current' ? 'bg-primary-500 shadow-[0_0_0_3px_rgba(76,111,255,.3)]' :
+                st==='completed' ? 'bg-accent-400' :
+                st==='unlocked' ? 'bg-transparent border-2 border-accent-400' :
+                'bg-white/10';
+      return '<button data-goto-m="'+i+'" class="w-2.5 h-2.5 rounded-full flex-shrink-0 '+cls+'" title="'+s.title+'"></button>';
+    }).join('<span class="w-2.5 h-px bg-white/10 flex-shrink-0 self-center"></span>');
+    wrap.querySelectorAll('[data-goto-m]').forEach(function(node){
+      node.addEventListener('click', function(){ goto(parseInt(node.getAttribute('data-goto-m'),10)); });
+    });
+    var cur = STEPS[viewingIndex];
+    var rate = chapterRate(cur.chapterId);
+    document.getElementById('mChapterTitle').textContent = cur.chapterTitle;
+    document.getElementById('mChapterPct').textContent = rate.pct+'%';
+  }
+
+  /* ================= 讲解内容渲染 ================= */
+  function renderContent(){
+    var s = STEPS[viewingIndex];
+    document.getElementById('chapterEyebrow').textContent = s.chapterTitle;
+    var rate = chapterRate(s.chapterId);
+    document.getElementById('chapterProgressLabel').textContent = rate.done+' / '+rate.total+' 步已完成';
+    document.getElementById('chapterProgressBar').style.width = rate.pct+'%';
+    document.getElementById('stepTitle').textContent = s.order+'. '+s.title;
+    document.getElementById('stepBody').innerHTML = s.body;
+    document.getElementById('hdrCurrentStep').textContent = viewingIndex+1;
+    document.getElementById('hdrTotalStep').textContent = STEPS.length;
+    document.getElementById('hdrChapterName').textContent = s.chapterId==='c1' ? '第一章' : '第二章';
+
+    // 受控输入 demo 联动（仅内容展示，不等同 waitFor 判定）
+    var echoInput = document.getElementById('controlledDemoInput');
+    if(echoInput){
+      echoInput.addEventListener('input', function(){
+        var echo = document.getElementById('controlledEcho');
+        echo.innerHTML = '你好，<span class="text-accent-400 font-medium">'+(echoInput.value.trim() || '陌生人')+'</span>！';
+      });
+    }
+  }
+
+  /* ================= waitFor 逻辑 ================= */
+  function isPendingStep(){ return viewingIndex === frontierIndex && !completed[STEPS[viewingIndex].id]; }
+
+  function renderWaitfor(){
+    var bar = document.getElementById('waitforBar');
+    var s = STEPS[viewingIndex];
+    if(timerHandle){ clearInterval(timerHandle); timerHandle = null; }
+
+    if(!isPendingStep() || s.waitFor === 'none'){
+      bar.className = 'waitfor-bar hidden mt-4';
+      bar.innerHTML = '';
+      updateNextButton(true);
+      return;
+    }
+
+    var satisfied = !!waitSatisfied[s.id];
+    if(satisfied){
+      bar.className = 'waitfor-bar waitfor-success mt-4 flex';
+      bar.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>已完成，即将自动进入下一步…</span>';
+      updateNextButton(true);
+      return;
+    }
+
+    updateNextButton(false);
+    bar.className = 'waitfor-bar waitfor-pending mt-4 flex';
+    if(s.waitFor === 'click'){
+      bar.innerHTML = '<svg class="pulse-dot" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11.5V6a1.5 1.5 0 0 1 3 0v3.5"/><path d="M12 9.5V4a1.5 1.5 0 0 1 3 0v6"/><path d="M15 9.5a1.5 1.5 0 0 1 3 0V13"/><path d="M6 13V8.5a1.5 1.5 0 0 1 3 0V13l-1.5-1.8a1.6 1.6 0 0 0-2.3 2.1L8 17c1 1.5 2.5 3 5 3h1a5 5 0 0 0 5-5v-3"/></svg><span>请点击左侧聚光灯圈出的目标元素以完成本步操作</span>';
+    } else if(s.waitFor === 'input'){
+      bar.innerHTML = '<svg class="pulse-dot" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="10.01"/><line x1="10" y1="10" x2="10" y2="10.01"/><line x1="14" y1="10" x2="14" y2="10.01"/><line x1="6" y1="14" x2="14" y2="14"/></svg><span>请在上方聚光灯圈出的输入框中填写内容后继续</span>';
+    } else if(s.waitFor === 'timer'){
+      var remain = s.waitForTarget;
+      bar.innerHTML = '<svg class="pulse-dot" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg><span>请阅读完成，<span id="timerRemain" class="font-mono-ui font-semibold">'+remain+'</span> 秒后自动解锁下一步</span>';
+      timerHandle = setInterval(function(){
+        remain -= 1;
+        var node = document.getElementById('timerRemain');
+        if(node) node.textContent = Math.max(remain,0);
+        if(remain <= 0){
+          clearInterval(timerHandle); timerHandle = null;
+          satisfyWait(s.id);
+        }
+      }, 1000);
+    }
+  }
+
+  function satisfyWait(stepId){
+    if(viewingIndex !== frontierIndex) return;
+    if(STEPS[viewingIndex].id !== stepId) return;
+    if(waitSatisfied[stepId]) return;
+    waitSatisfied[stepId] = true;
+    renderWaitfor();
+    showToast('操作已完成，正在进入下一步', 'success');
+    setTimeout(function(){ advance(); }, 300);
+  }
+
+  // 全局委托：click / input 类型 waitFor 监听
+  document.addEventListener('click', function(e){
+    if(!isPendingStep()) return;
+    var s = STEPS[viewingIndex];
+    if(s.waitFor !== 'click' || waitSatisfied[s.id]) return;
+    if(s.waitForTarget && e.target.closest(s.waitForTarget)) satisfyWait(s.id);
+  }, true);
+  document.addEventListener('input', function(e){
+    if(!isPendingStep()) return;
+    var s = STEPS[viewingIndex];
+    if(s.waitFor !== 'input' || waitSatisfied[s.id]) return;
+    if(s.waitForTarget && e.target.closest(s.waitForTarget) && e.target.value && e.target.value.trim().length>0) satisfyWait(s.id);
+  }, true);
+
+  /* ================= 上一步 / 下一步 ================= */
+  function updateNextButton(enabled){
+    var btn = document.getElementById('nextBtn');
+    var label = document.getElementById('nextBtnLabel');
+    var hint = document.getElementById('nextHint');
+    var isLast = viewingIndex === STEPS.length - 1;
+    var lastDone = completed[STEPS[STEPS.length-1].id];
+    if(isLast && lastDone){
+      btn.disabled = true;
+      label.textContent = '已完成教程';
+      hint.textContent = '';
+      return;
+    }
+    label.textContent = (isLast && isPendingStep()) ? '完成教程' : '下一步';
+    btn.disabled = !enabled;
+    hint.textContent = enabled ? '' : '请先完成上方操作';
+  }
+
+  function advance(){
+    var s = STEPS[viewingIndex];
+    if(viewingIndex < frontierIndex){
+      viewingIndex += 1;
+      render();
+      return;
+    }
+    // viewingIndex === frontierIndex
+    completed[s.id] = true;
+    if(frontierIndex < STEPS.length - 1){
+      frontierIndex += 1;
+      viewingIndex = frontierIndex;
+    } else {
+      viewingIndex = frontierIndex; // 停在最后一步
+      showToast('已完成「React 从笔记到实战」全部步骤', 'success');
+    }
+    render();
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', function(){
+    if(isPendingStep()){
+      var s = STEPS[viewingIndex];
+      if(s.waitFor !== 'none' && !waitSatisfied[s.id]) return;
+    }
+    advance();
+  });
+  document.getElementById('prevBtn').addEventListener('click', function(){
+    if(viewingIndex > 0){ viewingIndex -= 1; render(); }
+  });
+
+  /* ================= 沙箱 ================= */
+  var FILES = ['src/App.jsx','src/index.js','src/styles.css'];
+  function renderIdeTabs(){
+    var wrap = document.getElementById('ideTabs');
+    wrap.innerHTML = FILES.map(function(f){
+      return '<div class="ide-tab'+(f===activeFile?' active':'')+'" data-file="'+f+'">'+
+        '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'+
+        f.split('/').pop()+'</div>';
+    }).join('');
+    wrap.querySelectorAll('.ide-tab').forEach(function(node){
+      node.addEventListener('click', function(){
+        activeFile = node.getAttribute('data-file');
+        renderIdeTabs();
+        document.getElementById('codeEditor').value = sandboxFiles[activeFile];
+      });
+    });
+  }
+
+  function injectStepCode(){
+    var s = STEPS[viewingIndex];
+    if(s.code && s.code.file){
+      sandboxFiles[s.code.file] = s.code.content;
+      if(FILES.indexOf(s.code.file) !== -1) activeFile = s.code.file;
+    }
+    renderIdeTabs();
+    document.getElementById('codeEditor').value = sandboxFiles[activeFile];
+  }
+
+  document.getElementById('codeEditor').addEventListener('input', function(e){
+    sandboxFiles[activeFile] = e.target.value;
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    var s = STEPS[viewingIndex];
+    if(s.code && s.code.file){
+      sandboxFiles[s.code.file] = s.code.content;
+      activeFile = s.code.file;
+      renderIdeTabs();
+      document.getElementById('codeEditor').value = sandboxFiles[activeFile];
+      showToast('已重置为本步骤默认代码');
+    } else {
+      showToast('该文件无默认代码可重置', 'warning');
+    }
+  });
+
+  function buildPreviewSrcdoc(){
+    var name = 'React 学习者';
+    var m = /placeholder="输入你的名字"/.test(sandboxFiles['src/App.jsx'] || '') ? '' : '';
+    return '<!doctype html><html><head><meta charset="utf-8"><style>'+
+      'body{margin:0;font-family:Inter,"Noto Sans SC",sans-serif;background:#fff;padding:20px;box-sizing:border-box;color:#10121A;}'+
+      '.card{padding:18px 20px;border-radius:12px;background:#F4F6FB;border:1px solid #E4E8F2;}'+
+      'button{margin-top:10px;height:34px;padding:0 14px;border-radius:8px;border:none;background:#4C6FFF;color:#fff;font-size:13px;font-weight:600;cursor:pointer;}'+
+      'button:hover{background:#3854E0;} h3{margin:0 0 4px;font-size:15px;} p{margin:6px 0;font-size:13px;color:#4B5468;}'+
+      '</style></head><body>'+
+      '<div class="card"><h3>Live Preview</h3><p>点击 Run 后，这里会渲染当前教程代码对应的运行效果（原型演示，非真实打包）。</p>'+
+      '<div id="counterDemo"><button id="incBtn">点击了 <span id="cnt">0</span> 次</button></div>'+
+      '</div>'+
+      '<script>var c=0;var b=document.getElementById("incBtn");if(b){b.addEventListener("click",function(){c++;document.getElementById("cnt").textContent=c;});}<\/script>'+
+      '</body></html>';
+  }
+
+  document.getElementById('runBtn').addEventListener('click', function(){
+    var msg = document.getElementById('compileMsg');
+    msg.textContent = '编译中…';
+    document.getElementById('previewFrame').style.opacity = '.4';
+    setTimeout(function(){
+      document.getElementById('previewFrame').srcdoc = buildPreviewSrcdoc();
+      document.getElementById('previewFrame').style.opacity = '1';
+      msg.textContent = '✓ 编译成功 · '+(90+Math.floor(Math.random()*80))+'ms';
+      showToast('预览已更新');
+    }, 380);
+  });
+
+  function loadSandboxSkeleton(){
+    var skel = document.getElementById('ideSkeleton');
+    var ed = document.getElementById('codeEditor');
+    skel.classList.remove('hidden');
+    ed.classList.add('hidden');
+    setTimeout(function(){
+      skel.classList.add('hidden');
+      ed.classList.remove('hidden');
+      document.getElementById('previewFrame').srcdoc = buildPreviewSrcdoc();
+    }, 550);
+  }
+
+  /* ================= 聚光灯遮罩 ================= */
+  var spotLayer = document.getElementById('spotlightLayer');
+  function clearSpotlight(){ spotLayer.classList.add('hidden'); spotLayer.innerHTML = ''; }
+
+  function paneOfSelector(sel){
+    try{
+      var el = document.querySelector(sel);
+      if(!el) return null;
+      var pane = el.closest('[data-pane]');
+      return pane ? pane.getAttribute('data-pane') : 'global';
+    }catch(e){ return null; }
+  }
+
+  function renderSpotlight(){
+    var s = STEPS[viewingIndex];
+    if(!isPendingStep() || !s.selector || waitSatisfied[s.id]){ clearSpotlight(); return; }
+
+    var isDesktop = window.innerWidth >= 1440;
+    if(!isDesktop){
+      var pane = paneOfSelector(s.selector);
+      var activeTab = document.getElementById('lessonMain').getAttribute('data-active-tab');
+      if(pane && pane !== 'global' && pane !== activeTab){
+        clearSpotlight();
+        return; // 目标被切换隐藏——由 mobileHint 提示切换视图，不渲染遮罩
+      }
+    }
+
+    var target;
+    try{ target = document.querySelector(s.selector); }catch(e){ target = null; }
+    if(!target){ clearSpotlight(); return; }
+    var rect = target.getBoundingClientRect();
+    if(rect.width === 0 && rect.height === 0){ clearSpotlight(); return; }
+
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var pad = 6;
+    var top = Math.max(rect.top - pad, 0);
+    var left = Math.max(rect.left - pad, 0);
+    var right = Math.min(rect.right + pad, vw);
+    var bottom = Math.min(rect.bottom + pad, vh);
+
+    var tipTop = top - 34;
+    var tipBelow = tipTop < 4;
+    var tipStyle = tipBelow ? 'top:'+(bottom+10)+'px;left:'+left+'px;' : 'top:'+(tipTop)+'px;left:'+left+'px;';
+
+    spotLayer.innerHTML =
+      '<div class="spot-veil" style="left:0;top:0;width:'+vw+'px;height:'+top+'px;"></div>'+
+      '<div class="spot-veil" style="left:0;top:'+bottom+'px;width:'+vw+'px;height:'+Math.max(vh-bottom,0)+'px;"></div>'+
+      '<div class="spot-veil" style="left:0;top:'+top+'px;width:'+left+'px;height:'+(bottom-top)+'px;"></div>'+
+      '<div class="spot-veil" style="left:'+right+'px;top:'+top+'px;width:'+Math.max(vw-right,0)+'px;height:'+(bottom-top)+'px;"></div>'+
+      '<div class="spot-ring" style="left:'+left+'px;top:'+top+'px;width:'+(right-left)+'px;height:'+(bottom-top)+'px;"></div>'+
+      '<div class="spot-tip" style="'+tipStyle+'">'+
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5-5 18-3-8-8-3z"/></svg>'+
+        (s.waitFor==='click' ? '点这里' : s.waitFor==='input' ? '在这里输入' : '看这里')+
+      '</div>';
+    spotLayer.classList.remove('hidden');
+  }
+
+  var resizeRAF = null;
+  window.addEventListener('resize', function(){
+    if(resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(function(){ renderSpotlight(); });
+  });
+  window.addEventListener('scroll', function(){ renderSpotlight(); }, true);
+
+  /* ================= 移动端切换提示（目标被隐藏视图挡住） ================= */
+  function renderMobileHint(){
+    var s = STEPS[viewingIndex];
+    var bar = document.getElementById('waitforBar');
+    if(window.innerWidth >= 1440) return;
+    if(!isPendingStep() || !s.selector) return;
+    var pane = paneOfSelector(s.selector);
+    var activeTab = document.getElementById('lessonMain').getAttribute('data-active-tab');
+    if(pane && pane !== 'global' && pane !== activeTab){
+      var targetLabel = pane === 'sandbox' ? '沙箱' : '讲解';
+      bar.className = 'waitfor-bar waitfor-pending mt-4 flex';
+      bar.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 12l6-6M3 12l6 6"/></svg>'+
+        '<span class="flex-1">本步操作在「'+targetLabel+'」视图中，请先切换过去</span>'+
+        '<button id="switchToTargetPane" class="h-7 px-3 rounded-md bg-warning/20 text-warning text-xs font-semibold whitespace-nowrap">切换到'+targetLabel+'</button>';
+      var btn = document.getElementById('switchToTargetPane');
+      if(btn) btn.addEventListener('click', function(){ setActiveTab(pane); });
+    }
+  }
+
+  /* ================= Tab 切换（讲解/沙箱） ================= */
+  var lessonMain = document.getElementById('lessonMain');
+  function setActiveTab(tab){
+    lessonMain.setAttribute('data-active-tab', tab);
+    document.querySelectorAll('.tab-btn').forEach(function(b){
+      var active = b.getAttribute('data-tab') === tab;
+      b.classList.toggle('bg-surface', active);
+      b.classList.toggle('text-white', active);
+      b.classList.toggle('shadow-glow', active);
+      b.classList.toggle('text-tsecondary', !active);
+    });
+    renderSpotlight();
+    renderWaitfor();
+  }
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    b.addEventListener('click', function(){ setActiveTab(b.getAttribute('data-tab')); });
+  });
+  setActiveTab('content');
+
+  /* ================= 抽屉 ================= */
+  var drawer = document.getElementById('drawer');
+  function openDrawer(){ drawer.classList.add('open'); }
+  function closeDrawer(){ drawer.classList.remove('open'); }
+  document.getElementById('drawerBtn').addEventListener('click', openDrawer);
+  document.querySelectorAll('[data-close-drawer]').forEach(function(n){ n.addEventListener('click', closeDrawer); });
+
+  /* ================= 侧栏总进度 ECharts 仪表 ================= */
+  var gaugeChart = null;
+  function renderGauge(){
+    var pct = overallRate();
+    document.getElementById('sideOverallPct').textContent = pct+'%';
+    document.getElementById('drawerOverallPct').textContent = pct+'%';
+    document.getElementById('drawerOverallBar').style.width = pct+'%';
+    var el = document.getElementById('sideGauge');
+    if(!gaugeChart){ gaugeChart = echarts.init(el, null, { renderer:'svg' }); }
+    gaugeChart.setOption({
+      backgroundColor:'transparent',
+      series:[{
+        type:'gauge', startAngle:210, endAngle:-30, min:0, max:100,
+        radius:'92%', center:['50%','62%'],
+        axisLine:{ lineStyle:{ width:8, color:[[pct/100,'#4C6FFF'],[1,'rgba(255,255,255,.08)']] } },
+        pointer:{ show:false },
+        axisTick:{ show:false }, splitLine:{ show:false }, axisLabel:{ show:false },
+        anchor:{ show:false }, progress:{ show:false },
+        detail:{ valueAnimation:true, formatter:'{value}%', color:'#22D3EE', fontSize:16, fontWeight:700, fontFamily:'Inter', offsetCenter:[0,'0%'] },
+        data:[{ value: pct }]
+      }]
+    });
+  }
+  window.addEventListener('resize', function(){ if(gaugeChart) gaugeChart.resize(); });
+
+  /* ================= 总渲染 ================= */
+  function render(){
+    renderTreeInto('treeDesktop');
+    renderTreeInto('treeDrawer');
+    renderMobileDots();
+    renderContent();
+    injectStepCode();
+    renderGauge();
+    renderWaitfor();
+    renderSpotlight();
+    renderMobileHint();
+  }
+
+  render();
+  loadSandboxSkeleton();
+})();
+</script>
+</body>

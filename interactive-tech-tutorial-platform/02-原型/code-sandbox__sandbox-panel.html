@@ -1,0 +1,946 @@
+<!-- 沙箱主面板（桌面右栏） | 代码沙箱 -->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沙箱主面板 · 代码沙箱 · TutorEngine</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+</style>
+<style>
+  /* ---------- page-specific ---------- */
+  .nav-link { color: var(--color-text-secondary); }
+  .nav-link:hover { color: var(--color-text-primary); }
+  .nav-link.active { color: var(--color-text-primary); }
+  .breath { animation: breathe 2.2s ease-in-out infinite; }
+  @keyframes breathe { 0%,100%{ opacity:1; } 50%{ opacity:.5; } }
+  .fade-in { animation: fadeIn .25s var(--ease-standard); }
+  @keyframes fadeIn { from{ opacity:0; transform: translateY(4px);} to{ opacity:1; transform: translateY(0);} }
+  .pulse-ring { animation: pulseRing 1.6s var(--ease-standard) infinite; }
+  @keyframes pulseRing { 0%{ box-shadow:0 0 0 0 rgba(16,185,129,.5);} 70%{ box-shadow:0 0 0 8px rgba(16,185,129,0);} 100%{ box-shadow:0 0 0 0 rgba(16,185,129,0);} }
+  .spin { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* IDE 沙箱容器 */
+  .ide-shell { background: #0B0E14; border: 1px solid var(--color-border); border-radius: var(--radius-card); overflow: hidden; }
+  .ide-tabbar { height: 36px; background: #0B0E14; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .ide-tab { position: relative; font-family: 'JetBrains Mono', monospace; }
+  .ide-tab.active { color: var(--color-text-primary); }
+  .ide-tab.active::after { content:''; position:absolute; left:12px; right:12px; bottom:-1px; height:2px; background: var(--color-primary); border-radius: 2px 2px 0 0; }
+  .ide-tab:not(.active) { color: var(--color-text-muted); }
+  .ide-tab:not(.active):hover { color: var(--color-text-secondary); }
+  .ide-tab .close-x { opacity: 0; }
+  .ide-tab:hover .close-x { opacity: .6; }
+
+  .editor-scroll { height: 320px; display:flex; background:#0B0E14; }
+  .editor-gutter {
+    flex: 0 0 46px; overflow: hidden; padding: 14px 8px 14px 0; text-align: right;
+    color: var(--color-text-muted); font: 12px/1.6 'JetBrains Mono', monospace; user-select:none;
+    background: rgba(255,255,255,.015); border-right: 1px solid rgba(255,255,255,.05);
+  }
+  .editor-code { position: relative; flex: 1; overflow: hidden; }
+  .editor-highlight, .editor-input {
+    position: absolute; inset: 0; margin: 0; padding: 14px 16px;
+    font: 14px/1.6 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word;
+    overflow: hidden;
+  }
+  .editor-highlight { color: var(--color-text-primary); pointer-events: none; }
+  .editor-input {
+    color: transparent; background: transparent; caret-color: #E6E9F0;
+    resize: none; border: none; outline: none; z-index: 2;
+  }
+  .tok-comment { color: #5A6172; font-style: italic; }
+  .tok-string  { color: #A5F3FC; }
+  .tok-keyword { color: #8FA3FF; font-weight: 500; }
+  .tok-hook    { color: #FDBA33; font-weight: 500; }
+  .tok-number  { color: #67E8F9; }
+  .tok-tag     { color: #8FA3FF; }
+  .tok-fn      { color: #22D3EE; }
+
+  .status-dot { width: 7px; height: 7px; border-radius: 999px; display:inline-block; }
+  .console-line { font: 12px/1.7 'JetBrains Mono', monospace; white-space: pre-wrap; word-break: break-word; }
+
+  .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  details.deps-drawer > summary { list-style: none; cursor: pointer; }
+  details.deps-drawer > summary::-webkit-details-marker { display: none; }
+  details.deps-drawer[open] .chev { transform: rotate(180deg); }
+
+  /* 编辑区宽度过窄时的水平滚动兜底：任何不该横向撑破页面的容器都用 overflow-x:auto 局部滚动 */
+  .hscroll { overflow-x: auto; }
+</style>
+</head>
+<body class="min-h-screen">
+
+  <!-- ===================== 顶部导航 ===================== -->
+  <header class="sticky top-0 z-40 border-b border-white/[.06] bg-base/85 backdrop-blur-md">
+    <div class="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
+      <div class="h-16 flex items-center justify-between gap-4">
+        <!-- Logo -->
+        <a href="guided-tour__tutorial-catalog.html" class="flex items-center gap-2.5 shrink-0">
+          <span class="w-8 h-8 rounded-lg grad-primary-accent flex items-center justify-center shadow-glow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="2.4" fill="white"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" stroke="white" stroke-width="1.6" transform="rotate(120 12 12)"/></svg>
+          </span>
+          <span class="text-sm font-bold tracking-wide hidden sm:block">TutorEngine <span class="text-text-muted font-normal">代码沙箱</span></span>
+        </a>
+
+        <!-- 主导航（代码沙箱模块内快捷跳转） -->
+        <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
+          <a href="code-sandbox__sandbox-panel.html" class="nav-link active px-3 py-2 rounded-lg bg-white/[.05]">沙箱主面板</a>
+          <a href="code-sandbox__sandbox-mobile-tab.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">移动端沙箱 Tab 视图</a>
+          <a href="code-sandbox__sandbox-error-state.html" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04]">沙箱异常态视图</a>
+
+          <!-- 站点地图下拉 -->
+          <div class="relative" id="sitemapWrap">
+            <button id="sitemapBtn" class="nav-link px-3 py-2 rounded-lg hover:bg-white/[.04] flex items-center gap-1">
+              全部页面
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="sitemapMenu" class="hidden absolute left-0 mt-2 w-[560px] max-w-[90vw] glass-card !bg-[#12151C] border border-white/10 rounded-2xl shadow-[0_16px_48px_-12px_rgba(0,0,0,.6)] p-4 grid grid-cols-2 gap-x-6 gap-y-4 z-50">
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">教程与章节目录</p>
+                <a href="tutorial-catalog__package-selection.html" class="block py-1 text-sm nav-link">主题包选择页</a>
+                <a href="tutorial-catalog__chapter-tree.html" class="block py-1 text-sm nav-link">教程详情页（目录树+概览）</a>
+                <a href="tutorial-catalog__learning-progress-overview.html" class="block py-1 text-sm nav-link">我的学习总览页</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">课程讲解与步骤导航</p>
+                <a href="lesson-reader__catalog.html" class="block py-1 text-sm nav-link">教程包目录</a>
+                <a href="lesson-reader__lesson.html" class="block py-1 text-sm nav-link">课程学习页</a>
+                <a href="lesson-reader__my-progress.html" class="block py-1 text-sm nav-link">我的学习进度</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">引导引擎</p>
+                <a href="guided-tour__tour-overlay.html" class="block py-1 text-sm nav-link">引导蒙层与聚光灯</a>
+                <a href="guided-tour__tutorial-workspace.html" class="block py-1 text-sm nav-link">教程学习工作台</a>
+                <a href="guided-tour__chapter-toc.html" class="block py-1 text-sm nav-link">章节/步骤目录树</a>
+                <a href="guided-tour__tutorial-catalog.html" class="block py-1 text-sm nav-link">教程包（主题）选择页</a>
+                <a href="guided-tour__my-progress.html" class="block py-1 text-sm nav-link">我的学习进度页</a>
+              </div>
+              <div>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">代码沙箱</p>
+                <a href="code-sandbox__sandbox-panel.html" class="block py-1 text-sm text-primary-300">沙箱主面板</a>
+                <a href="code-sandbox__sandbox-mobile-tab.html" class="block py-1 text-sm nav-link">移动端沙箱 Tab 视图</a>
+                <a href="code-sandbox__sandbox-error-state.html" class="block py-1 text-sm nav-link">沙箱异常态视图</a>
+                <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2 mt-3">学习进度与账户</p>
+                <a href="learning-progress__auth-entry.html" class="block py-1 text-sm nav-link">登录入口与登录弹窗</a>
+                <a href="learning-progress__my-learning.html" class="block py-1 text-sm nav-link">我的学习</a>
+                <a href="learning-progress__progress-indicators.html" class="block py-1 text-sm nav-link">进度标记与同步状态</a>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <!-- 右侧：主题演示切换 + 用户区 -->
+        <div class="flex items-center gap-3">
+          <button id="demoThemeToggle" class="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-white/10 text-[11px] text-text-secondary hover:bg-white/[.04]" title="仅原型演示：切换编辑器/预览面板明暗主题">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            <span id="demoThemeLabel">深色主题</span>
+          </button>
+          <div class="relative">
+            <button id="userBtn" class="flex items-center gap-2 h-9 pl-1.5 pr-3 rounded-lg border border-white/10 hover:bg-white/[.05]">
+              <span class="w-6 h-6 rounded-full grad-primary-accent flex items-center justify-center text-[11px] font-bold text-white">满</span>
+              <span class="text-sm hidden sm:block">小满</span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="userMenu" class="hidden absolute right-0 mt-2 w-56 glass-card !bg-[#12151C] border border-white/10 rounded-xl p-2 shadow-[0_16px_48px_-12px_rgba(0,0,0,.6)] z-50">
+              <div class="px-3 py-2 border-b border-white/[.06] mb-1">
+                <p class="text-sm font-medium">小满</p>
+                <p class="text-xs text-text-muted font-mono-ui">userId: u_xiaoman_001</p>
+              </div>
+              <a href="guided-tour__my-progress.html" class="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-white/[.05] text-text-secondary hover:text-text-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-4 4 4 5-6"/></svg>
+                我的学习进度
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== 主体 ===================== -->
+  <main class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
+
+    <!-- Hero -->
+    <section class="mb-6">
+      <p class="text-xs uppercase tracking-wide text-accent-400 font-semibold mb-2 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-accent-400 breath"></span>
+        代码沙箱 · 沙箱主面板（桌面右栏）
+      </p>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">多文件 Sandpack 沙箱：编辑、运行、实时预览</h1>
+      <p class="text-sm text-text-secondary mt-2 max-w-3xl">桌面 ≥768px 下，此面板作为讲解区的右栏与之并排展示；步骤切换时引擎注入 <code class="font-mono-ui text-accent-300 bg-white/[.05] px-1 py-0.5 rounded">codeSnippet</code>，按 <code class="font-mono-ui text-accent-300 bg-white/[.05] px-1 py-0.5 rounded">resetAllFiles</code> 规则覆盖或增量更新文件；下方左栏为简化的讲解区示意，用于演示两栏联动，非本组件交付范围。</p>
+    </section>
+
+    <!-- 两栏：讲解区示意（简化） + 沙箱主面板（本页交付主体） -->
+    <section class="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-5 md:gap-6 items-start">
+
+      <!-- ============ 左栏：讲解区示意 ============ -->
+      <div class="glass-card p-5 md:sticky md:top-24">
+        <p class="text-[11px] uppercase tracking-wide text-text-muted mb-3">讲解区示意 · 非本页交付范围</p>
+
+        <p class="text-xs text-text-secondary mb-1">第 2 章 · State 与 Hooks</p>
+        <h2 id="stepTitle" class="text-lg font-bold mb-2">—</h2>
+        <p id="stepDesc" class="text-sm text-text-secondary leading-relaxed mb-4 line-clamp-3">—</p>
+
+        <!-- waitFor 提示条 -->
+        <div id="waitForBar" class="rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed flex items-start gap-2 mb-5 border-warning/40 bg-warning/[.08] text-warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 mt-0.5 breath"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+          <span id="waitForText">waitFor: input — 请在右侧编辑区修改代码以继续</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="prevStepBtn" class="h-9 px-3.5 rounded-lg bg-transparent border border-white/10 text-primary-100 hover:bg-white/5 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed">
+            上一步
+          </button>
+          <button id="nextStepBtn" class="flex-1 h-9 px-3.5 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-medium shadow-glow disabled:opacity-40 disabled:cursor-not-allowed">
+            下一步
+          </button>
+        </div>
+        <p class="text-[11px] text-text-muted mt-3">步骤 <span id="stepIndexLabel">1</span> / <span id="stepTotalLabel">3</span> · 点击「下一步」观察右侧文件按 <span class="font-mono-ui">resetAllFiles</span> 规则覆盖 / 增量更新</p>
+      </div>
+
+      <!-- ============ 右栏：沙箱主面板（本页交付主体） ============ -->
+      <div class="ide-shell">
+
+        <!-- Tab 栏 -->
+        <div class="ide-tabbar flex items-center justify-between pl-1 pr-2">
+          <div id="fileTabs" class="flex items-stretch overflow-x-auto hscroll">
+            <!-- JS 渲染文件 tab -->
+          </div>
+          <div class="flex items-center gap-3 shrink-0 pl-3">
+            <span class="hidden sm:flex items-center gap-1.5 text-[11px] text-text-muted font-mono-ui">
+              template: <span class="text-text-secondary">react</span>
+            </span>
+            <span class="flex items-center gap-1.5 text-[11px] font-medium text-success">
+              <span class="w-1.5 h-1.5 rounded-full bg-success pulse-ring"></span>
+              Live Preview
+            </span>
+            <button id="resetBtn" title="重置当前步骤代码" class="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-danger hover:bg-danger/10">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 编辑区 -->
+        <div class="editor-scroll">
+          <div id="editorGutter" class="editor-gutter">1</div>
+          <div class="editor-code">
+            <pre id="editorHighlight" class="editor-highlight" aria-hidden="true"><code></code></pre>
+            <textarea id="editorInput" class="editor-input" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          </div>
+        </div>
+
+        <!-- 操作条：Run + 状态 + 依赖 -->
+        <div class="flex flex-wrap items-center gap-3 px-3.5 py-3 border-t border-white/[.06] bg-white/[.015]">
+          <button id="runBtn" class="h-9 px-4 rounded-lg bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold shadow-glow flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none">
+            <svg id="runIcon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span id="runBtnText">运行代码</span>
+          </button>
+
+          <span id="runStatus" class="flex items-center gap-1.5 text-xs text-text-muted">
+            <span class="status-dot bg-text-muted" style="background:var(--color-text-muted)"></span>
+            <span id="runStatusText">就绪，未运行</span>
+          </span>
+
+          <div class="ml-auto flex items-center gap-2 text-[11px] text-text-muted">
+            <span id="codeChangeBadge" class="hidden items-center gap-1 px-2 py-1 rounded-md bg-primary-500/10 text-primary-300 border border-primary-500/20">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
+              已修改未运行
+            </span>
+          </div>
+        </div>
+
+        <!-- 依赖 / 控制台 信息条（可展开） -->
+        <details class="deps-drawer border-t border-white/[.06]">
+          <summary class="flex items-center justify-between px-3.5 py-2.5 hover:bg-white/[.02]">
+            <span class="flex items-center gap-2 text-xs text-text-secondary">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+              依赖与控制台
+              <span id="depsCount" class="text-text-muted font-mono-ui">(2 deps)</span>
+            </span>
+            <svg class="chev text-text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="px-3.5 pb-3.5 pt-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2">依赖包（只读，随 template 固定）</p>
+              <div id="depsList" class="space-y-1.5"></div>
+            </div>
+            <div>
+              <p class="text-[11px] uppercase tracking-wide text-text-muted mb-2 flex items-center justify-between">
+                <span>控制台输出</span>
+                <button id="clearConsoleBtn" class="text-text-muted hover:text-text-secondary normal-case font-normal">清空</button>
+              </p>
+              <div id="consoleLog" class="bg-black/30 rounded-lg border border-white/[.06] p-2.5 h-28 overflow-y-auto space-y-1"></div>
+            </div>
+          </div>
+        </details>
+
+        <!-- 预览面板 -->
+        <div class="border-t border-white/[.06]">
+          <div class="flex items-center justify-between px-3.5 py-2 bg-white/[.015]">
+            <span class="text-xs font-medium text-text-secondary flex items-center gap-1.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              预览
+            </span>
+            <div class="flex items-center gap-1">
+              <button id="refreshPreviewBtn" title="刷新预览" class="w-7 h-7 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-white/5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="relative bg-white h-72">
+            <iframe id="previewFrame" class="w-full h-full border-0" title="沙箱实时预览" sandbox="allow-scripts allow-same-origin"></iframe>
+            <div id="previewIdle" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0B0E14] text-text-muted">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 5v14l11-7z"/></svg>
+              <p class="text-xs">点击「运行代码」查看效果</p>
+            </div>
+            <div id="previewLoading" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0B0E14]/95 text-text-secondary">
+              <svg class="spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-9-9"/></svg>
+              <p class="text-xs">Sandpack 打包中…</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 状态快照：用于校验数据契约 -->
+    <section class="mt-8 glass-card p-5 md:p-6">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="w-9 h-9 rounded-xl bg-accent-500/10 border border-accent-500/20 flex items-center justify-center shrink-0">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.8"><path d="M9 3H5a2 2 0 00-2 2v4M15 3h4a2 2 0 012 2v4M9 21H5a2 2 0 01-2-2v-4M15 21h4a2 2 0 002-2v-4"/></svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-text-primary">沙箱状态快照（用于校验数据契约）</p>
+          <p class="text-xs text-text-secondary">实时反映当前面板持有的核心字段，随交互同步更新，便于对照引擎注入的 <span class="font-mono-ui text-accent-300">codeSnippet</span> 是否按预期生效。</p>
+        </div>
+      </div>
+      <pre id="stateSnapshot" class="bg-black/30 border border-white/[.06] rounded-lg p-4 text-[11.5px] leading-relaxed overflow-x-auto font-mono-ui text-accent-200"></pre>
+    </section>
+
+  </main>
+
+  <script>
+    // ==================================================================
+    // 数据：三个教学步骤的 TutorialPackage.codeSnippet 片段（拟真数据）
+    // 字段：title / desc / waitFor / codeSnippet:{ files, activeFile, resetAllFiles }
+    // ==================================================================
+    const dependencies = { react: '^18.2.0', 'react-dom': '^18.2.0' };
+    const sandboxTemplate = 'react';
+
+    const steps = [
+      {
+        title: '2.1 创建 Counter 组件骨架',
+        desc: '先搭好组件结构：App 渲染一个 Counter 按钮，此时点击次数还是写死的 0，下一步我们再用 useState 让它真正动起来。',
+        waitFor: 'input',
+        codeSnippet: {
+          resetAllFiles: true,
+          activeFile: 'Counter.jsx',
+          files: {
+            'App.js':
+`import Counter from './Counter';
+import './styles.css';
+
+export default function App() {
+  return (
+    <div className="app">
+      <h1>React useState 练习</h1>
+      <Counter />
+    </div>
+  );
+}`,
+            'Counter.jsx':
+`export default function Counter() {
+  // TODO: 用 useState 记录点击次数
+  return (
+    <button className="counter-btn">
+      点击次数：0
+    </button>
+  );
+}`,
+            'styles.css':
+`.app {
+  font-family: sans-serif;
+  padding: 24px;
+  color: #1f2937;
+}
+.counter-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #4C6FFF;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}`,
+            'index.js':
+`import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);`
+          }
+        }
+      },
+      {
+        title: '2.2 引入 useState 管理点击次数',
+        desc: '只增量更新 Counter.jsx 一个文件——App.js / styles.css 即使你刚才改过也会原样保留，这就是 resetAllFiles:false 的增量合并规则。',
+        waitFor: 'input',
+        codeSnippet: {
+          resetAllFiles: false,
+          activeFile: 'Counter.jsx',
+          files: {
+            'Counter.jsx':
+`import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <button className="counter-btn" onClick={() => setCount(count + 1)}>
+      点击次数：{count}
+    </button>
+  );
+}`
+          }
+        }
+      },
+      {
+        title: '2.3 条件渲染 + 拆出 Badge 组件',
+        desc: '这一步 resetAllFiles:true，全部文件整体替换为新版本，并新增 Badge.jsx——观察左侧文件 Tab 会多出一个新文件。',
+        waitFor: 'input',
+        codeSnippet: {
+          resetAllFiles: true,
+          activeFile: 'Badge.jsx',
+          files: {
+            'App.js':
+`import Counter from './Counter';
+import './styles.css';
+
+export default function App() {
+  return (
+    <div className="app">
+      <h1>React useState 练习</h1>
+      <Counter />
+    </div>
+  );
+}`,
+            'Counter.jsx':
+`import { useState } from 'react';
+import Badge from './Badge';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <div>
+      <button className="counter-btn" onClick={() => setCount(count + 1)}>
+        点击次数：{count}
+      </button>
+      {count >= 5 && <Badge text="已解锁：手速达人" />}
+    </div>
+  );
+}`,
+            'Badge.jsx':
+`export default function Badge({ text }) {
+  return <span className="badge">{text}</span>;
+}`,
+            'styles.css':
+`.app {
+  font-family: sans-serif;
+  padding: 24px;
+  color: #1f2937;
+}
+.counter-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #4C6FFF;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #FDBA33;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+}`,
+            'index.js':
+`import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);`
+          }
+        }
+      }
+    ];
+
+    // ==================================================================
+    // 运行时状态
+    // ==================================================================
+    let stepIndex = 0;
+    let currentFiles = {};      // 当前所有文件内容（含用户编辑）
+    let stepBaseline = {};      // 当前步骤的“初始内容”快照，供重置按钮还原
+    let activeFile = '';
+    let isRunning = false;
+    let theme = 'dark';
+    let consoleLogs = [];
+
+    const $ = (id) => document.getElementById(id);
+    const clone = (o) => JSON.parse(JSON.stringify(o));
+
+    function fileLang(name) {
+      if (name.endsWith('.css')) return 'css';
+      return 'jsx';
+    }
+
+    function esc(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function highlightJS(code) {
+      const e = esc(code);
+      const re = /(\/\/[^\n]*)|(\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|(&lt;\/?[A-Za-z][\w.]*)|(\buse[A-Z]\w*\b)|(\b(?:import|export|default|from|const|let|var|function|return|if|else|for|while|new|class|extends|this|typeof|of|in|null|undefined|true|false)\b)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_$][\w$]*(?=\())/g;
+      return e.replace(re, (m, c1, c2, str, tag, hook, kw, num, fn) => {
+        if (c1 || c2) return `<span class="tok-comment">${m}</span>`;
+        if (str) return `<span class="tok-string">${m}</span>`;
+        if (tag) return `<span class="tok-tag">${m}</span>`;
+        if (hook) return `<span class="tok-hook">${m}</span>`;
+        if (kw) return `<span class="tok-keyword">${m}</span>`;
+        if (num) return `<span class="tok-number">${m}</span>`;
+        if (fn) return `<span class="tok-fn">${m}</span>`;
+        return m;
+      });
+    }
+
+    function highlightCSS(code) {
+      const e = esc(code);
+      const re = /(\/\*[\s\S]*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(#[0-9a-fA-F]{3,8}\b)|(-?\d*\.?\d+(?:px|em|rem|%|deg|ms|s)?\b)|([.\w-]+)(?=\s*:)|([.#]?[\w-]+)(?=\s*\{)/g;
+      return e.replace(re, (m, comment, str, hex, num, prop, sel) => {
+        if (comment) return `<span class="tok-comment">${m}</span>`;
+        if (str) return `<span class="tok-string">${m}</span>`;
+        if (hex) return `<span class="tok-number">${m}</span>`;
+        if (num) return `<span class="tok-number">${m}</span>`;
+        if (prop) return `<span class="tok-fn">${m}</span>`;
+        if (sel) return `<span class="tok-tag">${m}</span>`;
+        return m;
+      });
+    }
+
+    function highlight(code, name) {
+      return fileLang(name) === 'css' ? highlightCSS(code) : highlightJS(code);
+    }
+
+    function renderGutter(code) {
+      const n = code.split('\n').length;
+      let out = '';
+      for (let i = 1; i <= n; i++) out += i + '\n';
+      $('editorGutter').textContent = out;
+    }
+
+    function renderEditor() {
+      const code = currentFiles[activeFile] || '';
+      $('editorInput').value = code;
+      $('editorHighlight').querySelector('code').innerHTML = highlight(code, activeFile) + '\n';
+      renderGutter(code);
+      syncScroll();
+    }
+
+    function syncScroll() {
+      const ta = $('editorInput');
+      $('editorHighlight').scrollTop = ta.scrollTop;
+      $('editorHighlight').scrollLeft = ta.scrollLeft;
+      $('editorGutter').scrollTop = ta.scrollTop;
+    }
+
+    function renderTabs() {
+      const wrap = $('fileTabs');
+      wrap.innerHTML = '';
+      Object.keys(currentFiles).forEach((name) => {
+        const tab = document.createElement('button');
+        tab.className = 'ide-tab h-9 px-4 text-xs flex items-center gap-2 shrink-0' + (name === activeFile ? ' active' : '');
+        tab.innerHTML = `<span>${name}</span>`;
+        tab.addEventListener('click', () => {
+          activeFile = name;
+          renderTabs();
+          renderEditor();
+          updateWaitForState();
+          renderSnapshot();
+        });
+        wrap.appendChild(tab);
+      });
+    }
+
+    function updateWaitForState() {
+      const changed = currentFiles[activeFile] !== stepBaseline[activeFile];
+      const bar = $('waitForBar');
+      const text = $('waitForText');
+      const badge = $('codeChangeBadge');
+      if (changed) {
+        bar.className = 'rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed flex items-start gap-2 mb-5 border-success/40 bg-success/[.08] text-success';
+        text.textContent = 'waitFor: input — 已检测到代码修改，可继续下一步';
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+      } else {
+        bar.className = 'rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed flex items-start gap-2 mb-5 border-warning/40 bg-warning/[.08] text-warning';
+        text.textContent = 'waitFor: input — 请在右侧编辑区修改代码以继续';
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+      }
+    }
+
+    function renderDeps() {
+      const list = $('depsList');
+      list.innerHTML = '';
+      Object.entries(dependencies).forEach(([name, ver]) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between text-xs bg-surface-2 border border-white/[.06] rounded-lg px-2.5 py-1.5';
+        row.innerHTML = `
+          <span class="font-mono-ui text-text-primary">${name}</span>
+          <span class="flex items-center gap-1.5 text-text-muted font-mono-ui">
+            ${ver}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+          </span>`;
+        list.appendChild(row);
+      });
+      $('depsCount').textContent = `(${Object.keys(dependencies).length} deps)`;
+    }
+
+    function pushConsole(level, text) {
+      consoleLogs.push({ level, text, t: new Date() });
+      if (consoleLogs.length > 60) consoleLogs.shift();
+      renderConsole();
+    }
+
+    function renderConsole() {
+      const box = $('consoleLog');
+      const colorMap = { log: 'text-text-secondary', warn: 'text-warning', error: 'text-danger', info: 'text-accent-300' };
+      box.innerHTML = consoleLogs.map(l => {
+        const hh = String(l.t.getHours()).padStart(2, '0');
+        const mm = String(l.t.getMinutes()).padStart(2, '0');
+        const ss = String(l.t.getSeconds()).padStart(2, '0');
+        return `<div class="console-line ${colorMap[l.level] || 'text-text-secondary'}"><span class="text-text-muted">${hh}:${mm}:${ss}</span>  ${esc(l.text)}</div>`;
+      }).join('') || '<p class="text-xs text-text-muted">暂无输出，点击「运行代码」查看控制台日志</p>';
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function setRunStatus(kind) {
+      const dot = $('runStatus').querySelector('.status-dot');
+      const text = $('runStatusText');
+      const map = {
+        idle:    { color: 'var(--color-text-muted)',   label: '就绪，未运行' },
+        loading: { color: 'var(--color-warning)',       label: '打包运行中…' },
+        success: { color: 'var(--color-success)',       label: '运行成功' },
+        error:   { color: 'var(--color-danger)',        label: '运行失败，见控制台' }
+      };
+      const s = map[kind];
+      dot.style.background = s.color;
+      text.style.color = kind === 'idle' ? '' : s.color;
+      text.textContent = s.label;
+    }
+
+    function stripModule(src) {
+      return src
+        .replace(/^import\s+.*from\s+['"].*['"];?\s*$/gm, '')
+        .replace(/^import\s+['"].*['"];?\s*$/gm, '')
+        .replace(/export\s+default\s+/g, '')
+        .replace(/^export\s+/gm, '');
+    }
+
+    function buildSrcDoc(files, themeMode) {
+      const appSrc = stripModule(files['App.js'] || '');
+      const counterSrc = stripModule(files['Counter.jsx'] || '');
+      const badgeSrc = files['Badge.jsx'] ? stripModule(files['Badge.jsx']) : '';
+      const css = files['styles.css'] || '';
+      const dark = themeMode === 'dark';
+      const bg = dark ? '#0B0E14' : '#ffffff';
+      const fg = dark ? '#E6E9F0' : '#111827';
+      return `<!doctype html><html><head><meta charset="utf-8">
+<script src="https://unpkg.com/react@18/umd/react.development.js"><\/script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+<style>
+  body{margin:0;font-family:Inter,'Noto Sans SC',sans-serif;background:${bg};color:${fg};}
+  ${css}
+</style></head><body>
+<div id="root"></div>
+<script>
+(function(){
+  var origLog = console.log, origErr = console.error, origWarn = console.warn;
+  function post(level, args){ try{ parent.postMessage({__sandboxConsole:true, level:level, text: args.map(function(a){ try{ return typeof a==='object' ? JSON.stringify(a) : String(a); } catch(e){ return String(a); } }).join(' ')}, '*'); }catch(e){} }
+  console.log = function(){ post('log', Array.prototype.slice.call(arguments)); origLog.apply(console, arguments); };
+  console.warn = function(){ post('warn', Array.prototype.slice.call(arguments)); origWarn.apply(console, arguments); };
+  console.error = function(){ post('error', Array.prototype.slice.call(arguments)); origErr.apply(console, arguments); };
+  window.addEventListener('error', function(e){ post('error', [e.message]); });
+})();
+<\/script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+${badgeSrc}
+${counterSrc}
+${appSrc}
+try {
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  console.log('[sandbox] 渲染成功');
+} catch (e) {
+  document.getElementById('root').innerHTML = '<pre style="color:#EF4444;font-family:monospace;white-space:pre-wrap;padding:16px;">' + (e && e.message ? e.message : e) + '<\/pre>';
+  console.error(e && e.message ? e.message : String(e));
+}
+<\/script>
+</body></html>`;
+    }
+
+    function runSandbox() {
+      if (isRunning) return;
+      isRunning = true;
+      $('runBtn').disabled = true;
+      $('previewIdle').classList.add('hidden');
+      $('previewLoading').classList.remove('hidden');
+      setRunStatus('loading');
+      pushConsole('info', '[sandbox] 正在打包（Babel 转译 JSX）…');
+      renderSnapshot();
+
+      window.__sandboxRunFailed = false;
+      const frame = $('previewFrame');
+      const themeAtRun = theme;
+
+      setTimeout(() => {
+        frame.srcdoc = buildSrcDoc(currentFiles, themeAtRun);
+        frame.onload = () => {
+          setTimeout(() => {
+            $('previewLoading').classList.add('hidden');
+            isRunning = false;
+            $('runBtn').disabled = false;
+            setRunStatus(window.__sandboxRunFailed ? 'error' : 'success');
+            if (!window.__sandboxRunFailed) pushConsole('log', '[sandbox] 编译并挂载完成');
+            renderSnapshot();
+          }, 250);
+        };
+      }, 450);
+    }
+
+    window.addEventListener('message', (e) => {
+      const d = e.data;
+      if (d && d.__sandboxConsole) {
+        pushConsole(d.level, d.text);
+        if (d.level === 'error') window.__sandboxRunFailed = true;
+      }
+    });
+
+    function renderSnapshot() {
+      const snap = {
+        sandboxTemplate,
+        activeFile,
+        isRunning,
+        theme,
+        dependencies,
+        'codeSnippet.resetAllFiles': steps[stepIndex].codeSnippet.resetAllFiles,
+        currentFiles: Object.fromEntries(Object.entries(currentFiles).map(([k, v]) => [k, `${v.length} 字符`]))
+      };
+      $('stateSnapshot').textContent = JSON.stringify(snap, null, 2);
+    }
+
+    function loadStep(idx) {
+      const step = steps[idx];
+      if (step.codeSnippet.resetAllFiles) {
+        currentFiles = clone(step.codeSnippet.files);
+      } else {
+        currentFiles = Object.assign({}, currentFiles, clone(step.codeSnippet.files));
+      }
+      stepBaseline = clone(currentFiles);
+      activeFile = step.codeSnippet.activeFile || Object.keys(currentFiles)[0];
+      stepIndex = idx;
+
+      $('stepTitle').textContent = step.title;
+      $('stepDesc').textContent = step.desc;
+      $('stepIndexLabel').textContent = idx + 1;
+      $('stepTotalLabel').textContent = steps.length;
+      $('prevStepBtn').disabled = idx === 0;
+      $('nextStepBtn').disabled = idx === steps.length - 1;
+      $('nextStepBtn').textContent = idx === steps.length - 1 ? '已是最后一步' : '下一步';
+
+      renderTabs();
+      renderEditor();
+      updateWaitForState();
+
+      // 新步骤注入后，预览回到“未运行”态，等待学习者点击 Run
+      $('previewFrame').srcdoc = '';
+      $('previewLoading').classList.add('hidden');
+      $('previewIdle').classList.remove('hidden');
+      setRunStatus('idle');
+      pushConsole('info', `[engine] 已注入 codeSnippet · resetAllFiles=${step.codeSnippet.resetAllFiles}`);
+      renderSnapshot();
+    }
+
+    // ------------------------------------------------------------------
+    // 事件绑定
+    // ------------------------------------------------------------------
+    $('editorInput').addEventListener('input', (e) => {
+      currentFiles[activeFile] = e.target.value;
+      $('editorHighlight').querySelector('code').innerHTML = highlight(e.target.value, activeFile) + '\n';
+      renderGutter(e.target.value);
+      updateWaitForState();
+      renderSnapshot();
+    });
+    $('editorInput').addEventListener('scroll', syncScroll);
+
+    $('runBtn').addEventListener('click', runSandbox);
+    $('refreshPreviewBtn').addEventListener('click', () => { if (!isRunning) runSandbox(); });
+
+    $('resetBtn').addEventListener('click', () => {
+      currentFiles = clone(stepBaseline);
+      renderEditor();
+      updateWaitForState();
+      pushConsole('info', '[sandbox] 已重置为当前步骤默认代码');
+      renderSnapshot();
+    });
+
+    $('clearConsoleBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      consoleLogs = [];
+      renderConsole();
+    });
+
+    $('prevStepBtn').addEventListener('click', () => { if (stepIndex > 0) loadStep(stepIndex - 1); });
+    $('nextStepBtn').addEventListener('click', () => { if (stepIndex < steps.length - 1) loadStep(stepIndex + 1); });
+
+    // 主题切换（演示：跟随平台明暗模式切换编辑器与预览面板主题）
+    $('demoThemeToggle').addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      $('demoThemeLabel').textContent = theme === 'dark' ? '深色主题' : '浅色主题';
+      renderSnapshot();
+      pushConsole('info', `[engine] theme -> ${theme}（下一次 Run 后预览面板生效）`);
+    });
+
+    // 用户菜单
+    $('userBtn').addEventListener('click', () => $('userMenu').classList.toggle('hidden'));
+    document.addEventListener('click', (e) => {
+      if (!$('userBtn').contains(e.target) && !$('userMenu').contains(e.target)) $('userMenu').classList.add('hidden');
+    });
+
+    // 站点地图下拉
+    $('sitemapBtn').addEventListener('click', () => $('sitemapMenu').classList.toggle('hidden'));
+    document.addEventListener('click', (e) => {
+      if (!$('sitemapWrap').contains(e.target)) $('sitemapMenu').classList.add('hidden');
+    });
+
+    // ------------------------------------------------------------------
+    // 初始化
+    // ------------------------------------------------------------------
+    renderDeps();
+    renderConsole();
+    loadStep(0);
+  </script>
+
+</body>
+</html>

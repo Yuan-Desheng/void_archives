@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>进度标记与同步状态（嵌入式规范） · TutorLab 教程引擎</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FF', 100: '#DCE3FF', 200: '#B9C7FF', 300: '#8FA3FF',
+            400: '#6B85FF', 500: '#4C6FFF', 600: '#3854E0', 700: '#2A3FB8',
+            800: '#202F8C', 900: '#182468', DEFAULT: '#4C6FFF'
+          },
+          accent: {
+            50: '#ECFEFF', 100: '#CFFAFE', 200: '#A5F3FC', 300: '#67E8F9',
+            400: '#22D3EE', 500: '#06B6D4', 600: '#0891B2', 700: '#0E7490',
+            800: '#155E75', 900: '#164E63', DEFAULT: '#22D3EE'
+          },
+          spotlight: { DEFAULT: '#FDBA33', 400: '#FDBA33', 500: '#F59E0B' },
+          success: { DEFAULT: '#10B981', 500: '#10B981' },
+          warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+          danger:  { DEFAULT: '#EF4444', 500: '#EF4444' },
+          surface: { DEFAULT: '#12151C', 2: '#1A1E27' },
+          base: '#0A0C10'
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', 'ui-sans-serif', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        },
+        boxShadow: {
+          glow: '0 0 24px -4px rgba(76,111,255,.45)',
+          'glow-accent': '0 0 24px -4px rgba(34,211,238,.45)',
+          spotlight: '0 0 0 4px #FDBA33, 0 0 32px 8px rgba(253,186,51,.35)'
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --color-bg-base: #0A0C10;
+    --color-bg-surface: #12151C;
+    --color-bg-surface-2: #1A1E27;
+    --color-border: rgba(255,255,255,.06);
+    --color-border-strong: rgba(255,255,255,.12);
+    --color-text-primary: #E6E9F0;
+    --color-text-secondary: #8B93A7;
+    --color-text-muted: #5A6172;
+    --color-primary: #4C6FFF;
+    --color-accent: #22D3EE;
+    --color-spotlight: #FDBA33;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --radius-card: 16px;
+    --radius-control: 8px;
+    --ease-standard: cubic-bezier(.4,0,.2,1);
+  }
+  html { color-scheme: dark; }
+  body {
+    background-color: var(--color-bg-base);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 10% -10%, rgba(76,111,255,.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(34,211,238,.08), transparent);
+    background-attachment: fixed;
+    color: var(--color-text-primary);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(76,111,255,.35); color: #fff; }
+  * { transition-property: color, background-color, border-color, box-shadow, transform, opacity; transition-duration: 200ms; transition-timing-function: var(--ease-standard); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.24); background-clip: padding-box; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+
+  code, pre, .font-mono-ui { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .glass-card {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+  .glass-card:hover { border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); transform: translateY(-2px); }
+
+  .grad-primary-accent {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  }
+  .text-grad {
+    background-image: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .spotlight-mask { backdrop-filter: blur(4px); background: rgba(0,0,0,.7); }
+  .spotlight-ring { box-shadow: 0 0 0 4px var(--color-spotlight), 0 0 32px 8px rgba(253,186,51,.35); border-radius: 8px; }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-theme="light"] body { background-color: #F4F6FB; color: #10121A; }
+  }
+
+  .btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; height:2.5rem; padding:0 1.1rem; border-radius:8px; background:var(--color-primary); color:#fff; font-size:.875rem; font-weight:600; box-shadow:0 0 24px -4px rgba(76,111,255,.45); }
+  .btn-primary:hover { background:#3854E0; transform: translateY(-1px); }
+  .btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; height:2.5rem; padding:0 1.1rem; border-radius:8px; background:transparent; border:1px solid rgba(255,255,255,.1); color:#DCE3FF; font-size:.875rem; font-weight:500; }
+  .btn-secondary:hover { background:rgba(255,255,255,.05); }
+  .btn-ghost { color:var(--color-text-secondary); font-size:.8125rem; }
+  .btn-ghost:hover { color:var(--color-accent); }
+  .btn-primary:disabled, .btn-secondary:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-primary:disabled:hover, .btn-secondary:disabled:hover { transform:none; }
+
+  .card-hover-lift:hover { transform: translateY(-2px); border-color: rgba(76,111,255,.35); box-shadow: 0 0 24px -4px rgba(76,111,255,.45); }
+
+  .dropdown-panel { opacity:0; visibility:hidden; transform: translateY(-6px); transition: opacity 160ms ease, transform 160ms ease, visibility 160ms; }
+  .dropdown-panel.open { opacity:1; visibility:visible; transform: translateY(0); }
+
+  @keyframes breathe { 0%,100% { opacity:1; } 50% { opacity:.55; } }
+  .animate-breathe { animation: breathe 2s ease-in-out infinite; }
+
+  @keyframes spin-slow { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+  .animate-spin-slow { animation: spin-slow 1.1s linear infinite; }
+
+  @keyframes pop-in { 0% { transform: scale(.5); opacity:0; } 60% { transform: scale(1.15); opacity:1; } 100% { transform: scale(1); } }
+  .animate-pop { animation: pop-in 320ms var(--ease-standard); }
+
+  @keyframes fade-up { 0% { opacity:0; transform: translateY(4px); } 100% { opacity:1; transform: translateY(0); } }
+  .animate-fade-up { animation: fade-up 220ms var(--ease-standard); }
+
+  .step-row { cursor: pointer; }
+  .step-row.is-locked { cursor: not-allowed; }
+  .step-row:hover:not(.is-locked) { background: rgba(255,255,255,.035); }
+  .step-row.is-current .step-dot { animation: breathe 2s ease-in-out infinite; }
+
+  .field-badge { font-family:'JetBrains Mono', monospace; font-size:.6875rem; padding:.15rem .5rem; border-radius:6px; }
+
+  .anno-num { width:1.25rem; height:1.25rem; border-radius:9999px; display:inline-flex; align-items:center; justify-content:center; font-size:.625rem; font-weight:800; flex-shrink:0; background:rgba(76,111,255,.15); border:1px solid rgba(76,111,255,.4); color:#B9C7FF; }
+
+  .tooltip-pop { opacity:0; visibility:hidden; transform: translateY(4px); transition: opacity 160ms ease, transform 160ms ease, visibility 160ms; pointer-events:none; }
+  .group:hover .tooltip-pop, .tooltip-pop.force-show { opacity:1; visibility:visible; transform: translateY(0); pointer-events:auto; }
+
+  .toc-link.active { color: var(--color-accent); border-color: rgba(34,211,238,.4); background: rgba(34,211,238,.08); }
+
+  .toast-item { animation: fade-up 220ms var(--ease-standard); }
+</style>
+</head>
+<body class="min-h-screen pb-24">
+
+<!-- ============ 顶部导航 ============ -->
+<header class="sticky top-0 z-40 border-b border-white/[.06] bg-[#0A0C10]/85 backdrop-blur-md">
+  <div class="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
+    <div class="h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-8">
+        <a href="tutorial-catalog__package-selection.html" class="flex items-center gap-2 shrink-0">
+          <span class="w-8 h-8 rounded-lg grad-primary-accent grid place-items-center shadow-glow">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="font-bold text-[15px] tracking-tight">TutorLab<span class="text-grad">引擎</span></span>
+        </a>
+
+        <nav class="hidden lg:flex items-center gap-1" id="nav-groups">
+          <div class="relative nav-group">
+            <button class="nav-trigger flex items-center gap-1 h-9 px-3 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">
+              教程与章节目录
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="chevron"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="dropdown-panel absolute left-0 top-full mt-2 w-64 glass-card !bg-[#12151C] p-2 shadow-2xl">
+              <a href="tutorial-catalog__package-selection.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">主题包选择页</a>
+              <a href="tutorial-catalog__chapter-tree.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">教程详情页（目录树+概览）</a>
+              <a href="tutorial-catalog__learning-progress-overview.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">我的学习总览页</a>
+            </div>
+          </div>
+          <div class="relative nav-group">
+            <button class="nav-trigger flex items-center gap-1 h-9 px-3 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">
+              课程讲解与步骤导航
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="chevron"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="dropdown-panel absolute left-0 top-full mt-2 w-64 glass-card !bg-[#12151C] p-2 shadow-2xl">
+              <a href="lesson-reader__catalog.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">教程包目录</a>
+              <a href="lesson-reader__lesson.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">课程学习页</a>
+              <a href="lesson-reader__my-progress.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">我的学习进度</a>
+            </div>
+          </div>
+          <div class="relative nav-group">
+            <button class="nav-trigger flex items-center gap-1 h-9 px-3 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">
+              引导引擎
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="chevron"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="dropdown-panel absolute left-0 top-full mt-2 w-64 glass-card !bg-[#12151C] p-2 shadow-2xl">
+              <a href="guided-tour__tour-overlay.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">引导蒙层与聚光灯</a>
+              <a href="guided-tour__tutorial-workspace.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">教程学习工作台</a>
+              <a href="guided-tour__chapter-toc.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">章节/步骤目录树</a>
+              <a href="guided-tour__tutorial-catalog.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">教程包（主题）选择页</a>
+              <a href="guided-tour__my-progress.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">我的学习进度页</a>
+            </div>
+          </div>
+          <div class="relative nav-group">
+            <button class="nav-trigger flex items-center gap-1 h-9 px-3 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">
+              代码沙箱
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="chevron"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="dropdown-panel absolute left-0 top-full mt-2 w-64 glass-card !bg-[#12151C] p-2 shadow-2xl">
+              <a href="code-sandbox__sandbox-panel.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">沙箱主面板（桌面右栏）</a>
+              <a href="code-sandbox__sandbox-mobile-tab.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">移动端沙箱 Tab 视图</a>
+              <a href="code-sandbox__sandbox-error-state.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">沙箱异常态视图</a>
+            </div>
+          </div>
+          <div class="relative nav-group">
+            <button class="nav-trigger flex items-center gap-1 h-9 px-3 rounded-lg text-sm text-primary-200 bg-white/5">
+              学习进度与账户
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="chevron"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="dropdown-panel absolute left-0 top-full mt-2 w-64 glass-card !bg-[#12151C] p-2 shadow-2xl">
+              <a href="learning-progress__auth-entry.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">登录入口与登录弹窗</a>
+              <a href="learning-progress__my-learning.html" class="block px-3 py-2 rounded-lg text-sm text-secondary hover:text-primary-100 hover:bg-white/5">我的学习</a>
+              <a href="learning-progress__progress-indicators.html" class="block px-3 py-2 rounded-lg text-sm text-white bg-primary-500/15 border border-primary-500/30">进度标记与同步状态</a>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div id="nav-user" class="flex items-center gap-3">
+          <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-muted">
+            <span class="w-1.5 h-1.5 rounded-full bg-success"></span>已同步 · 09:42
+          </span>
+          <div class="flex items-center gap-2 pl-3 border-l border-white/[.08]">
+            <div class="w-8 h-8 rounded-full grad-primary-accent grid place-items-center text-xs font-bold text-white">崔</div>
+            <span class="hidden md:inline text-sm text-primary-100">演示用户</span>
+          </div>
+        </div>
+        <button class="lg:hidden w-9 h-9 grid place-items-center rounded-lg border border-white/10 text-secondary" id="mobile-nav-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="mobile-nav" class="hidden lg:hidden pb-4 space-y-1 border-t border-white/[.06] pt-3">
+      <p class="text-[10px] uppercase tracking-wide text-muted px-2 pb-1">教程与章节目录</p>
+      <a href="tutorial-catalog__package-selection.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">主题包选择页</a>
+      <a href="tutorial-catalog__chapter-tree.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">教程详情页</a>
+      <a href="tutorial-catalog__learning-progress-overview.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">我的学习总览页</a>
+      <p class="text-[10px] uppercase tracking-wide text-muted px-2 pb-1 pt-2">课程讲解与步骤导航</p>
+      <a href="lesson-reader__catalog.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">教程包目录</a>
+      <a href="lesson-reader__lesson.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">课程学习页</a>
+      <a href="lesson-reader__my-progress.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">我的学习进度</a>
+      <p class="text-[10px] uppercase tracking-wide text-muted px-2 pb-1 pt-2">引导引擎</p>
+      <a href="guided-tour__tour-overlay.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">引导蒙层与聚光灯</a>
+      <a href="guided-tour__tutorial-workspace.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">教程学习工作台</a>
+      <a href="guided-tour__chapter-toc.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">章节/步骤目录树</a>
+      <a href="guided-tour__tutorial-catalog.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">教程包选择页</a>
+      <a href="guided-tour__my-progress.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">我的学习进度页</a>
+      <p class="text-[10px] uppercase tracking-wide text-muted px-2 pb-1 pt-2">代码沙箱</p>
+      <a href="code-sandbox__sandbox-panel.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">沙箱主面板</a>
+      <a href="code-sandbox__sandbox-mobile-tab.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">移动端沙箱 Tab 视图</a>
+      <a href="code-sandbox__sandbox-error-state.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">沙箱异常态视图</a>
+      <p class="text-[10px] uppercase tracking-wide text-muted px-2 pb-1 pt-2">学习进度与账户</p>
+      <a href="learning-progress__auth-entry.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">登录入口与登录弹窗</a>
+      <a href="learning-progress__my-learning.html" class="block px-2 py-2 rounded-lg text-sm text-secondary hover:bg-white/5">我的学习</a>
+      <a href="learning-progress__progress-indicators.html" class="block px-2 py-2 rounded-lg text-sm text-white bg-primary-500/15 border border-primary-500/30">进度标记与同步状态</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 页面主体 ============ -->
+<main class="max-w-[1280px] mx-auto px-4 md:px-6 lg:px-8 pt-8">
+
+  <!-- 面包屑 -->
+  <div class="flex items-center gap-1.5 text-xs text-muted mb-4">
+    <a href="learning-progress__my-learning.html" class="hover:text-accent-400">学习进度与账户</a>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span class="text-secondary">进度标记与同步状态</span>
+  </div>
+
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-3">
+    <div>
+      <div class="flex flex-wrap items-center gap-2.5 mb-2">
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">进度标记与同步状态</h1>
+        <span class="field-badge bg-primary-500/15 text-primary-300 border border-primary-500/30">嵌入式组件规范 · v1.2</span>
+      </div>
+      <p class="text-sm text-secondary max-w-2xl">定义步骤完成后目录树 / 章节进度条 / 顶部全局进度 / 同步状态角标在教程学习页中的呈现规范，供其他模块页面引用实现，确保跨页面视觉与交互一致。</p>
+    </div>
+    <div class="text-xs text-muted text-right shrink-0">
+      <p>最后更新：2026-07-17</p>
+      <p class="mt-0.5">维护模块：学习进度与账户</p>
+    </div>
+  </div>
+
+  <!-- 使用说明 callout -->
+  <div class="glass-card !bg-accent-500/[.06] border-accent-500/25 p-4 md:p-5 mb-8 flex gap-3">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-accent-400 shrink-0 mt-0.5"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8h.01M11.5 11h1v6h-1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <div class="text-xs text-secondary leading-relaxed">
+      <span class="text-primary-100 font-semibold">本页是组件视觉/交互规范文档，非最终用户可见的业务页面。</span>
+      下方 4 个组件（目录树完成标记、章节进度条、教程包全局进度、同步状态角标）在真实业务页中的落地示例见
+      <a href="guided-tour__chapter-toc.html" class="text-accent-400 hover:underline">章节/步骤目录树</a>、
+      <a href="guided-tour__tutorial-workspace.html" class="text-accent-400 hover:underline">教程学习工作台</a>、
+      <a href="lesson-reader__my-progress.html" class="text-accent-400 hover:underline">我的学习进度</a>。
+      本页的目录树与进度条 3 个演示区共享同一份 demo 数据源，点击任一步骤完成后可观察三者联动更新，用以验证实现是否一致。
+    </div>
+  </div>
+
+  <!-- 本页目录 -->
+  <div class="flex flex-wrap gap-2 mb-10" id="page-toc">
+    <a href="#fields" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">数据字段</a>
+    <a href="#tree" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">A · 目录树完成标记</a>
+    <a href="#chapter-bar" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">B · 章节进度条</a>
+    <a href="#global-progress" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">C · 教程包全局进度</a>
+    <a href="#sync-badge" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">D · 同步状态角标</a>
+    <a href="#rules" class="toc-link px-3 py-1.5 rounded-lg text-xs border border-white/10 text-secondary hover:text-accent-400 hover:border-accent-500/30">关键交互规则</a>
+  </div>
+
+  <!-- ============ 数据字段总表 ============ -->
+  <section id="fields" class="mb-14 scroll-mt-24">
+    <h2 class="text-lg font-bold text-primary-100 mb-1">数据字段</h2>
+    <p class="text-xs text-secondary mb-4">以下字段由服务端进度存储与前端本地缓存共同维护，驱动本文档下述全部组件的渲染。</p>
+    <div class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[720px]">
+          <thead class="sticky top-0 bg-surface border-b border-white/10 text-xs uppercase text-secondary">
+            <tr>
+              <th class="text-left font-semibold px-4 py-3 w-[180px]">字段</th>
+              <th class="text-left font-semibold px-4 py-3 w-[140px]">类型</th>
+              <th class="text-left font-semibold px-4 py-3">说明</th>
+              <th class="text-left font-semibold px-4 py-3 w-[220px]">示例值</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/[.06]">
+            <tr class="hover:bg-white/[.03]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">stepId</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">string</span></td>
+              <td class="px-4 py-3 text-secondary">步骤唯一标识，格式 <code class="font-mono-ui text-accent-300">{chapterId}-{index}</code></td>
+              <td class="px-4 py-3 font-mono-ui text-muted">"c1-s3"</td>
+            </tr>
+            <tr class="hover:bg-white/[.03] bg-white/[.015]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">stepStatus</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">enum</span></td>
+              <td class="px-4 py-3 text-secondary">步骤完成状态：<code class="font-mono-ui text-success">completed</code> 已完成 / <code class="font-mono-ui text-primary-300">current</code> 当前所在 / <code class="font-mono-ui text-muted">incomplete</code> 未完成</td>
+              <td class="px-4 py-3 font-mono-ui text-muted">"current"</td>
+            </tr>
+            <tr class="hover:bg-white/[.03]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">chapterCompletionRate</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">number 0–1</span></td>
+              <td class="px-4 py-3 text-secondary">章节内已完成步骤数 / 章节总步骤数，渲染时四舍五入取整为百分比</td>
+              <td class="px-4 py-3 font-mono-ui text-muted">0.67</td>
+            </tr>
+            <tr class="hover:bg-white/[.03] bg-white/[.015]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">tutorialCompletionRate</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">number 0–1</span></td>
+              <td class="px-4 py-3 text-secondary">教程包内已完成步骤数 / 教程包总步骤数，驱动全局进度指示</td>
+              <td class="px-4 py-3 font-mono-ui text-muted">0.43</td>
+            </tr>
+            <tr class="hover:bg-white/[.03]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">syncStatus</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">enum</span></td>
+              <td class="px-4 py-3 text-secondary"><code class="font-mono-ui text-success">synced</code> 已同步 / <code class="font-mono-ui text-accent-300">syncing</code> 同步中 / <code class="font-mono-ui text-danger">error</code> 同步失败</td>
+              <td class="px-4 py-3 font-mono-ui text-muted">"error"</td>
+            </tr>
+            <tr class="hover:bg-white/[.03] bg-white/[.015]">
+              <td class="px-4 py-3 font-mono-ui text-primary-200">lastSyncedAt</td>
+              <td class="px-4 py-3"><span class="field-badge bg-white/5 text-muted">ISO8601 | null</span></td>
+              <td class="px-4 py-3 text-secondary">最近一次成功同步到服务端的时间；<code class="font-mono-ui text-muted">null</code> 表示仅存在于本地、尚未成功同步过</td>
+              <td class="px-4 py-3 font-mono-ui text-muted">"2026-07-17T09:42:15+08:00"</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ A. 目录树节点完成标记 ============ -->
+  <section id="tree" class="mb-14 scroll-mt-24">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="text-lg font-bold text-primary-100">A · 目录树节点完成标记</h2>
+      <span class="field-badge bg-white/5 text-muted border border-white/10">三态：completed / current / incomplete</span>
+    </div>
+    <p class="text-xs text-secondary mb-4">用于章节/步骤目录树中每个节点的完成状态展示。点击当前所在步骤即模拟"完成"，节点乐观打勾，不等待服务端确认；已完成步骤仍可点击回看内容。落地示例见 <a href="guided-tour__chapter-toc.html" class="text-accent-400 hover:underline">章节/步骤目录树</a>。</p>
+
+    <div class="glass-card p-5 md:p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-6">
+        <!-- 演示目录树 -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wide text-secondary">演示：React 核心概念训练营</span>
+            <button onclick="resetDemo()" class="btn-ghost text-xs flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 4v5h5M20 20v-5h-5M4.6 15a8 8 0 0014.4-3M19.4 9A8 8 0 005 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              重置演示
+            </button>
+          </div>
+          <div id="demo-tree" class="space-y-4"></div>
+        </div>
+
+        <!-- 图例 + 说明 -->
+        <div class="space-y-4">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-secondary mb-2">状态图例</p>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full bg-accent-400/15 border border-accent-400 text-accent-400 flex items-center justify-center shrink-0"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <span class="text-secondary">已完成 <code class="font-mono-ui text-muted">completed</code> · 仍可点击回看</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="step-dot w-4 h-4 rounded-full bg-primary-500 ring-2 ring-primary-500/30 shrink-0"></span>
+                <span class="text-secondary">当前所在 <code class="font-mono-ui text-muted">current</code> · 呼吸发光</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-4 h-4 rounded-full border border-white/25 shrink-0"></span>
+                <span class="text-secondary">未完成 <code class="font-mono-ui text-muted">incomplete</code></span>
+              </div>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-white/[.06]">
+            <p class="text-xs uppercase tracking-wide text-secondary mb-2">交互要点</p>
+            <ul class="space-y-2 text-xs text-secondary leading-relaxed">
+              <li class="flex gap-2"><span class="anno-num">1</span><span>点击「当前所在」节点 → 立即打勾，不阻塞等待服务端响应</span></li>
+              <li class="flex gap-2"><span class="anno-num">2</span><span>点击「已完成」节点 → 直接跳转回看内容，完成标记不代表锁定</span></li>
+              <li class="flex gap-2"><span class="anno-num">3</span><span>「未完成」且非当前的节点，是否可点击由解锁策略决定，本组件仅负责完成态展示</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ B. 章节级进度条 ============ -->
+  <section id="chapter-bar" class="mb-14 scroll-mt-24">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="text-lg font-bold text-primary-100">B · 章节级进度条</h2>
+      <span class="field-badge bg-white/5 text-muted border border-white/10">当前步/总步数 + 百分比</span>
+    </div>
+    <p class="text-xs text-secondary mb-4">章节内学习进度的线性表达，随 A 区目录树的完成操作实时联动更新（同一 demo 数据源）。落地示例见 <a href="guided-tour__tutorial-workspace.html" class="text-accent-400 hover:underline">教程学习工作台</a>。</p>
+
+    <div class="glass-card p-5 md:p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-secondary mb-3">联动示例 · 第1章 · 组件与 Props 基础</p>
+          <div class="flex items-center gap-3 mb-2">
+            <span id="ch1-step-count" class="text-sm font-mono-ui text-primary-100 font-semibold">2 / 4</span>
+            <span class="text-xs text-muted">步</span>
+            <span class="ml-auto text-lg font-extrabold font-mono-ui text-grad" id="ch1-percent-label">50%</span>
+          </div>
+          <div class="h-2.5 rounded-full bg-white/[.08] overflow-hidden">
+            <div id="ch1-bar" class="h-full rounded-full transition-all duration-500" style="width:50%; background:linear-gradient(135deg,#4C6FFF,#22D3EE)"></div>
+          </div>
+          <p class="text-[11px] text-muted mt-2">该条会随 A 区「完成当前步」操作实时增长，验证 chapterCompletionRate 联动一致性</p>
+        </div>
+
+        <div>
+          <p class="text-xs uppercase tracking-wide text-secondary mb-3">静态状态样例</p>
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5 text-xs">
+                <span class="text-secondary">未开始</span>
+                <span class="ml-auto font-mono-ui text-muted">0/6 · 0%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/[.08] overflow-hidden"><div class="h-full rounded-full bg-white/[.12]" style="width:0%"></div></div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1.5 text-xs">
+                <span class="text-secondary">进行中</span>
+                <span class="ml-auto font-mono-ui text-muted">4/9 · 44%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/[.08] overflow-hidden"><div class="h-full rounded-full" style="width:44%; background:linear-gradient(135deg,#4C6FFF,#22D3EE)"></div></div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-1.5 text-xs">
+                <span class="text-secondary">已完成章节</span>
+                <span class="ml-auto font-mono-ui text-success">7/7 · 100%</span>
+              </div>
+              <div class="h-2 rounded-full bg-white/[.08] overflow-hidden"><div class="h-full rounded-full bg-success" style="width:100%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ C. 教程包级全局进度指示 ============ -->
+  <section id="global-progress" class="mb-14 scroll-mt-24">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="text-lg font-bold text-primary-100">C · 教程包级全局进度指示</h2>
+      <span class="field-badge bg-white/5 text-muted border border-white/10">tutorialCompletionRate</span>
+    </div>
+    <p class="text-xs text-secondary mb-4">教程包整体完成度，提供环形（卡片场景）与线性（顶部条场景）两种呈现，两者数值一致、均随 A 区演示联动。落地示例见 <a href="tutorial-catalog__learning-progress-overview.html" class="text-accent-400 hover:underline">我的学习总览页</a>。</p>
+
+    <div class="glass-card p-5 md:p-6">
+      <div class="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 items-center">
+        <!-- 环形 -->
+        <div class="flex flex-col items-center gap-2">
+          <div id="global-ring" class="relative w-28 h-28 rounded-full grid place-items-center" style="background: conic-gradient(from -90deg, #4C6FFF 0%, #22D3EE 29%, rgba(255,255,255,.08) 29% 100%);">
+            <div class="absolute inset-[8px] rounded-full bg-[#12151C] grid place-items-center">
+              <span id="global-ring-label" class="text-xl font-extrabold font-mono-ui text-grad">29%</span>
+            </div>
+          </div>
+          <span class="text-[11px] text-muted">环形 · 卡片场景</span>
+        </div>
+
+        <!-- 线性顶部条 -->
+        <div class="w-full">
+          <div class="flex items-center justify-between mb-1.5 text-xs">
+            <span class="text-secondary">React 核心概念训练营 · 教程包全局进度</span>
+            <span id="global-bar-label" class="font-mono-ui text-primary-100 font-semibold">2/7 步 · 29%</span>
+          </div>
+          <div class="h-3 rounded-full bg-white/[.08] overflow-hidden">
+            <div id="global-bar" class="h-full rounded-full transition-all duration-500" style="width:29%; background:linear-gradient(135deg,#4C6FFF,#22D3EE)"></div>
+          </div>
+          <span class="text-[11px] text-muted mt-2 block">线性 · 常驻顶部工作台场景（如教程学习工作台页头）</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ D. 同步状态微型角标 ============ -->
+  <section id="sync-badge" class="mb-14 scroll-mt-24">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h2 class="text-lg font-bold text-primary-100">D · 同步状态微型角标</h2>
+      <span class="field-badge bg-white/5 text-muted border border-white/10">syncStatus + lastSyncedAt</span>
+    </div>
+    <p class="text-xs text-secondary mb-4">标记本地进度与服务端的同步情况，hover 展示已同步时间，失败态可点击重试。步骤完成后会自动触发一次同步尝试（见下方联动角标）。落地示例见 <a href="lesson-reader__my-progress.html" class="text-accent-400 hover:underline">我的学习进度</a>。</p>
+
+    <div class="glass-card p-5 md:p-6">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_1px_260px] gap-6">
+        <div>
+          <p class="text-xs uppercase tracking-wide text-secondary mb-3">联动角标 · 与 A 区完成操作绑定</p>
+          <div class="flex items-center gap-3 p-3 rounded-lg bg-surface-2 border border-white/[.06] w-fit">
+            <span class="text-xs text-secondary">React 核心概念训练营</span>
+            <div class="relative group">
+              <button type="button" id="live-sync-badge" class="sync-badge flex items-center gap-1.5 text-muted hover:text-accent-400" data-status="synced" onclick="retryLiveSync()">
+                <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                <span class="sync-label">已同步 · 09:40</span>
+              </button>
+              <div class="tooltip-pop absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 glass-card !bg-[#1A1E27] p-3 text-[11px] text-secondary leading-relaxed shadow-2xl z-10">
+                <p class="text-primary-100 font-semibold mb-1" id="live-sync-tip-title">已同步至服务端</p>
+                <p id="live-sync-tip-body">最近同步时间：2026-07-17 09:40:12</p>
+              </div>
+            </div>
+          </div>
+          <p class="text-[11px] text-muted mt-3">在 A 区点击「完成当前步」后，角标会先进入 <code class="font-mono-ui text-accent-300">syncing</code> 态，约 1.2s 后按概率进入 <code class="font-mono-ui text-success">synced</code> 或 <code class="font-mono-ui text-danger">error</code>，模拟真实网络不稳定场景。</p>
+        </div>
+
+        <div class="hidden lg:block bg-white/[.06]"></div>
+
+        <div>
+          <p class="text-xs uppercase tracking-wide text-secondary mb-3">全部状态样例</p>
+          <div class="space-y-3">
+            <div class="relative group inline-block">
+              <button type="button" class="sync-badge flex items-center gap-1.5 text-muted hover:text-accent-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-success shrink-0"></span>
+                <span class="sync-label text-xs">已同步 · 22:11</span>
+              </button>
+              <div class="tooltip-pop absolute left-0 bottom-full mb-2 w-52 glass-card !bg-[#1A1E27] p-3 text-[11px] text-secondary leading-relaxed shadow-2xl z-10">
+                最近同步：2026-07-16 22:11:03 · 设备：MacBook Pro
+              </div>
+            </div>
+            <div class="relative group inline-block">
+              <button type="button" class="sync-badge flex items-center gap-1.5 text-secondary" disabled>
+                <span class="w-1.5 h-1.5 rounded-full bg-accent-400 animate-breathe shrink-0"></span>
+                <span class="sync-label text-xs">同步中…</span>
+              </button>
+              <div class="tooltip-pop absolute left-0 bottom-full mb-2 w-52 glass-card !bg-[#1A1E27] p-3 text-[11px] text-secondary leading-relaxed shadow-2xl z-10">
+                正在写入服务端进度存储，请稍候
+              </div>
+            </div>
+            <div class="relative group inline-block">
+              <button type="button" class="sync-badge flex items-center gap-1.5 text-danger hover:underline" data-status="error" onclick="retrySampleSync(this)">
+                <span class="w-1.5 h-1.5 rounded-full bg-danger shrink-0"></span>
+                <span class="sync-label text-xs">同步失败 · 点击重试</span>
+              </button>
+              <div class="tooltip-pop absolute left-0 bottom-full mb-2 w-56 glass-card !bg-[#1A1E27] p-3 text-[11px] text-secondary leading-relaxed shadow-2xl z-10">
+                上次尝试失败：网络超时（08:15）。点击角标立即重试
+              </div>
+            </div>
+            <div class="relative group inline-block">
+              <button type="button" class="sync-badge flex items-center gap-1.5 text-muted">
+                <span class="w-1.5 h-1.5 rounded-full bg-white/25 shrink-0"></span>
+                <span class="sync-label text-xs">仅本地 · 未同步</span>
+              </button>
+              <div class="tooltip-pop absolute left-0 bottom-full mb-2 w-52 glass-card !bg-[#1A1E27] p-3 text-[11px] text-secondary leading-relaxed shadow-2xl z-10">
+                lastSyncedAt 为 null，通常出现于游客态或首次断网学习
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 关键交互规则 ============ -->
+  <section id="rules" class="mb-6 scroll-mt-24">
+    <h2 class="text-lg font-bold text-primary-100 mb-1">关键交互规则</h2>
+    <p class="text-xs text-secondary mb-4">以下规则适用于全部引用本组件的业务页面，实现方不应擅自变更。</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="glass-card p-5 flex gap-3">
+        <span class="w-9 h-9 rounded-lg bg-accent-500/10 text-accent-400 grid place-items-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-primary-100 mb-1">乐观更新，不阻塞交互</p>
+          <p class="text-xs text-secondary leading-relaxed">步骤完成时目录树节点立即打勾、进度条立即增长，不等待服务端确认；服务端确认失败也不回滚已完成标记，仅将 syncStatus 置为 error 并允许重试。</p>
+        </div>
+      </div>
+      <div class="glass-card p-5 flex gap-3">
+        <span class="w-9 h-9 rounded-lg bg-danger/10 text-danger grid place-items-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 4v5h5M20 20v-5h-5M4.6 15a8 8 0 0014.4-3M19.4 9A8 8 0 005 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-primary-100 mb-1">同步失败可点击重试</p>
+          <p class="text-xs text-secondary leading-relaxed">syncStatus 为 error 时角标变为 danger 色，点击触发重新同步，进入 syncing 态；重试成功后立即更新 lastSyncedAt 并恢复 success 色。</p>
+        </div>
+      </div>
+      <div class="glass-card p-5 flex gap-3">
+        <span class="w-9 h-9 rounded-lg bg-success/10 text-success grid place-items-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-primary-100 mb-1">完成 ≠ 锁定</p>
+          <p class="text-xs text-secondary leading-relaxed">点击已完成步骤仍可跳转回看该步骤内容；完成标记只用于展示学习进度，不会禁用点击、不会阻止用户重新查看讲解或重跑沙箱代码。</p>
+        </div>
+      </div>
+      <div class="glass-card p-5 flex gap-3">
+        <span class="w-9 h-9 rounded-lg bg-primary-500/10 text-primary-300 grid place-items-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v15.5A2.5 2.5 0 0117.5 21H6.5A2.5 2.5 0 014 18.5v-13z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 18.5A2.5 2.5 0 016.5 16H20" stroke="currentColor" stroke-width="1.6"/></svg>
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-primary-100 mb-1">同一数据源驱动多组件</p>
+          <p class="text-xs text-secondary leading-relaxed">stepStatus 变更需同时驱动目录树、章节进度条（chapterCompletionRate）与全局进度（tutorialCompletionRate）重新计算，三者不应出现数值不一致。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- toast 容器 -->
+<div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none"></div>
+
+<script>
+  // ---------- 顶部下拉导航 ----------
+  const groups = document.querySelectorAll('.nav-group');
+  groups.forEach(g => {
+    const trigger = g.querySelector('.nav-trigger');
+    const panel = g.querySelector('.dropdown-panel');
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+      if (!isOpen) panel.classList.add('open');
+    });
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.dropdown-panel').forEach(p => p.classList.remove('open'));
+  });
+
+  const mobileBtn = document.getElementById('mobile-nav-btn');
+  const mobileNav = document.getElementById('mobile-nav');
+  mobileBtn.addEventListener('click', () => mobileNav.classList.toggle('hidden'));
+
+  // ---------- 本页目录高亮（滚动监听） ----------
+  const tocLinks = document.querySelectorAll('#page-toc .toc-link');
+  const tocSections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href')));
+  function updateToc() {
+    let activeIdx = 0;
+    tocSections.forEach((sec, i) => { if (sec && sec.getBoundingClientRect().top - 96 <= 0) activeIdx = i; });
+    tocLinks.forEach((a, i) => a.classList.toggle('active', i === activeIdx));
+  }
+  window.addEventListener('scroll', updateToc, { passive: true });
+  updateToc();
+
+  // ---------- Toast ----------
+  function showToast(msg, tone = 'default') {
+    const el = document.createElement('div');
+    const toneClass = tone === 'success' ? 'border-success/40 text-success' : tone === 'warning' ? 'border-warning/40 text-warning' : 'border-white/10 text-primary-100';
+    el.className = `toast-item px-4 py-2.5 rounded-lg text-xs font-medium bg-[#1A1E27] border ${toneClass} shadow-2xl pointer-events-auto`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity 300ms ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 320);
+    }, 2200);
+  }
+
+  // ---------- A/B/C 联动 demo 数据源 ----------
+  const ICONS = {
+    check: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`
+  };
+
+  const INITIAL_STATE = () => ([
+    { chapterId: 'c1', title: '第1章 · 组件与 Props 基础', steps: [
+      { stepId: 'c1-s1', title: '函数组件与 JSX 语法', status: 'completed' },
+      { stepId: 'c1-s2', title: 'Props 传递与类型约束', status: 'completed' },
+      { stepId: 'c1-s3', title: '条件渲染与列表 key', status: 'current' },
+      { stepId: 'c1-s4', title: '组件拆分实践', status: 'incomplete' },
+    ]},
+    { chapterId: 'c2', title: '第2章 · State 与副作用', steps: [
+      { stepId: 'c2-s1', title: 'useState 基础用法', status: 'incomplete' },
+      { stepId: 'c2-s2', title: 'useEffect 依赖数组', status: 'incomplete' },
+      { stepId: 'c2-s3', title: '自定义 Hook 抽取', status: 'incomplete' },
+    ]},
+  ]);
+
+  let demoState = INITIAL_STATE();
+
+  function flatSteps() { return demoState.flatMap(ch => ch.steps); }
+
+  function findChapterOf(stepId) { return demoState.find(ch => ch.steps.some(s => s.stepId === stepId)); }
+
+  function renderTree() {
+    const root = document.getElementById('demo-tree');
+    root.innerHTML = demoState.map(ch => {
+      const completed = ch.steps.filter(s => s.status === 'completed').length;
+      const total = ch.steps.length;
+      const pct = Math.round((completed / total) * 100);
+      const rows = ch.steps.map(st => {
+        let dot = '';
+        let rowCls = 'step-row';
+        let clickHint = '';
+        if (st.status === 'completed') {
+          dot = `<span class="w-5 h-5 rounded-full bg-accent-400/15 border border-accent-400 text-accent-400 flex items-center justify-center shrink-0">${ICONS.check}</span>`;
+        } else if (st.status === 'current') {
+          dot = `<span class="step-dot w-5 h-5 rounded-full bg-primary-500 ring-2 ring-primary-500/30 shrink-0"></span>`;
+          rowCls += ' is-current bg-primary-500/10 ring-1 ring-primary-500/40 rounded-lg';
+        } else {
+          dot = `<span class="w-5 h-5 rounded-full border border-white/25 shrink-0"></span>`;
+          rowCls += ' opacity-50';
+          clickHint = 'cursor-not-allowed';
+        }
+        return `<div data-step-id="${st.stepId}" class="${rowCls} ${clickHint} flex items-center gap-3 px-3 py-2.5 rounded-lg" onclick="handleStepClick('${st.stepId}')">
+          ${dot}
+          <span class="text-sm ${st.status === 'incomplete' ? 'text-muted' : 'text-primary-100'} truncate">${st.title}</span>
+          <span class="ml-auto text-[10px] font-mono-ui text-muted shrink-0">${st.stepId}</span>
+        </div>`;
+      }).join('');
+      return `<div>
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <span class="text-xs font-semibold text-primary-100">${ch.title}</span>
+          <span class="text-[11px] font-mono-ui text-muted">${completed}/${total} · ${pct}%</span>
+        </div>
+        <div class="space-y-1">${rows}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderChapterBar() {
+    const ch1 = demoState[0];
+    const completed = ch1.steps.filter(s => s.status === 'completed').length;
+    const total = ch1.steps.length;
+    const pct = Math.round((completed / total) * 100);
+    document.getElementById('ch1-step-count').textContent = `${completed} / ${total}`;
+    document.getElementById('ch1-percent-label').textContent = `${pct}%`;
+    document.getElementById('ch1-bar').style.width = pct + '%';
+  }
+
+  function renderGlobalProgress() {
+    const all = flatSteps();
+    const completed = all.filter(s => s.status === 'completed').length;
+    const total = all.length;
+    const pct = Math.round((completed / total) * 100);
+    document.getElementById('global-ring').style.background = `conic-gradient(from -90deg, #4C6FFF 0%, #22D3EE ${pct}%, rgba(255,255,255,.08) ${pct}% 100%)`;
+    document.getElementById('global-ring-label').textContent = `${pct}%`;
+    document.getElementById('global-bar').style.width = pct + '%';
+    document.getElementById('global-bar-label').textContent = `${completed}/${total} 步 · ${pct}%`;
+  }
+
+  function renderAll() {
+    renderTree();
+    renderChapterBar();
+    renderGlobalProgress();
+  }
+
+  function handleStepClick(stepId) {
+    const ch = findChapterOf(stepId);
+    const step = ch.steps.find(s => s.stepId === stepId);
+    if (step.status === 'completed') {
+      showToast('已完成步骤仍可跳转回看内容，完成标记不代表锁定', 'default');
+      return;
+    }
+    if (step.status === 'incomplete') {
+      showToast('需先完成前置步骤，才能推进到此节点', 'warning');
+      return;
+    }
+    // status === 'current' → 乐观完成
+    step.status = 'completed';
+    const idx = ch.steps.findIndex(s => s.stepId === stepId);
+    if (idx + 1 < ch.steps.length) {
+      ch.steps[idx + 1].status = 'current';
+    } else {
+      const chIdx = demoState.findIndex(c => c.chapterId === ch.chapterId);
+      if (chIdx + 1 < demoState.length && demoState[chIdx + 1].steps.length) {
+        demoState[chIdx + 1].steps[0].status = 'current';
+      }
+    }
+    renderAll();
+    showToast('步骤已乐观标记完成，目录树 / 进度条已即时更新', 'success');
+    triggerLiveSync();
+  }
+
+  function resetDemo() {
+    demoState = INITIAL_STATE();
+    renderAll();
+    setLiveSyncState('synced', '已同步 · 09:40', '已同步至服务端', '最近同步时间：2026-07-17 09:40:12');
+    showToast('演示数据已重置');
+  }
+
+  // ---------- D 区：联动同步角标 ----------
+  function setLiveSyncState(status, label, tipTitle, tipBody) {
+    const btn = document.getElementById('live-sync-badge');
+    const dot = btn.querySelector('span.w-1\\.5');
+    const labelEl = btn.querySelector('.sync-label');
+    btn.dataset.status = status;
+    labelEl.textContent = label;
+    document.getElementById('live-sync-tip-title').textContent = tipTitle;
+    document.getElementById('live-sync-tip-body').textContent = tipBody;
+    btn.classList.remove('text-danger', 'text-muted', 'text-secondary');
+    if (status === 'synced') {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-success shrink-0';
+      btn.classList.add('text-muted');
+    } else if (status === 'syncing') {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-accent-400 animate-breathe shrink-0';
+      btn.classList.add('text-secondary');
+    } else {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-danger shrink-0';
+      btn.classList.add('text-danger');
+    }
+  }
+
+  function triggerLiveSync() {
+    setLiveSyncState('syncing', '同步中…', '正在同步至服务端', '本地进度写入中，请稍候');
+    setTimeout(() => {
+      const ok = Math.random() > 0.3;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      if (ok) {
+        setLiveSyncState('synced', `已同步 · ${hh}:${mm}`, '已同步至服务端', `最近同步时间：2026-07-17 ${hh}:${mm}:${ss}`);
+      } else {
+        setLiveSyncState('error', '同步失败 · 点击重试', '同步失败', `网络超时（${hh}:${mm}）。点击角标立即重试`);
+        showToast('模拟网络异常：本次同步失败，可点击角标重试', 'warning');
+      }
+    }, 1200);
+  }
+
+  function retryLiveSync() {
+    const btn = document.getElementById('live-sync-badge');
+    if (btn.dataset.status !== 'error') return;
+    triggerLiveSync();
+  }
+
+  // ---------- D 区：静态样例中的失败角标独立重试 ----------
+  function retrySampleSync(btn) {
+    if (btn.dataset.status !== 'error') return;
+    const label = btn.querySelector('.sync-label');
+    const dot = btn.querySelector('span.w-1\\.5');
+    btn.dataset.status = 'syncing';
+    btn.classList.remove('text-danger');
+    btn.classList.add('text-secondary');
+    dot.className = 'w-1.5 h-1.5 rounded-full bg-accent-400 animate-breathe shrink-0';
+    label.textContent = '同步中…';
+    setTimeout(() => {
+      btn.dataset.status = 'synced';
+      btn.classList.remove('text-secondary');
+      btn.classList.add('text-muted');
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-success shrink-0';
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      label.textContent = `已同步 · ${hh}:${mm}`;
+      showToast('重试成功，进度已同步', 'success');
+    }, 1300);
+  }
+
+  renderAll();
+</script>
+
+</body>
+</html>
