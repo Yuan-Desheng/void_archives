@@ -1,0 +1,39 @@
+#!/bin/sh
+# 提交前 PII / 敏感文件拦截钩子 —— 公开仓零明文红线
+# 绕过（仅限确有误报时）：git commit --no-verify （CLAUDE.md 默认禁用，慎用）
+# 注：扫描排除本钩子自身目录 —— 那里的 PII 字面量是「规则」不是「数据」，否则会自拦。
+
+EXCLUDE=":(exclude)scripts/git-hooks/*"
+fail=0
+
+# 1. 真实身份 PII（AI 工作流已三次误塞真名/公司邮箱作样例数据）
+PII='崔战伟|plantlove\.com\.cn|zhanwei\.cui'
+hits=$(git diff --cached -U0 -- . "$EXCLUDE" | grep -nE "^\+" | grep -E "$PII")
+if [ -n "$hits" ]; then
+  echo "❌ 提交被拦：检测到疑似真实 PII（真名/公司邮箱）"
+  echo "$hits" | sed 's/^/   /' | head -20
+  echo "   → 请替换为 演示用户 / demo@example.com 再提交"
+  fail=1
+fi
+
+# 2. 不该进公开仓的敏感文件
+staged=$(git diff --cached --name-only)
+bad=$(echo "$staged" | grep -iE '(^|/)\.env($|\.)|\.(db|sqlite3?|pem|key|p12)$|(^|/)CLAUDE\.md$|(^|/)secrets\.')
+if [ -n "$bad" ]; then
+  echo "❌ 提交被拦：检测到敏感文件（凭据/数据库/私有配置）"
+  echo "$bad" | sed 's/^/   /'
+  echo "   → 应加入 .gitignore，不入公开仓"
+  fail=1
+fi
+
+# 3. 常见密钥指纹
+KEY='sk-[A-Za-z0-9]{16}|ghp_[A-Za-z0-9]{20}|-----BEGIN [A-Z ]*PRIVATE KEY-----|postgres://[^:]+:[^@]+@'
+kh=$(git diff --cached -U0 -- . "$EXCLUDE" | grep -nE "^\+" | grep -E "$KEY")
+if [ -n "$kh" ]; then
+  echo "❌ 提交被拦：检测到疑似密钥/凭据"
+  echo "$kh" | sed 's/^/   /' | head -10
+  fail=1
+fi
+
+[ "$fail" = 1 ] && { echo; echo "如确认为误报，可 git commit --no-verify 绕过（慎用）"; exit 1; }
+exit 0
