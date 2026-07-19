@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>非功能性/性能与容量设计 · ITTP 设计说明书</title>
+
+<!-- ============================================================
+     ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+     用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+     置于 <title> 之后、页面自有 <style>（如有）之前。
+     ============================================================ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+        },
+        colors: {
+          primary: {
+            50:  '#f0f4f8',
+            100: '#d9e2ec',
+            200: '#bcccdc',
+            300: '#9fb3c8',
+            400: '#829ab1',
+            500: '#627d98',
+            600: '#486581',
+            700: '#334e68',
+            800: '#243b53',
+            900: '#102a43'
+          },
+          accent: {
+            50:  '#fdf8ec',
+            100: '#faedc4',
+            200: '#f5db8e',
+            300: '#eec258',
+            400: '#e0a530',
+            500: '#c98a1f',
+            600: '#a86c17',
+            700: '#855316',
+            800: '#6b4318',
+            900: '#5a3818'
+          }
+        },
+        boxShadow: {
+          card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --doc-primary: #243b53;
+    --doc-primary-dark: #102a43;
+    --doc-primary-soft: #f0f4f8;
+    --doc-accent: #a86c17;
+    --doc-accent-soft: #faedc4;
+    --doc-text: #1b2a38;
+    --doc-text-muted: #52697e;
+    --doc-border: #d9e2ec;
+    --doc-bg: #f7f9fb;
+    --doc-surface: #ffffff;
+    --doc-code-bg: #0f2438;
+    --doc-code-text: #d8e6f0;
+  }
+  :root[data-theme="dark"] {
+    --doc-primary: #bcccdc;
+    --doc-primary-dark: #f0f4f8;
+    --doc-primary-soft: #17293b;
+    --doc-accent: #eec258;
+    --doc-accent-soft: #3a2c10;
+    --doc-text: #dbe4ec;
+    --doc-text-muted: #93a8bd;
+    --doc-border: #2c4054;
+    --doc-bg: #0b1a29;
+    --doc-surface: #12233590;
+    --doc-code-bg: #08131f;
+    --doc-code-text: #cfe0ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- 滚动条 ---------- */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--doc-border);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+  /* ---------- 正文排版容器 ---------- */
+  .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+  .doc-prose > *:first-child { margin-top: 0; }
+
+  .doc-prose h1 {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: var(--doc-primary-dark);
+    letter-spacing: 0.01em;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--doc-primary);
+  }
+  .doc-prose h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin: 2.4rem 0 1rem;
+    padding: 0.1rem 0 0.6rem;
+    border-bottom: 1px solid var(--doc-border);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .doc-prose h2::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+    flex: none;
+  }
+  .doc-prose h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.8rem 0 0.75rem;
+  }
+  .doc-prose h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.4rem 0 0.6rem;
+    opacity: 0.9;
+  }
+  .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+  .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+  .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-prose a:hover { color: var(--doc-accent); }
+
+  .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.35rem 0; }
+  .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+  .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+  .doc-prose hr {
+    border: none;
+    border-top: 1px dashed var(--doc-border);
+    margin: 2rem 0;
+  }
+
+  /* ---------- 表格 ---------- */
+  .doc-prose table, .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.9rem;
+    background: var(--doc-surface);
+  }
+  .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+  .doc-prose th, .doc-table th {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    white-space: nowrap;
+  }
+  .doc-prose td, .doc-table td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    vertical-align: top;
+    color: var(--doc-text);
+  }
+  .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+  .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+  /* ---------- 行内代码 / 代码块 ---------- */
+  .doc-prose code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--doc-border);
+  }
+  .doc-prose pre {
+    background: var(--doc-code-bg);
+    color: var(--doc-code-text);
+    padding: 1rem 1.15rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+  }
+  .doc-prose pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ---------- 引用块 ---------- */
+  .doc-prose blockquote {
+    margin: 1.1rem 0;
+    padding: 0.7rem 1.1rem;
+    background: var(--doc-primary-soft);
+    border-left: 4px solid var(--doc-accent);
+    color: var(--doc-text-muted);
+    border-radius: 0 6px 6px 0;
+  }
+  .doc-prose blockquote p { margin: 0.3rem 0; }
+
+  /* ---------- Mermaid 图容器 ---------- */
+  .doc-prose pre.mermaid, pre.mermaid {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+  .doc-card {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+  }
+  .doc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    border: 1px solid var(--doc-border);
+  }
+  .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+</style>
+
+<!-- ---------- Mermaid ---------- -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+</script>
+</head>
+<body>
+
+<!-- 统一导航栏 -->
+<nav class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm" style="background: var(--doc-surface); border-color: var(--doc-border);">
+  <div class="mx-auto px-4 py-3 max-w-6xl">
+    <div class="flex flex-col gap-2">
+      <div class="text-sm font-semibold" style="color: var(--doc-primary-dark);">
+        互动式技术教程平台（ITTP）· 设计说明书
+      </div>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <a href="00-overview.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">00 系统设计总览</a>
+        <a href="01-architecture.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">01 总体架构设计</a>
+        <a href="02-dataflow.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">02 数据流设计</a>
+        <a href="03-database.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">03 数据库设计</a>
+        <a href="04-api.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">04 接口/API 设计</a>
+        <a href="05-security.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">05 安全设计</a>
+        <a href="06-ops.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">06 运维与部署设计</a>
+        <span class="px-2.5 py-1.5 rounded font-semibold" style="background: var(--doc-primary-soft); color: var(--doc-primary-dark);">07 非功能性/性能与容量设计</span>
+        <a href="08-integration.html" class="px-2.5 py-1.5 rounded hover:bg-gray-100 transition" style="color: var(--doc-text);">08 集成/对接设计</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- 正文容器 -->
+<main class="mx-auto px-4 py-12 max-w-3xl">
+  <article class="doc-prose">
+
+<h1>非功能性 / 性能与容量设计</h1>
+
+<blockquote>
+<p>阶段③设计 · 资深系统设计专家产出。上游唯一真源：<code>00-系统设计总览.md</code>（§四 nfrDrivers）、<code>01-architecture.md</code>（§九 techBaseline）、原型 specs（<code>02-原型-v2/specs/</code>）。<br>
+产品：<strong>互动式技术教程平台（ITTP）</strong>——内容与引擎分离、以 JSON 配置（<code>TutorialPackage</code>）驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。<br>
+本维度聚焦：性能指标（响应时延/吞吐）、并发与容量估算、可用性 SLA、伸缩性、关键路径性能预算与压测目标、缓存与限流降级策略。</p>
+</blockquote>
+
+<hr>
+
+<h2>一、非功能定位：先把「不是什么」讲清楚</h2>
+
+<p>本系统的非功能设计有一个<strong>反直觉的前提</strong>，必须在动手前锁死，否则整份文档会被写成一个不存在的高并发系统：</p>
+
+<blockquote>
+<p><strong>本系统的首要非功能目标是「主题可扩展性（R8）」，而不是性能、吞吐或高可用。</strong> 真正的压力在<strong>内容扩展</strong>（新增 <code>vue.json</code> 引擎零改动），不在 QPS。</p>
+</blockquote>
+
+<p>三条硬事实决定了本文档的基调（全部来自 nfrDrivers，如实记录，<strong>下游禁止套用政企/高并发模板</strong>）：</p>
+
+<table>
+<thead>
+<tr>
+<th>事实</th>
+<th>数量级</th>
+<th>对性能设计的含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用户规模</td>
+<td>内部自用，单人~小团队，并发峰值<strong>个位数~两位数</strong></td>
+<td>无需负载均衡集群、无需水平分片、无需限流削峰</td>
+</tr>
+<tr>
+<td>数据量级</td>
+<td>内容侧 62 篇/8 章（MVP 9 篇）；进度侧每用户每主题<strong>一行</strong></td>
+<td>DB 量级可忽略，无需读写分离/缓存中间件</td>
+</tr>
+<tr>
+<td>计算分布</td>
+<td>代码打包运行是<strong>客户端</strong> Sandpack 浏览器内 bundler</td>
+<td>服务端零编译负载，性能瓶颈（若有）在<strong>浏览器</strong>不在服务器</td>
+</tr>
+</tbody>
+</table>
+
+<p>因此本文档的价值不是「怎么扛住高流量」，而是<strong>定义一组克制、可验收的性能预算与容量边界</strong>，防止：</p>
+
+<ol>
+<li>下游开发<strong>过度设计</strong>（凭空加 Redis / 加限流网关 / 加读写分离）——违反简洁守则「删 &gt; 加」。</li>
+<li>下游开发<strong>欠设计</strong>（把 <code>completedStepIds</code> 全表扫描、把内容页做成每次动态 SSR、把进度写做成同步阻塞学习）——踩到本来不该有的坑。</li>
+</ol>
+
+<p><strong>刻意不做清单</strong>（对齐 <code>01-architecture.md</code> §四「刻意不引入」，本维度再确认一次）：</p>
+
+<table>
+<thead>
+<tr>
+<th>不做项</th>
+<th>理由（三问：谁在用 / 不做会怎样 / 以后好加吗）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Redis / 独立缓存层</td>
+<td>只读小数据 + HTTP/CDN 缓存已足够；谁都不会因为没有 Redis 卡；未来真需要再加，零迁移成本</td>
+</tr>
+<tr>
+<td>限流网关 / WAF 削峰</td>
+<td>内部工具无对外流量、无刷量风险；峰值两位数并发离触发限流差 3 个数量级</td>
+</tr>
+<tr>
+<td>读写分离 / 分库分表</td>
+<td>进度表总行数 &lt;1000（见 §三），单实例绰绰有余</td>
+</tr>
+<tr>
+<td>消息队列 / 异步削峰</td>
+<td>无异步任务、无写放大，进度写是一次单行 UPSERT</td>
+</tr>
+<tr>
+<td>服务端沙箱 / 压测服务端打包</td>
+<td>打包在客户端，服务端根本不打包，没有可压的对象</td>
+</tr>
+<tr>
+<td>多区域容灾 / 异地多活</td>
+<td>无 SLA 硬约束，进度丢失在原型级都可接受，MVP 单区域够用</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>二、性能指标（响应时延 / 吞吐）</h2>
+
+<h3>2.1 关键路径清单与延迟预算</h3>
+
+<p>系统的关键路径只有四条（对应四类真实用户动作）。每条给出<strong>服务端预算</strong>（我们可控）与<strong>端到端 UX 预算</strong>（含客户端与第三方 CDN，仅可影响、不完全可控）：</p>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>关键路径</th>
+<th>触发动作</th>
+<th>计算位置</th>
+<th>服务端预算 (p95)</th>
+<th>端到端 UX 预算 (p95)</th>
+<th>预算依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td><strong>打开教程内容页</strong></td>
+<td>进入某主题某步骤</td>
+<td>服务端 RSC + Edge/CDN</td>
+<td>TTFB &lt; 200ms（缓存 HIT）/ &lt; 500ms（MISS 冷渲染）</td>
+<td>LCP &lt; 2.5s</td>
+<td>内容静态化，多数走 CDN；Core Web Vitals「good」阈值</td>
+</tr>
+<tr>
+<td>P2</td>
+<td><strong>读进度</strong>（断点续学）</td>
+<td>打开教程包时拉 <code>GET /api/progress</code></td>
+<td>服务端单行索引读</td>
+<td>&lt; 150ms</td>
+<td>&lt; 400ms（含 Clerk 会话校验）</td>
+<td>单行主键查询，无 JOIN</td>
+</tr>
+<tr>
+<td>P3</td>
+<td><strong>写进度</strong>（点下一步）</td>
+<td><code>PUT /api/progress</code> 一次 UPSERT</td>
+<td>服务端单行写</td>
+<td>&lt; 200ms</td>
+<td>&lt; 500ms（<strong>异步非阻塞</strong>，不卡学习）</td>
+<td>单行 UPSERT + 索引；写失败降级见 §六</td>
+</tr>
+<tr>
+<td>P4</td>
+<td><strong>沙箱首次打包运行</strong></td>
+<td>进入步骤 / 点 Run</td>
+<td><strong>客户端</strong> Sandpack bundler</td>
+<td><strong>N/A（服务端不参与）</strong></td>
+<td>首次冷打包 2~5s；热重跑 &lt; 500ms</td>
+<td>浏览器内 bundler + CodeSandbox CDN 拉依赖，服务端无预算</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p><strong>P4 是全系统最慢的一环，但它不消耗服务端资源。</strong> 这条路径的「性能」优化手段是内容工程（<code>meta.dependencies</code> 尽量精简）与 UX（打包时给出 loading 态），不是服务端调优。切勿把它算进服务端容量。</p>
+</blockquote>
+
+<h3>2.2 前端 Web Vitals 预算（对齐 D5 视觉基线）</h3>
+
+<p>内容页以 RSC 优先、纯灰阶 shadcn，天然轻量。目标锁在 Google CWV「good」档：</p>
+
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>目标 (p75)</th>
+<th>落地手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LCP</strong> 最大内容绘制</td>
+<td>&lt; 2.5s</td>
+<td>RSC 静态化内容页 + 首屏不阻塞加载 Sandpack（懒加载 Client Component）</td>
+</tr>
+<tr>
+<td><strong>INP</strong> 交互到下一次绘制</td>
+<td>&lt; 200ms</td>
+<td>步骤导航为纯客户端状态切换，不发请求；进度写异步</td>
+</tr>
+<tr>
+<td><strong>CLS</strong> 累积布局偏移</td>
+<td>&lt; 0.1</td>
+<td>三段式布局固定骨架 + 沙箱容器预留占位，避免加载抖动</td>
+</tr>
+<tr>
+<td><strong>TBT / 首屏 JS</strong></td>
+<td>Sandpack 代码分割、动态 import</td>
+<td>沙箱是最大 JS 依赖，须 <code>next/dynamic</code> 懒加载，不进内容页首屏包</td>
+</tr>
+</tbody>
+</table>
+
+<h3>2.3 吞吐目标</h3>
+
+<p>吞吐不是本系统的约束项，但给出<strong>设计裕量目标</strong>作为压测基线（见 §七），确保代码没写出反常低效实现：</p>
+
+<table>
+<thead>
+<tr>
+<th>端点</th>
+<th>峰值真实吞吐（估算）</th>
+<th>设计裕量目标</th>
+<th>裕量倍数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内容页（P1）</td>
+<td>&lt; 2 req/s（多数 CDN 命中，不回源）</td>
+<td>回源 SSR ≥ 50 req/s</td>
+<td>~25×</td>
+</tr>
+<tr>
+<td><code>GET /api/progress</code>（P2）</td>
+<td>&lt; 1 req/s</td>
+<td>≥ 100 req/s</td>
+<td>~100×</td>
+</tr>
+<tr>
+<td><code>PUT /api/progress</code>（P3）</td>
+<td>&lt; 0.5 req/s（见 §三推算）</td>
+<td>≥ 100 req/s</td>
+<td>~200×</td>
+</tr>
+</tbody>
+</table>
+
+<p>裕量倍数刻意留大，因为 Vercel Serverless + Neon 单实例天然能给到，<strong>不需要为此做任何额外工程</strong>——这正是「规模极小」的红利。</p>
+
+<hr>
+
+<h2>三、并发与容量估算</h2>
+
+<h3>3.1 用户与并发推算</h3>
+
+<p>以内部团队真实规模为基准，向上留一档增长裕量：</p>
+
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>MVP 现实值</th>
+<th>设计上限（留裕量）</th>
+<th>推算说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>注册用户总数</td>
+<td>≤ 20</td>
+<td>100</td>
+<td>单团队 + 少量跨团队旁听</td>
+</tr>
+<tr>
+<td>日活 DAU</td>
+<td>≤ 10</td>
+<td>50</td>
+<td>自主学习工具，非每日必用</td>
+</tr>
+<tr>
+<td>峰值同时在线</td>
+<td>3~5</td>
+<td>20</td>
+<td>nfrDrivers 明确「个位数~两位数」</td>
+</tr>
+<tr>
+<td>单用户步进频率</td>
+<td>1 步 / 1~3 分钟</td>
+<td>1 步 / 60s</td>
+<td>读一段讲解 + 动手改沙箱代码的自然节奏</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>峰值写 QPS 推算</strong>（P3）：</p>
+
+<pre><code>峰值写 QPS = 峰值同时在线 × 步进频率
+           = 20 用户 × (1 次写 / 60s)
+           ≈ 0.33 req/s
+</code></pre>
+
+<p><strong>峰值读 QPS 推算</strong>（P2，仅打开教程包时读一次）：</p>
+
+<pre><code>峰值读 QPS ≈ 20 用户 × (1 次读 / 会话，会话按 5 分钟计)
+           ≈ 20 / 300s ≈ 0.07 req/s
+</code></pre>
+
+<blockquote>
+<p>峰值写 QPS <strong>不到 0.5</strong>，设计裕量目标 100 QPS，<strong>留了 200 倍余量</strong>。这不是保守，是「小到根本不构成约束」。</p>
+</blockquote>
+
+<h3>3.2 数据量容量估算</h3>
+
+<h4>内容侧（TutorialPackage JSON，随仓库/构建产物）</h4>
+
+<p>以 9 篇样板真实 step 形态外推 62 篇（<code>files</code> + <code>solution</code> 多文件 + MDX 讲解）：</p>
+
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>单位估算</th>
+<th>62 篇合计</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单 step <code>files</code>（初始代码，2~3 文件）</td>
+<td>~2 KB</td>
+<td>—</td>
+<td>如 <code>App.js</code> + <code>styles.css</code> + <code>index.js</code></td>
+</tr>
+<tr>
+<td>单 step <code>solution</code>（答案代码）</td>
+<td>~2 KB</td>
+<td>—</td>
+<td>与 files 同量级</td>
+</tr>
+<tr>
+<td>单 step <code>description</code>（MDX 讲解）</td>
+<td>~2 KB</td>
+<td>—</td>
+<td>一屏讲解文本</td>
+</tr>
+<tr>
+<td><strong>单 step 合计</strong></td>
+<td><strong>~6 KB</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>react.json 单包</strong></td>
+<td>~6 KB × 62</td>
+<td><strong>~370 KB</strong></td>
+<td>加 meta/chapter 结构约 400 KB</td>
+</tr>
+<tr>
+<td>4 主题（React/Vue/JS/算法）内容总量</td>
+<td>~400 KB × 4</td>
+<td><strong>~1.6 MB</strong></td>
+<td>全部主题内容</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>结论</strong>：全部内容量级 <strong>&lt; 2 MB</strong>，是构建产物级的静态资源，<strong>无需内容数据库、无需分页、无需 CDN 分片</strong>。单个包 400 KB 走一次 RSC 渲染 + CDN 缓存即可。</p>
+
+<h4>进度侧（PostgreSQL <code>learning_progress</code>）</h4>
+
+<p>每用户每主题<strong>一行</strong>，<code>completedStepIds</code> 存 step id 数组（62 个以内的整型/短字符串）：</p>
+
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>估算</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单行大小</td>
+<td>~0.5~1 KB</td>
+<td>userId + tutorialId + currentStepId + completedStepIds[≤62] + lastVisitedAt</td>
+</tr>
+<tr>
+<td>总行数（设计上限）</td>
+<td>100 用户 × 4 主题 = <strong>400 行</strong></td>
+<td>稀疏，实际远低于此</td>
+</tr>
+<tr>
+<td>表总大小</td>
+<td>400 × 1 KB ≈ <strong>&lt; 1 MB</strong></td>
+<td>含索引也在个位数 MB</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>结论</strong>：进度表终生大小 <strong>&lt; 10 MB</strong>，单 PostgreSQL 实例、单主键索引，永远不需要分表/归档/冷热分离。</p>
+
+<h3>3.3 容量数据模型（ER 视角）</h3>
+
+<pre class="mermaid">
+erDiagram
+    USERS ||--o{ LEARNING_PROGRESS : "owns (userId)"
+    USERS {
+        text id PK "Clerk userId"
+        text email
+        timestamp created_at
+    }
+    LEARNING_PROGRESS {
+        bigserial id PK
+        text user_id FK "Clerk userId"
+        text tutorial_id "如 react / vue"
+        text current_step_id "断点续学定位"
+        jsonb completed_step_ids "已完成集合(只增不减,≤62)"
+        timestamp last_visited_at
+    }
+</pre>
+
+<blockquote>
+<p>容量红线（不是性能红线，是「什么时候该重新设计」的信号）：
+- 进度表行数 &gt; 100 万（当前预期 400），或单行 <code>completed_step_ids</code> &gt; 10 万元素 → 才需要考虑拆表。<strong>MVP 到这条线差 3~4 个数量级，明确不做预留。</strong>
+- 唯一约束 <code>UNIQUE(user_id, tutorial_id)</code> 保证一用户一主题一行，UPSERT 幂等。</p>
+</blockquote>
+
+<hr>
+
+<h2>四、可用性 SLA</h2>
+
+<h3>4.1 SLA 定位：无硬约束，尽力而为</h3>
+
+<p>nfrDrivers 明确「<strong>可用性无 SLA 硬约束</strong>——内部工具，Vercel 默认可用性即可满足；进度丢失在原型级属可接受代价」。因此本系统<strong>不承诺</strong>、<strong>不定义</strong>对外 SLA，只声明一个<strong>内部尽力目标</strong>用于自查：</p>
+
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>目标</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内部尽力可用性</td>
+<td>工作时段 <strong>99.5%/月</strong>（≈ 每月允许 3.6 小时不可用）</td>
+<td>尽力，非合同承诺</td>
+</tr>
+<tr>
+<td>依赖底座可用性</td>
+<td>继承 Vercel（~99.99% 平台）、Neon/Vercel Postgres、Clerk 各自的托管 SLA</td>
+<td>平台默认，不自建冗余</td>
+</tr>
+<tr>
+<td>RTO（恢复时间目标）</td>
+<td>&lt; 4 小时（重部署 / 联系托管方）</td>
+<td>内部工具可接受</td>
+</tr>
+<tr>
+<td>RPO（恢复点目标）</td>
+<td>进度数据 ≤ 24 小时（依赖托管 DB 自带备份）</td>
+<td>进度丢失原型级可接受</td>
+</tr>
+</tbody>
+</table>
+
+<h3>4.2 关键依赖与故障影响面</h3>
+
+<p>系统对四个托管依赖有运行时耦合，各自失效的<strong>影响面必须是「局部降级」而非「整体不可用」</strong>（对齐 D4「不拦人」）：</p>
+
+<pre class="mermaid">
+graph LR
+    U["学习者浏览器"] -->|HTTPS| V["Vercel<br/>Next.js 单体"]
+    V -->|读内容| J["TutorialPackage JSON<br/>(构建产物,随应用)"]
+    V -->|进度读写| PG[("PostgreSQL<br/>Neon/Vercel")]
+    V -->|会话校验| CK["Clerk"]
+    U -->|拉模板/依赖| SP["Sandpack CDN<br/>(codesandbox)"]
+
+    classDef core fill:#e8e8e8,stroke:#555,color:#111
+    classDef ext fill:#f4f4f4,stroke:#888,color:#111
+    class V,J core
+    class PG,CK,SP ext
+</pre>
+
+<table>
+<thead>
+<tr>
+<th>依赖失效</th>
+<th>影响面</th>
+<th>降级行为（保证「继续能学」）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PostgreSQL 不可用</strong></td>
+<td>仅进度读写失败</td>
+<td>前端回退<strong>会话内内存态</strong>（对齐 progress spec §3.5）；学习流程不中断、不报错阻断</td>
+</tr>
+<tr>
+<td><strong>Clerk 不可用</strong></td>
+<td>仅进度归属/登录失败</td>
+<td>内容接口<strong>可匿名</strong>（techBaseline），内容页照常渲染；进度功能临时禁用</td>
+</tr>
+<tr>
+<td><strong>Sandpack CDN 不可用</strong></td>
+<td>仅沙箱预览失败</td>
+<td>编辑器仍可看/改代码；预览区展示「网络异常，无法加载运行环境」（对齐 code-sandbox spec）</td>
+</tr>
+<tr>
+<td><strong>内容 JSON 缺失/损坏</strong></td>
+<td>该主题渲染失败</td>
+<td>Package Loader zod 校验拦截，返回该主题不可用，<strong>不影响其他主题</strong></td>
+</tr>
+<tr>
+<td><strong>Vercel 平台故障</strong></td>
+<td>整体不可用</td>
+<td>无自建冗余（无 SLA 硬约束），等平台恢复；内部工具可接受</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>核心不变量：<strong>任何后端/第三方依赖挂掉，都不能阻断「读讲解 + 改代码」这一核心学习动作。</strong> 这是 D4 范式在可用性维度的落点——进度、登录、预览都是增强，不是学习的前置门禁。</p>
+</blockquote>
+
+<hr>
+
+<h2>五、伸缩性</h2>
+
+<h3>5.1 两条正交的伸缩轴</h3>
+
+<p>本系统的伸缩性讨论必须区分两条轴，且<strong>只有第二条是真需求</strong>：</p>
+
+<table>
+<thead>
+<tr>
+<th>伸缩轴</th>
+<th>是否本系统真需求</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>负载伸缩</strong>（更多用户/更高 QPS）</td>
+<td>❌ 不是（规模极小、峰值两位数）</td>
+<td>Vercel Serverless 自动伸缩已覆盖，<strong>无需任何工程</strong></td>
+</tr>
+<tr>
+<td><strong>内容伸缩</strong>（更多主题/更多步骤，R8）</td>
+<td>✅ <strong>首要非功能目标</strong></td>
+<td>引擎零改动扩展是架构必须扛住的核心指标</td>
+</tr>
+</tbody>
+</table>
+
+<h3>5.2 负载伸缩（够用即止，不做工程）</h3>
+
+<ul>
+<li><strong>无状态服务端</strong>：Route Handler 无本地会话状态，Vercel 按请求自动横向拉起函数实例，天然可伸缩。</li>
+<li><strong>DB 连接</strong>：Serverless 环境下用 Neon serverless driver / 连接池（PgBouncer 风格）避免连接爆炸；峰值 20 并发离连接上限差得远，<strong>用托管默认池即可</strong>。</li>
+<li><strong>不做</strong>：负载均衡集群、自建自动扩缩容策略、多实例会话粘滞——峰值 QPS &lt; 1，这些全是过度设计。</li>
+</ul>
+
+<h3>5.3 内容伸缩（R8 —— 这才是伸缩性的主战场）</h3>
+
+<p>「伸缩」在本系统的真实含义是：<strong>内容规模增长时，引擎侧成本是否恒定（O(1) 改动）</strong>。</p>
+
+<pre class="mermaid">
+graph TD
+    subgraph Now["MVP: 1 主题 9 篇"]
+        R9["react.json (9 steps)"]
+    end
+    subgraph Grow["扩展: N 主题 M 篇"]
+        R62["react.json (62 steps)"]
+        VUE["vue.json"]
+        JS["javascript.json"]
+        ALGO["algorithm.json"]
+    end
+    LOADER["Package Loader<br/>(zod 校验 · 唯一入口)"]
+    ENGINE["配置遍历渲染引擎<br/>零主题分支"]
+
+    R9 --> LOADER
+    R62 --> LOADER
+    VUE --> LOADER
+    JS --> LOADER
+    ALGO --> LOADER
+    LOADER --> ENGINE
+
+    ENGINE -.->|"引擎代码行数<br/>不随主题数增长"| ENGINE
+
+    classDef c fill:#e8e8e8,stroke:#555,color:#111
+    class R9,R62,VUE,JS,ALGO c
+</pre>
+
+<table>
+<thead>
+<tr>
+<th>内容伸缩指标</th>
+<th>目标</th>
+<th>验收手段（对齐 01-architecture §三 CI 门禁）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新增 1 主题的引擎改动量</td>
+<td><strong>0 行 <code>.ts/.tsx</code></strong></td>
+<td>CI：放入最小 <code>vue.json</code>，git diff 仅新增 JSON，构建通过</td>
+</tr>
+<tr>
+<td>引擎代码随主题数增长</td>
+<td><strong>恒定（O(1)）</strong></td>
+<td>CI 静态扫描 <code>lib/engine/**</code>、<code>components/**</code> 主题字面量分支 = 0</td>
+</tr>
+<tr>
+<td>单主题步骤数上限</td>
+<td>无硬上限（62 → 数百皆可）</td>
+<td>遍历渲染 + 目录树虚拟化（步骤数 &gt; 200 时按需引入，当前不做）</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p><strong>性能与内容伸缩的交点</strong>：单包 JSON 增大到 62 篇（~400 KB）时，RSC 渲染是否变慢？——内容页按<strong>步骤</strong>而非整包渲染，且经 CDN 静态缓存，单步渲染成本与总步骤数无关。若未来单包 &gt; 数百步导致构建期静态生成变慢，再引入按章分包，<strong>MVP 不预留</strong>。</p>
+</blockquote>
+
+<hr>
+
+<h2>六、缓存、限流与降级策略</h2>
+
+<h3>6.1 缓存分层（只用 HTTP/CDN + RSC 静态化，无 Redis）</h3>
+
+<pre class="mermaid">
+graph TD
+    B["浏览器"] -->|1| BC["浏览器缓存<br/>静态资源 immutable"]
+    B -->|2| EDGE["Vercel Edge/CDN<br/>内容页 + /api/packages 只读"]
+    EDGE -->|MISS| RSC["Next.js RSC<br/>静态生成/ISR"]
+    RSC --> JSON["TutorialPackage JSON<br/>(构建产物)"]
+    B -->|3 不缓存| PROG["/api/progress<br/>per-user, private, no-store"]
+    PROG --> PG[("PostgreSQL")]
+
+    classDef cache fill:#e8e8e8,stroke:#555,color:#111
+    classDef nocache fill:#f4f4f4,stroke:#c00,color:#111
+    class BC,EDGE,RSC cache
+    class PROG nocache
+</pre>
+
+<table>
+<thead>
+<tr>
+<th>缓存层</th>
+<th>对象</th>
+<th>策略</th>
+<th>失效方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L0 浏览器</td>
+<td>哈希指纹静态资源（JS/CSS/字体）</td>
+<td><code>Cache-Control: public, max-age=31536000, immutable</code></td>
+<td>内容变更 → 文件名 hash 变更</td>
+</tr>
+<tr>
+<td>L1 Edge/CDN</td>
+<td>内容页（P1）、<code>GET /api/packages/*</code>（只读内容）</td>
+<td>RSC 静态化 / ISR：<code>s-maxage=3600, stale-while-revalidate=86400</code></td>
+<td>重新部署 / ISR 重验证</td>
+</tr>
+<tr>
+<td>L2 RSC 静态生成</td>
+<td>主题/章节/步骤内容页</td>
+<td>构建期 <code>generateStaticParams</code> 预渲染</td>
+<td>内容随代码提交，构建即更新</td>
+</tr>
+<tr>
+<td><strong>不缓存</strong></td>
+<td><code>GET/PUT /api/progress</code>（per-user）</td>
+<td><code>Cache-Control: private, no-store</code></td>
+<td>每次实时读写 DB</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>为什么内容可以激进缓存</strong>：<code>TutorialPackage</code> JSON 是构建产物、随仓库版本化，一次部署内<strong>内容不可变</strong>，因此可安全长缓存 + SWR。进度是 per-user 可变数据，绝不进共享缓存。</p>
+
+<h3>6.2 限流：内部工具不做业务限流，仅留一层防跑飞</h3>
+
+<ul>
+<li><strong>不做</strong>面向业务的限流/配额——内部工具无刷量、无对外流量，峰值离任何阈值差 2~3 个数量级。</li>
+<li><strong>仅保留</strong>一层轻量「防呆」保护（防止客户端 bug 死循环打爆 DB），作为 defense-in-depth：</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>保护点</th>
+<th>手段</th>
+<th>阈值</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>进度写防抖</td>
+<td>客户端点「下一步」debounce</td>
+<td>合并 500ms 内重复写</td>
+<td>UX + 减写，<strong>首选</strong></td>
+</tr>
+<tr>
+<td>API 兜底限流</td>
+<td>Vercel 平台层 / middleware 简单计数</td>
+<td>单用户 60 req/min</td>
+<td>防跑飞，非业务限流</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>兜底限流是「防御性预留」，按简洁守则应警惕。此处保留的理由：进度写走 UPSERT 直连 DB，一旦前端逻辑 bug 死循环，60/min 的软顶能挡住打爆 Neon 连接。<strong>若 middleware 实现成本 &gt; 收益，可仅保留客户端 debounce，当场标为可省技术债，不默默扩大。</strong></p>
+</blockquote>
+
+<h3>6.3 降级矩阵（对齐 D4「不拦人」—— 降级也绝不阻断学习）</h3>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>触发条件</th>
+<th>降级行为</th>
+<th>是否阻断学习</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>进度写失败</td>
+<td>DB 超时/不可用</td>
+<td>静默重试 1 次 → 仍失败则落会话内存态，下次成功再同步</td>
+<td><strong>否</strong></td>
+</tr>
+<tr>
+<td>进度读失败</td>
+<td>DB 超时/不可用</td>
+<td>不展示续学提示，按「首次访问」进第一步</td>
+<td><strong>否</strong></td>
+</tr>
+<tr>
+<td>localStorage 不可用（原型期）</td>
+<td>隐私模式/禁用</td>
+<td>降级为当次会话内存态（progress spec §3.5）</td>
+<td><strong>否</strong></td>
+</tr>
+<tr>
+<td>沙箱依赖加载失败</td>
+<td>Sandpack CDN 故障/离线</td>
+<td>编辑区可用，预览区提示网络异常</td>
+<td>否（可读改代码）</td>
+</tr>
+<tr>
+<td><code>solution</code> 缺失</td>
+<td>内容未补答案</td>
+<td>「给我看答案」按钮置灰，不报错</td>
+<td>否</td>
+</tr>
+<tr>
+<td>内容 JSON 校验失败</td>
+<td>zod 校验不过</td>
+<td>该主题标记不可用，其余主题正常</td>
+<td>否（其他主题）</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>七、性能预算落地与压测目标</h2>
+
+<h3>7.1 压测的真实意义：回归护栏，不是容量发现</h3>
+
+<p>因为峰值负载 &lt; 1 QPS，<strong>压测不是为了发现容量上限</strong>（上限远高于需求），而是作为<strong>回归护栏</strong>——确保开发过程中没有引入反常低效实现（如进度接口里全表扫、内容页每次动态 SSR 不缓存、Sandpack 进了首屏包）。</p>
+
+<h3>7.2 压测场景与通过判据</h3>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>工具</th>
+<th>负载模型</th>
+<th>通过判据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>进度接口负载</strong>（P2/P3）</td>
+<td>k6 / autocannon</td>
+<td>50 VU 持续 1 min，读写 3:1</td>
+<td>p95 &lt; 200ms，错误率 &lt; 0.1%，DB 连接不耗尽</td>
+</tr>
+<tr>
+<td><strong>内容页性能</strong>（P1）</td>
+<td>Lighthouse CI</td>
+<td>单页冷/热各一次</td>
+<td>Perf ≥ 90，LCP &lt; 2.5s，CLS &lt; 0.1</td>
+</tr>
+<tr>
+<td><strong>首屏 JS 体积</strong></td>
+<td><code>next build</code> 分析</td>
+<td>内容页首屏 bundle</td>
+<td>Sandpack <strong>不在</strong>内容页首屏包（须动态 import）</td>
+</tr>
+<tr>
+<td><strong>沙箱冷打包</strong>（P4，UX 观测非服务端压测）</td>
+<td>手动 / Playwright 计时</td>
+<td>首次进入含依赖步骤</td>
+<td>冷打包有 loading 态，热重跑 &lt; 500ms</td>
+</tr>
+<tr>
+<td><strong>R8 内容伸缩门禁</strong></td>
+<td>CI 静态扫描 + 冒烟</td>
+<td>注入最小 <code>vue.json</code></td>
+<td>引擎主题字面量分支 = 0，git diff 仅新增 JSON</td>
+</tr>
+</tbody>
+</table>
+
+<h3>7.3 关键路径时序 + 延迟预算（P2/P3 进度读写）</h3>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant B as 浏览器
+    participant E as Vercel Edge
+    participant MW as middleware.ts (Clerk)
+    participant RH as Route Handler
+    participant DB as PostgreSQL
+
+    Note over B,DB: P2 读进度（打开教程包，断点续学）
+    B->>E: GET /api/progress?tutorialId=react
+    E->>MW: 转发（no-store）
+    MW->>MW: 校验 Clerk 会话，注入 userId [~30ms]
+    MW->>RH: 已鉴权请求
+    RH->>DB: SELECT ... WHERE user_id=? AND tutorial_id=? [单行主键索引 ~20ms]
+    DB-->>RH: 一行 progress
+    RH-->>B: 200 {currentStepId, completedStepIds} [服务端 p95 < 150ms]
+    Note over B: 展示「继续学习」提示（非阻塞，失败则进第一步）
+
+    Note over B,DB: P3 写进度（点下一步，异步非阻塞）
+    B->>B: 点「下一步」→ 本地 UI 立即前进（INP < 200ms）
+    B-->>RH: PUT /api/progress（debounce 500ms，后台发）
+    RH->>DB: INSERT ... ON CONFLICT(user_id,tutorial_id) DO UPDATE [幂等 UPSERT ~30ms]
+    DB-->>RH: ok
+    RH-->>B: 204（失败则静默重试→会话内存态）[服务端 p95 < 200ms]
+</pre>
+
+<blockquote>
+<p>关键设计点：<strong>P3 写进度绝不阻塞 UI</strong>。点「下一步」时本地状态立即前进（保证 INP），进度写在后台异步发出、失败降级——用户永远感觉不到 DB 延迟。这是「服务端负载轻」在交互层的落点。</p>
+</blockquote>
+
+<hr>
+
+<h2>八、监控指标与告警阈值</h2>
+
+<p>内部工具不做重量级 APM，只用 <strong>Vercel Analytics + 平台日志</strong> 看几个关键信号（够用即止）：</p>
+
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数据源</th>
+<th>观测目标</th>
+<th>告警阈值（尽力，非 SLA）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内容页 LCP p75</td>
+<td>Vercel Speed Insights</td>
+<td>&lt; 2.5s</td>
+<td>&gt; 4s 连续 1 天 → 查静态化是否失效</td>
+</tr>
+<tr>
+<td><code>/api/progress</code> 错误率</td>
+<td>Vercel 函数日志</td>
+<td>&lt; 0.1%</td>
+<td>&gt; 1% 持续 10 min → 查 DB 连接</td>
+</tr>
+<tr>
+<td><code>/api/progress</code> p95 延迟</td>
+<td>Vercel 函数日志</td>
+<td>&lt; 200ms</td>
+<td>&gt; 1s → 查是否漏索引/连接池耗尽</td>
+</tr>
+<tr>
+<td>DB 连接数</td>
+<td>Neon/Vercel Postgres 面板</td>
+<td>远低于池上限</td>
+<td>接近上限 → 查是否连接泄漏</td>
+</tr>
+<tr>
+<td>Clerk / DB 依赖可用性</td>
+<td>各托管方状态页</td>
+<td>可用</td>
+<td>依赖故障 → 确认降级生效、不阻断学习</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>不做：分布式追踪、自定义 Prometheus、SLO burn-rate 告警——这些对峰值 20 并发的内部工具是纯负担。</p>
+</blockquote>
+
+<hr>
+
+<h2>九、性能与容量基线总表（供下游开发直接引用）</h2>
+
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>指标</th>
+<th>基线值</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>并发</strong></td>
+<td>峰值同时在线</td>
+<td>20（设计上限）</td>
+<td>现实 3~5</td>
+</tr>
+<tr>
+<td><strong>并发</strong></td>
+<td>峰值写 QPS</td>
+<td>&lt; 0.5</td>
+<td>裕量目标 100 QPS</td>
+</tr>
+<tr>
+<td><strong>容量</strong></td>
+<td>全部内容 JSON 总量</td>
+<td>&lt; 2 MB</td>
+<td>4 主题，构建产物</td>
+</tr>
+<tr>
+<td><strong>容量</strong></td>
+<td>进度表终生大小</td>
+<td>&lt; 10 MB</td>
+<td>≤ 400 行</td>
+</tr>
+<tr>
+<td><strong>时延</strong></td>
+<td>内容页 TTFB p95</td>
+<td>&lt; 200ms(HIT)/500ms(MISS)</td>
+<td>CDN + RSC 静态化</td>
+</tr>
+<tr>
+<td><strong>时延</strong></td>
+<td><code>GET /api/progress</code> p95</td>
+<td>&lt; 150ms（服务端）</td>
+<td>单行索引读</td>
+</tr>
+<tr>
+<td><strong>时延</strong></td>
+<td><code>PUT /api/progress</code> p95</td>
+<td>&lt; 200ms（服务端，异步）</td>
+<td>幂等 UPSERT</td>
+</tr>
+<tr>
+<td><strong>时延</strong></td>
+<td>内容页 LCP p75</td>
+<td>&lt; 2.5s</td>
+<td>CWV good</td>
+</tr>
+<tr>
+<td><strong>时延</strong></td>
+<td>沙箱冷打包</td>
+<td>2~5s（客户端，非服务端预算）</td>
+<td>加 loading 态</td>
+</tr>
+<tr>
+<td><strong>可用性</strong></td>
+<td>内部尽力目标</td>
+<td>99.5%/月（工作时段）</td>
+<td>无 SLA 硬约束</td>
+</tr>
+<tr>
+<td><strong>可用性</strong></td>
+<td>RPO / RTO</td>
+<td>24h / 4h</td>
+<td>进度丢失原型级可接受</td>
+</tr>
+<tr>
+<td><strong>伸缩</strong></td>
+<td>新增主题引擎改动</td>
+<td>0 行 <code>.ts/.tsx</code>（R8）</td>
+<td>CI 门禁强制</td>
+</tr>
+<tr>
+<td><strong>缓存</strong></td>
+<td>内容页/内容接口</td>
+<td><code>s-maxage=3600, SWR=86400</code></td>
+<td>无 Redis</td>
+</tr>
+<tr>
+<td><strong>缓存</strong></td>
+<td>进度接口</td>
+<td><code>private, no-store</code></td>
+<td>per-user 不共享</td>
+</tr>
+<tr>
+<td><strong>限流</strong></td>
+<td>兜底软顶</td>
+<td>60 req/min/user</td>
+<td>防跑飞，非业务限流</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>十、与技术基线一致性自检</h2>
+
+<table>
+<thead>
+<tr>
+<th>techBaseline 约束</th>
+<th>本维度落地</th>
+<th>是否一致</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>非功能首要目标是可扩展性（R8）非性能</td>
+<td>§五 内容伸缩为主战场；性能仅设克制预算</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>计算重心在客户端，服务端负载轻</td>
+<td>§二 P4 客户端打包不占服务端预算；§七 写进度异步不阻塞</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>无 Redis，仅 HTTP/CDN + RSC 静态化</td>
+<td>§六 缓存分层无独立缓存中间件</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>无消息队列</td>
+<td>无异步削峰设计，进度写为同步单行 UPSERT</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>无独立 API 网关，Vercel Edge/CDN + Clerk middleware</td>
+<td>§六/§七 限流走平台层，鉴权走 middleware</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>PostgreSQL 仅 users/learning_progress，量级可忽略</td>
+<td>§三 进度表 &lt; 10 MB，不分表</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Vercel 默认可用性即满足，无 SLA 硬约束</td>
+<td>§四 尽力目标 99.5%，不自建冗余</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>无信创/无内网/无等保/无数据不出域</td>
+<td>全文无政企内网/容灾/削峰模板</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>简洁守则「删 &gt; 加」</td>
+<td>§一 刻意不做清单；§六 兜底限流标注可省技术债</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>D4 不拦人</td>
+<td>§四/§六 任何降级都不阻断「读讲解 + 改代码」</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+
+  </article>
+</main>
+
+</body>
+</html>

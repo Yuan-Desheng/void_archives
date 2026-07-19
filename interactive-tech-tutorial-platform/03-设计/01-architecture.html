@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>总体架构设计 | ITTP 技术设计说明书</title>
+
+  <!-- ============================================================
+       ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+       用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+       置于 <title> 之后、页面自有 <style>（如有）之前。
+       ============================================================ -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          },
+          colors: {
+            primary: {
+              50:  '#f0f4f8',
+              100: '#d9e2ec',
+              200: '#bcccdc',
+              300: '#9fb3c8',
+              400: '#829ab1',
+              500: '#627d98',
+              600: '#486581',
+              700: '#334e68',
+              800: '#243b53',
+              900: '#102a43'
+            },
+            accent: {
+              50:  '#fdf8ec',
+              100: '#faedc4',
+              200: '#f5db8e',
+              300: '#eec258',
+              400: '#e0a530',
+              500: '#c98a1f',
+              600: '#a86c17',
+              700: '#855316',
+              800: '#6b4318',
+              900: '#5a3818'
+            }
+          },
+          boxShadow: {
+            card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --doc-primary: #243b53;
+      --doc-primary-dark: #102a43;
+      --doc-primary-soft: #f0f4f8;
+      --doc-accent: #a86c17;
+      --doc-accent-soft: #faedc4;
+      --doc-text: #1b2a38;
+      --doc-text-muted: #52697e;
+      --doc-border: #d9e2ec;
+      --doc-bg: #f7f9fb;
+      --doc-surface: #ffffff;
+      --doc-code-bg: #0f2438;
+      --doc-code-text: #d8e6f0;
+    }
+    :root[data-theme="dark"] {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --doc-primary: #bcccdc;
+        --doc-primary-dark: #f0f4f8;
+        --doc-primary-soft: #17293b;
+        --doc-accent: #eec258;
+        --doc-accent-soft: #3a2c10;
+        --doc-text: #dbe4ec;
+        --doc-text-muted: #93a8bd;
+        --doc-border: #2c4054;
+        --doc-bg: #0b1a29;
+        --doc-surface: #12233590;
+        --doc-code-bg: #08131f;
+        --doc-code-text: #cfe0ee;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--doc-bg);
+      color: var(--doc-text);
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ---------- 滚动条 ---------- */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--doc-border);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+    /* ---------- 正文排版容器 ---------- */
+    .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+    .doc-prose > *:first-child { margin-top: 0; }
+
+    .doc-prose h1 {
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: var(--doc-primary-dark);
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 3px solid var(--doc-primary);
+    }
+    .doc-prose h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--doc-primary-dark);
+      margin: 2.4rem 0 1rem;
+      padding: 0.1rem 0 0.6rem;
+      border-bottom: 1px solid var(--doc-border);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .doc-prose h2::before {
+      content: '';
+      width: 5px;
+      height: 1.05em;
+      background: var(--doc-accent);
+      border-radius: 2px;
+      display: inline-block;
+      flex: none;
+    }
+    .doc-prose h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--doc-primary);
+      margin: 1.8rem 0 0.75rem;
+    }
+    .doc-prose h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--doc-primary);
+      margin: 1.4rem 0 0.6rem;
+      opacity: 0.9;
+    }
+    .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+    .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+    .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+    .doc-prose a:hover { color: var(--doc-accent); }
+
+    .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+    .doc-prose ul { list-style: disc; }
+    .doc-prose ol { list-style: decimal; }
+    .doc-prose li { margin: 0.35rem 0; }
+    .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+    .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+    .doc-prose hr {
+      border: none;
+      border-top: 1px dashed var(--doc-border);
+      margin: 2rem 0;
+    }
+
+    /* ---------- 表格 ---------- */
+    .doc-prose table, .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.1rem 0 1.4rem;
+      font-size: 0.9rem;
+      background: var(--doc-surface);
+    }
+    .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+    .doc-prose th, .doc-table th {
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      font-weight: 700;
+      text-align: left;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--doc-border);
+      white-space: nowrap;
+    }
+    .doc-prose td, .doc-table td {
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--doc-border);
+      vertical-align: top;
+      color: var(--doc-text);
+    }
+    .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+    .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+    /* ---------- 行内代码 / 代码块 ---------- */
+    .doc-prose code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.86em;
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid var(--doc-border);
+    }
+    .doc-prose pre {
+      background: var(--doc-code-bg);
+      color: var(--doc-code-text);
+      padding: 1rem 1.15rem;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 1.1rem 0 1.4rem;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+    }
+    .doc-prose pre code {
+      background: transparent;
+      border: none;
+      color: inherit;
+      padding: 0;
+      font-size: 1em;
+    }
+
+    /* ---------- 引用块 ---------- */
+    .doc-prose blockquote {
+      margin: 1.1rem 0;
+      padding: 0.7rem 1.1rem;
+      background: var(--doc-primary-soft);
+      border-left: 4px solid var(--doc-accent);
+      color: var(--doc-text-muted);
+      border-radius: 0 6px 6px 0;
+    }
+    .doc-prose blockquote p { margin: 0.3rem 0; }
+
+    /* ---------- Mermaid 图容器 ---------- */
+    .doc-prose pre.mermaid, pre.mermaid {
+      background: var(--doc-surface);
+      border: 1px solid var(--doc-border);
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+    .doc-card {
+      background: var(--doc-surface);
+      border: 1px solid var(--doc-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+    }
+    .doc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      border: 1px solid var(--doc-border);
+    }
+    .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+
+    /* 导航栏样式 */
+    .doc-nav {
+      background: var(--doc-surface);
+      border-bottom: 1px solid var(--doc-border);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 2px rgba(16,42,67,0.06);
+    }
+    .doc-nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+    .doc-nav-title {
+      font-size: 0.9rem;
+      color: var(--doc-text-muted);
+      margin-bottom: 0.8rem;
+      font-weight: 600;
+    }
+    .doc-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .doc-nav-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      text-decoration: none;
+      color: var(--doc-text);
+      border: 1px solid var(--doc-border);
+      transition: all 0.2s ease;
+    }
+    .doc-nav-link:hover {
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+    }
+    .doc-nav-link.active {
+      background: var(--doc-accent);
+      color: white;
+      border-color: var(--doc-accent);
+      font-weight: 600;
+    }
+  </style>
+
+  <!-- ---------- Mermaid ---------- -->
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="doc-nav">
+    <div class="doc-nav-container">
+      <div class="doc-nav-title">互动式技术教程平台（ITTP）技术设计说明书</div>
+      <div class="doc-nav-links">
+        <a href="00-overview.html" class="doc-nav-link">00 系统设计总览</a>
+        <a href="01-architecture.html" class="doc-nav-link active">01 总体架构设计</a>
+        <a href="02-dataflow.html" class="doc-nav-link">02 数据流设计</a>
+        <a href="03-database.html" class="doc-nav-link">03 数据库设计</a>
+        <a href="04-api.html" class="doc-nav-link">04 接口/API 设计</a>
+        <a href="05-security.html" class="doc-nav-link">05 安全设计</a>
+        <a href="06-ops.html" class="doc-nav-link">06 运维与部署设计</a>
+        <a href="07-nfr.html" class="doc-nav-link">07 非功能性/性能与容量设计</a>
+        <a href="08-integration.html" class="doc-nav-link">08 集成/对接设计</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主容器 -->
+  <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;">
+    <article class="doc-prose">
+      <h1>总体架构设计</h1>
+
+      <blockquote>
+        <p>阶段③设计 · 首席架构师产出。上游唯一真源：<code>00-系统设计总览.md</code>、原型 specs（<code>02-原型-v2/specs/</code>）、<code>manifest.proto.json</code>、<code>01-需求/</code> 与 <code>99-会议与决策/</code>。</p>
+        <p>产品：<strong>互动式技术教程平台（ITTP）</strong>——内容与引擎分离、以 JSON 配置（<code>TutorialPackage</code>）驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。</p>
+        <p>范式基线：2026-07-17 决策 D4/D5 生效版本——忠于 Vue3 官方互动教程「左讲解 + 右沙箱、靠内容引导、全程不拦人」；已砍 R3/R4/R5（高亮/等待/聚光灯）。</p>
+      </blockquote>
+
+      <hr>
+
+      <h2>一、架构总纲与首要目标</h2>
+
+      <p>本架构服务于一个明确且被反复强调的成败判据 —— <strong>R8：新增一个 <code>vue.json</code> 即可跑通新主题、引擎代码零改动</strong>。因此架构的第一性原理不是性能、不是高可用，而是<strong>内容与引擎的彻底解耦</strong>：</p>
+
+      <blockquote>
+        <p>引擎是一台「解释器」，<code>TutorialPackage</code> JSON 是喂给它的「程序」。引擎里不允许出现任何 <code>if (theme === 'react')</code> / <code>switch(language)</code> 之类的主题分支；一切主题差异都必须外移到 JSON 配置里，由引擎无差别遍历渲染。</p>
+      </blockquote>
+
+      <p>其余一切都据此让位：</p>
+
+      <table>
+        <tr>
+          <th>维度</th>
+          <th>结论</th>
+          <th>依据</th>
+        </tr>
+        <tr>
+          <td>部署形态</td>
+          <td><strong>分层单体</strong>（Next.js 15 全栈单体），不拆微服务/中台</td>
+          <td>内部小工具、并发个位数~两位数，微服务是过度设计</td>
+        </tr>
+        <tr>
+          <td>首要非功能目标</td>
+          <td><strong>主题可扩展性</strong>（R8），而非性能/高可用</td>
+          <td>nfrDrivers：压力在扩展不在性能</td>
+        </tr>
+        <tr>
+          <td>计算重心</td>
+          <td><strong>客户端</strong>（Sandpack 浏览器内 bundler 打包运行），服务端只做页面渲染 + 进度读写</td>
+          <td>服务端无实时/计算压力</td>
+        </tr>
+        <tr>
+          <td>合规基线</td>
+          <td><strong>公有云 Vercel</strong>，无信创/无内网/无等保/无数据不出域</td>
+          <td>techConstraints 明确排除政企约束，下游禁止误套</td>
+        </tr>
+      </table>
+
+      <p>「内容与引擎分离」是<strong>模块边界与配置驱动原则</strong>，落在代码目录与依赖方向上，<strong>不是</strong>部署层面的服务拆分——这一点必须贯穿所有下游设计维度。</p>
+
+      <hr>
+
+      <h2>二、系统逻辑分层</h2>
+
+      <p>自顶向下五层，依赖方向严格单向（上层依赖下层，内容层反向由引擎层读取，永不反向耦合）：</p>
+
+      <pre class="mermaid">graph TD
+    subgraph L0["L0 内容层 · Content（R8 核心 · 独立于引擎）"]
+        TP["TutorialPackage JSON<br/>react.json / vue.json / ...<br/>meta.language · defaultCode · dependencies<br/>chapters[] → steps[] → files/solution"]
+    end
+
+    subgraph L1["L1 表现层 · Presentation（Next.js App Router · RSC + Client Components）"]
+        TL["theme-library<br/>主题库/大纲树"]
+        LW["learning-workspace<br/>三段式学习壳"]
+        CS["code-sandbox<br/>Sandpack 沙箱（Client）"]
+        LP["learning-progress<br/>进度指示"]
+        AT["appearance-theme<br/>灰阶tokens/亮暗/响应式"]
+    end
+
+    subgraph L2["L2 引擎/编排层 · Engine（配置驱动 · 零主题分支）"]
+        REN["配置遍历渲染器<br/>package→chapter→step 无差别遍历"]
+        NAV["步骤编排器<br/>上一步/下一步 · 永不阻塞"]
+        MDX["MDX 讲解渲染器"]
+        LOADER["Package Loader<br/>JSON 加载 + Schema 校验（zod）"]
+    end
+
+    subgraph L3["L3 应用/接口层 · API（Next.js Route Handler）"]
+        API_PKG["GET 内容读取<br/>/api/packages/*"]
+        API_PROG["进度读写<br/>/api/progress"]
+        AUTH["Clerk 鉴权中间件<br/>middleware.ts"]
+    end
+
+    subgraph L4["L4 数据/持久层 · Persistence"]
+        DRZ["Drizzle ORM"]
+        PG["PostgreSQL<br/>users / learning_progress"]
+        LS["localStorage<br/>（原型期进度 · MVP 迁 PG）"]
+    end
+
+    subgraph EXT["外部运行时"]
+        SP["Sandpack<br/>@codesandbox/sandpack-react<br/>浏览器端 bundler"]
+        CLERK["Clerk 托管鉴权"]
+    end
+
+    TP -->|"读取（单向）"| LOADER
+    LOADER --> REN
+    REN --> TL & LW
+    NAV --> LW
+    MDX --> LW
+    LW --> CS & LP & AT
+    CS -.->|"编辑器/预览 iframe"| SP
+    TL & LP --> API_PKG & API_PROG
+    API_PROG --> AUTH
+    AUTH -.-> CLERK
+    API_PROG --> DRZ --> PG
+    LP -.->|"原型期"| LS
+
+    classDef content fill:#e8e8e8,stroke:#555,color:#111
+    classDef engine fill:#f4f4f4,stroke:#666,color:#111
+    class TP content
+    class REN,NAV,MDX,LOADER engine</pre>
+
+      <h3>分层职责边界</h3>
+
+      <table>
+        <tr>
+          <th>层</th>
+          <th>职责</th>
+          <th>明确不做</th>
+        </tr>
+        <tr>
+          <td><strong>L0 内容层</strong></td>
+          <td>承载全部主题差异：语言模板、依赖、章节步骤、初始代码 <code>files</code>、答案 <code>solution</code>。以 JSON 文件形态存在，独立于引擎代码演进</td>
+          <td>不含任何渲染逻辑、不感知引擎实现</td>
+        </tr>
+        <tr>
+          <td><strong>L1 表现层</strong></td>
+          <td>5 个功能模块的 UI 组件（RSC 优先，沙箱等交互部分 Client Component）。纯灰阶 shadcn 视觉</td>
+          <td>不写死主题分支、不含业务持久化逻辑</td>
+        </tr>
+        <tr>
+          <td><strong>L2 引擎/编排层</strong></td>
+          <td>配置驱动的遍历渲染 + 步骤编排 + MDX 渲染 + JSON 加载/校验。<strong>R8 的物理落点</strong></td>
+          <td>严禁 <code>if(theme)</code>；不做鉴权/持久化</td>
+        </tr>
+        <tr>
+          <td><strong>L3 接口层</strong></td>
+          <td>Route Handler 暴露内容读取与进度读写；Clerk middleware 保护进度接口</td>
+          <td>不承担代码打包（那是客户端 Sandpack 的事）</td>
+        </tr>
+        <tr>
+          <td><strong>L4 持久层</strong></td>
+          <td>Drizzle + PostgreSQL 存 users/progress；原型期 progress 暂存 localStorage</td>
+          <td>内容不强制入库（JSON 文件即真源，可选内容表）</td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <h2>三、R8 架构级证明（内容-引擎分离硬约束）</h2>
+
+      <p>R8 是成败判据，必须给出<strong>结构性证明</strong>而非口头承诺。证明由三条架构约束共同保证：</p>
+
+      <ol>
+        <li><strong>依赖方向单向且收敛于一个入口</strong>：所有主题差异只能经 <code>Package Loader</code> 进入引擎。引擎所有渲染函数的入参类型是 <code>TutorialPackage</code>，不存在第二条注入主题信息的通道。新增 <code>vue.json</code> 走的是同一条数据通道，引擎代码不感知。</li>
+        <li><strong>语言/模板由数据决定，而非代码分支</strong>：沙箱 <code>template</code> 恒等于 <code>meta.language</code>（<code>react</code>/<code>vanilla</code>/<code>vue</code>），依赖恒等于 <code>meta.dependencies</code>。组件内<strong>不允许</strong>出现主题字面量判断。这一条在 code-sandbox spec F5/约束7 已锁死，架构侧升级为 CI 静态门禁（见下）。</li>
+        <li><strong>Schema 是唯一契约</strong>：<code>Package Loader</code> 用 zod 依据 <code>TutorialPackage</code> Schema 校验任何新 JSON；只要新主题 JSON 通过 Schema 校验，即保证可被引擎无差别渲染。Schema 即「引擎能吃什么」的形式化定义。</li>
+      </ol>
+
+      <p><strong>可验收门禁（CI 强制）</strong>：</p>
+
+      <table>
+        <tr>
+          <th>门禁</th>
+          <th>手段</th>
+          <th>通过判据</th>
+        </tr>
+        <tr>
+          <td>零主题分支</td>
+          <td>静态扫描引擎目录（<code>lib/engine/**</code>、<code>components/**</code>）正则命中 <code>react\|vue\|vanilla</code> 字面量分支</td>
+          <td>命中数 = 0</td>
+        </tr>
+        <tr>
+          <td>新增 JSON 零改动</td>
+          <td>放入一个最小 <code>vue.json</code>，仅跑构建与渲染冒烟，不改任何 <code>.ts/.tsx</code></td>
+          <td>构建通过、主题可渲染、git diff 仅新增 JSON</td>
+        </tr>
+        <tr>
+          <td>Schema 契约</td>
+          <td>zod 校验全部 package JSON</td>
+          <td>全部通过</td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <h2>四、技术选型</h2>
+
+      <p>选型全部为 techConstraints「既定技术选型」，本节固化版本倾向与在本架构中的定位。<strong>无信创/无内网/无国产化替代要求</strong>（公有云内部工具，如实记录以免下游误套）。</p>
+
+      <table>
+        <tr>
+          <th>层</th>
+          <th>选型</th>
+          <th>版本倾向</th>
+          <th>定位与理由</th>
+        </tr>
+        <tr>
+          <td>前端框架</td>
+          <td><strong>Next.js（App Router）+ React</strong></td>
+          <td>Next 15 / React 19</td>
+          <td>全栈单体骨架；RSC 减少客户端负担，内容页可静态/服务端渲染</td>
+        </tr>
+        <tr>
+          <td>语言</td>
+          <td><strong>TypeScript</strong></td>
+          <td>5.x</td>
+          <td>全栈类型；<code>TutorialPackage</code> Schema 类型即 R8 契约</td>
+        </tr>
+        <tr>
+          <td>样式</td>
+          <td><strong>Tailwind CSS + shadcn/ui</strong></td>
+          <td>Tailwind v4 / shadcn latest</td>
+          <td>落地 D5 shadcn neutral 灰阶 design tokens、亮暗双主题、WCAG AA</td>
+        </tr>
+        <tr>
+          <td>沙箱运行时</td>
+          <td><strong>Sandpack（@codesandbox/sandpack-react）</strong></td>
+          <td>latest</td>
+          <td><strong>客户端</strong> bundler：CodeMirror 编辑器 + iframe/srcdoc 预览；多文件、手动 Run、语言随 <code>meta.language</code> 切换、R10 看答案</td>
+        </tr>
+        <tr>
+          <td>后端运行时</td>
+          <td><strong>Next.js Route Handler</strong></td>
+          <td>同框架</td>
+          <td>无独立后端服务；进度读写 + 内容读取，负载轻</td>
+        </tr>
+        <tr>
+          <td>ORM</td>
+          <td><strong>Drizzle ORM</strong></td>
+          <td>latest</td>
+          <td>类型安全、迁移可控；契合「幂等迁移」偏好</td>
+        </tr>
+        <tr>
+          <td>数据库</td>
+          <td><strong>PostgreSQL</strong></td>
+          <td>15/16（Vercel Postgres / Neon 兼容）</td>
+          <td>存 users/progress，数据量可忽略</td>
+        </tr>
+        <tr>
+          <td>鉴权</td>
+          <td><strong>Clerk</strong></td>
+          <td>latest</td>
+          <td>MVP 引入（Q5）；托管身份，<code>middleware.ts</code> 保护进度接口；<code>userId</code> 即进度归属主体</td>
+        </tr>
+        <tr>
+          <td>内容存储</td>
+          <td><strong>JSON 文件（随仓库）</strong></td>
+          <td>—</td>
+          <td><code>TutorialPackage</code> 以文件为真源；内容量小、天然版本化，无需内容 CMS</td>
+        </tr>
+        <tr>
+          <td>网关/边缘</td>
+          <td><strong>Vercel Edge/CDN（平台自带）</strong></td>
+          <td>—</td>
+          <td>无独立 API 网关；Vercel 路由 + 边缘缓存即足够</td>
+        </tr>
+        <tr>
+          <td>缓存</td>
+          <td><strong>HTTP/CDN 缓存 + RSC 静态化</strong>，无 Redis</td>
+          <td>—</td>
+          <td>内容只读且量小、并发极低，独立缓存中间件属过度设计</td>
+        </tr>
+        <tr>
+          <td>消息队列</td>
+          <td><strong>无</strong></td>
+          <td>—</td>
+          <td>非异步/调度类，无解耦需求，引入 MQ 是过度设计</td>
+        </tr>
+        <tr>
+          <td>部署</td>
+          <td><strong>Vercel 公有云</strong></td>
+          <td>—</td>
+          <td>平台默认可用性即满足；无 SLA 硬约束</td>
+        </tr>
+        <tr>
+          <td>内容工程（离线）</td>
+          <td>小满zs-react 笔记 / MDX → steps</td>
+          <td>—</td>
+          <td>构建期/离线内容管道，非运行时集成</td>
+        </tr>
+      </table>
+
+      <p><strong>刻意不引入</strong>（按简洁守则「删 > 加」明确记录，防止下游顺手加）：Redis、消息队列、独立 API 网关、微服务、BFF、内容 CMS、WebContainer（Sandpack 已足够）、feature flag 兼容垫片。</p>
+
+      <hr>
+
+      <h2>五、核心组件职责与边界</h2>
+
+      <table>
+        <tr>
+          <th>组件</th>
+          <th>所属层</th>
+          <th>职责</th>
+          <th>边界（不做）</th>
+        </tr>
+        <tr>
+          <td><strong>Package Loader</strong></td>
+          <td>L2</td>
+          <td>加载 <code>TutorialPackage</code> JSON、zod Schema 校验、类型收敛为引擎入参。R8 唯一注入通道</td>
+          <td>不渲染、不判断主题</td>
+        </tr>
+        <tr>
+          <td><strong>配置遍历渲染器</strong></td>
+          <td>L2</td>
+          <td>无差别遍历 package→chapter→step 生成大纲树与步骤内容</td>
+          <td>无主题分支、无进度判断</td>
+        </tr>
+        <tr>
+          <td><strong>步骤编排器</strong></td>
+          <td>L2</td>
+          <td>上一步/下一步导航；步骤永远可点、不阻塞；切步复位沙箱为「我的代码」态</td>
+          <td><strong>禁 waitFor/门禁</strong>（D4）</td>
+        </tr>
+        <tr>
+          <td><strong>MDX 渲染器</strong></td>
+          <td>L2</td>
+          <td>渲染 step.description（含代码块语法高亮）</td>
+          <td>不做交互逻辑</td>
+        </tr>
+        <tr>
+          <td><strong>学习工作台壳</strong></td>
+          <td>L1</td>
+          <td>三段式：顶部信息条 + 左讲解 + 右沙箱容器 + 底部步骤导航；编排其余模块</td>
+          <td>不重复实现沙箱/进度内部逻辑</td>
+        </tr>
+        <tr>
+          <td><strong>代码沙箱（Client）</strong></td>
+          <td>L1↔EXT</td>
+          <td>用 step.<code>files</code> 初始化 Sandpack；手动 Run；<code>template=meta.language</code>；R10：快照 <code>currentFiles</code>→填入 <code>solution</code>→自动 Run→可切回</td>
+          <td>不感知「第几步」、不做进度判断；<code>solution</code> 缺失则按钮置灰不报错</td>
+        </tr>
+        <tr>
+          <td><strong>进度指示 + 记忆</strong></td>
+          <td>L1/L3</td>
+          <td>当前步/总步数、进度条、目录打勾、完成度%；断点 + completedSteps；原型 localStorage → MVP <code>/api/progress</code></td>
+          <td><strong>不做 waitFor 门禁</strong>；不阻塞跳转</td>
+        </tr>
+        <tr>
+          <td><strong>外观与主题</strong></td>
+          <td>L1（横切）</td>
+          <td>shadcn 灰阶 tokens、亮/暗+跟随系统+记忆、375/768/1440 三档响应式、移动端讲解/沙箱 Tab 切换</td>
+          <td>禁高饱和撞色（D5）；对比度须 WCAG AA</td>
+        </tr>
+        <tr>
+          <td><strong>进度 Route Handler</strong></td>
+          <td>L3</td>
+          <td><code>GET/PUT /api/progress</code>：读写单用户单主题断点与完成集合，经 Clerk 鉴权</td>
+          <td>不做代码打包</td>
+        </tr>
+        <tr>
+          <td><strong>Clerk middleware</strong></td>
+          <td>L3</td>
+          <td>保护进度接口，注入 <code>userId</code></td>
+          <td>内容读取接口可匿名</td>
+        </tr>
+      </table>
+
+      <h3>沙箱与工作台的解耦边界（组件级 R8 落点）</h3>
+
+      <p>工作台在进入某步时，仅把该步 <code>files</code> 交给沙箱；沙箱是纯「受控组件」，只响应 <code>初始化文件 / Run / 看答案 / 切回我的代码</code> 四类指令。切步时<strong>完整替换</strong>文件集合（不做跨步增量合并，避免上一步残留污染），并强制退出看答案态。这保证沙箱本身零主题耦合、零进度耦合。</p>
+
+      <hr>
+
+      <h2>六、部署拓扑</h2>
+
+      <pre class="mermaid">graph TB
+    subgraph Client["浏览器 · 客户端（计算重心在此）"]
+        UI["Next.js 前端<br/>React 19 + shadcn 灰阶"]
+        SPB["Sandpack Bundler<br/>浏览器内打包 + iframe/srcdoc 预览"]
+        LSC["localStorage<br/>（原型期进度）"]
+        UI --- SPB
+        UI --- LSC
+    end
+
+    subgraph Vercel["Vercel 公有云（无内网/无信创/无等保）"]
+        EDGE["Edge Network / CDN<br/>静态资源 + RSC 缓存"]
+        SSR["Next.js Runtime<br/>App Router SSR/RSC"]
+        RH["Route Handler<br/>/api/packages · /api/progress"]
+        MW["middleware.ts<br/>Clerk 鉴权"]
+        JSON["TutorialPackage JSON<br/>（随构建产物 / 内容目录）"]
+    end
+
+    subgraph Managed["托管外部服务"]
+        PG[("PostgreSQL<br/>Vercel Postgres / Neon<br/>users · learning_progress")]
+        CLK["Clerk<br/>托管身份鉴权"]
+        SPCDN["Sandpack 依赖 CDN<br/>模板/npm 依赖拉取"]
+    end
+
+    UI -->|HTTPS| EDGE
+    EDGE --> SSR
+    SSR --> RH
+    RH --> MW
+    MW -->|"验证会话"| CLK
+    RH -->|"Drizzle · SQL/TLS"| PG
+    SSR -->|"读取"| JSON
+    SPB -->|"拉模板/依赖"| SPCDN
+    UI -.->|"登录重定向"| CLK
+
+    classDef cloud fill:#f4f4f4,stroke:#666,color:#111
+    classDef ext fill:#e8e8e8,stroke:#555,color:#111
+    class EDGE,SSR,RH,MW,JSON cloud
+    class PG,CLK,SPCDN ext</pre>
+
+      <p><strong>拓扑要点</strong>：</p>
+
+      <ul>
+        <li><strong>单一部署单元</strong>：整个应用是一个 Vercel 项目（Next.js 单体），前端、SSR、Route Handler 同源同部署，无跨服务网络调用。</li>
+        <li><strong>计算下沉客户端</strong>：代码打包/运行全部在浏览器 Sandpack 内完成，服务端零编译压力；Vercel Runtime 仅承担页面渲染与进度读写。</li>
+        <li><strong>内容随构建</strong>：<code>TutorialPackage</code> JSON 作为内容目录随仓库/构建产物走，读取走 RSC/静态化，可被 Edge/CDN 缓存。</li>
+        <li><strong>托管依赖</strong>：PostgreSQL（Vercel Postgres 或 Neon）、Clerk、Sandpack 依赖 CDN 均为托管服务，无自建中间件。</li>
+        <li><strong>合规如实</strong>：公有云、数据可出域、无等保定级——<strong>下游安全/运维设计不得套用内网/信创/专网模板</strong>。</li>
+      </ul>
+
+      <hr>
+
+      <h2>七、关键数据流</h2>
+
+      <p><strong>内容渲染流（只读，R8 主通道）</strong>：
+      <code>vue.json/react.json</code> → Package Loader（zod 校验）→ 配置遍历渲染器 → 大纲树/步骤 → 工作台壳 → 沙箱以 <code>files</code> 初始化 → 用户手动 Run → Sandpack 浏览器内打包 → iframe 预览。</p>
+
+      <p><strong>看答案流（R10）</strong>：
+      点「给我看答案」→ 快照 <code>currentFiles</code> 为 <code>ownCodeSnapshot</code> → 用 <code>solution</code> 完整替换 → 自动 Run → <code>isShowingAnswer=true</code> → 点「切回我的代码」→ 恢复快照。<code>solution</code> 缺失则按钮置灰。</p>
+
+      <p><strong>进度流（分期）</strong>：</p>
+      <ul>
+        <li>原型期：进度指示 → localStorage（断点 + completedSteps）。</li>
+        <li>MVP：进度指示 → <code>PUT /api/progress</code> → Clerk 鉴权注入 <code>userId</code> → Drizzle → PostgreSQL；跨端读取 <code>GET /api/progress</code>。<strong>一次做全套后端，不留半吊子</strong>（Q5 决策）。</li>
+      </ul>
+
+      <hr>
+
+      <h2>八、关键技术决策与取舍</h2>
+
+      <table>
+        <tr>
+          <th>#</th>
+          <th>决策</th>
+          <th>取舍 / 被否方案</th>
+          <th>理由</th>
+        </tr>
+        <tr>
+          <td>D-A</td>
+          <td><strong>分层单体（Next.js 全栈）</strong>，前后端同部署</td>
+          <td>否决微服务/BFF/独立后端</td>
+          <td>内部工具、并发个位数~两位数；「内容-引擎分离」是模块边界不是服务拆分</td>
+        </tr>
+        <tr>
+          <td>D-B</td>
+          <td><strong>引擎零主题分支 + zod Schema 契约 + CI 静态门禁</strong> 落地 R8</td>
+          <td>否决「靠约定/code review 保证」</td>
+          <td>R8 是成败判据，必须结构性可验收，不能靠自觉</td>
+        </tr>
+        <tr>
+          <td>D-C</td>
+          <td><strong>内容存 JSON 文件（随仓库）</strong>，不入 CMS/不强制入库</td>
+          <td>否决内容表/Headless CMS</td>
+          <td>内容量小、天然版本化；JSON 即真源，减一层基础设施</td>
+        </tr>
+        <tr>
+          <td>D-D</td>
+          <td><strong>计算下沉客户端 Sandpack</strong>，服务端不打包</td>
+          <td>否决服务端沙箱/WebContainer 自建</td>
+          <td>Sandpack 浏览器端 bundler 已满足；服务端零编译负载</td>
+        </tr>
+        <tr>
+          <td>D-E</td>
+          <td><strong>无 Redis / 无 MQ / 无独立网关</strong></td>
+          <td>否决「预留缓存/消息层」</td>
+          <td>只读小数据 + 极低并发，独立中间件是过度设计（删 > 加）</td>
+        </tr>
+        <tr>
+          <td>D-F</td>
+          <td><strong>进度分期：localStorage → PostgreSQL 一次做全</strong></td>
+          <td>否决长期双写/兼容垫片</td>
+          <td>不留半吊子（Q5）；避免自作主张的向后兼容层</td>
+        </tr>
+        <tr>
+          <td>D-G</td>
+          <td><strong>Clerk 托管鉴权</strong>，仅保护进度接口，内容可匿名</td>
+          <td>否决自建用户体系</td>
+          <td>内部工具，托管身份最省；内容只读无需登录</td>
+        </tr>
+        <tr>
+          <td>D-H</td>
+          <td><strong>公有云 Vercel，如实记录无信创/无内网/无等保</strong></td>
+          <td>否决套用政企内网/国产化模板</td>
+          <td>与典型政企项目相反，防止下游误套约束</td>
+        </tr>
+        <tr>
+          <td>D-I</td>
+          <td><strong>禁 waitFor/门禁/蒙层/聚光灯（D4）· 禁高饱和撞色（D5）</strong></td>
+          <td>否决 R3/R4/R5 交互</td>
+          <td>忠于 Vue3 不拦人范式；shadcn 灰阶 + WCAG AA</td>
+        </tr>
+      </table>
+
+      <hr>
+
+      <h2>九、技术基线（techBaseline · 供下游所有维度统一引用）</h2>
+
+      <blockquote>
+        <p>数据库 / 数据流 / 接口 / 安全 / 运维 / 非功能性 / 集成 各维度<strong>必须</strong>严格遵循本基线，确保全套选型一致。</p>
+      </blockquote>
+
+      <ul>
+        <li><strong>架构风格</strong>：分层单体（Next.js 15 全栈单体，App Router）。「内容-引擎分离」为模块边界与配置驱动原则，<strong>非服务拆分</strong>。引擎层零主题分支，主题差异全外移到 <code>TutorialPackage</code> JSON，经唯一入口 Package Loader（zod 校验）注入——此为 R8 成败判据的物理落点，须 CI 静态门禁强制。</li>
+        <li><strong>前端</strong>：Next.js 15 + React 19 + TypeScript 5 + Tailwind v4 + shadcn/ui；RSC 优先、沙箱等交互为 Client Component；视觉锁定 shadcn neutral 灰阶 + 亮暗双主题 + WCAG AA + 375/768/1440 三档响应式；严禁蒙层/聚光灯/高亮框/waitFor 阻塞（D4）与高饱和撞色（D5）。</li>
+        <li><strong>后端</strong>：无独立后端服务，用 Next.js Route Handler（<code>/api/packages</code> 只读内容、<code>/api/progress</code> 进度读写）；服务端不承担代码打包。</li>
+        <li><strong>沙箱运行时</strong>：Sandpack（@codesandbox/sandpack-react），<strong>客户端</strong>浏览器内 bundler，<code>template = meta.language</code>、依赖 = <code>meta.dependencies</code>，组件零主题字面量；R10 看答案走「快照→填 solution→自动 Run→切回」。</li>
+        <li><strong>数据库</strong>：PostgreSQL（Vercel Postgres / Neon 兼容）+ Drizzle ORM；仅 <code>users</code> 与 <code>learning_progress</code> 两类核心数据，量级可忽略；迁移幂等可重复跑。</li>
+        <li><strong>缓存</strong>：仅 HTTP/CDN 缓存 + RSC 静态化，<strong>无 Redis</strong>。</li>
+        <li><strong>消息</strong>：<strong>无消息队列</strong>（非异步/调度类）。</li>
+        <li><strong>网关</strong>：<strong>无独立 API 网关</strong>，用 Vercel Edge/CDN + Next.js 路由；鉴权用 Clerk <code>middleware.ts</code> 保护进度接口，内容接口可匿名。</li>
+        <li><strong>鉴权</strong>：Clerk 托管身份（MVP 引入，Q5），<code>userId</code> 为进度归属主体。</li>
+        <li><strong>内容存储</strong>：<code>TutorialPackage</code> JSON 文件随仓库/构建产物为唯一真源，不入 CMS。</li>
+        <li><strong>部署形态</strong>：单一 Vercel 项目（前端 + SSR + Route Handler 同源同部署）；PostgreSQL/Clerk/Sandpack 依赖 CDN 为托管外部服务。</li>
+        <li><strong>合规基线</strong>：公有云、内部自用、<strong>无信创/无内网/无专网/无等保定级/无数据不出域</strong>——下游安全与运维设计禁止套用政企内网模板。</li>
+        <li><strong>进度分期</strong>：原型 localStorage → MVP PostgreSQL 一次做全套，不留半吊子、不做长期双写兼容垫片。</li>
+        <li><strong>非功能首要目标</strong>：主题可扩展性（R8），非性能/高可用；计算重心在客户端，服务端负载轻，Vercel 默认可用性即满足。</li>
+      </ul>
+    </article>
+  </div>
+</body>
+</html>

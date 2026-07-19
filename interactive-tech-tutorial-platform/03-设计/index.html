@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设计说明书首页 · ITTP 设计说明书</title>
+
+<!-- ============================================================
+     ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+     用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+     置于 <title> 之后、页面自有 <style>（如有）之前。
+     ============================================================ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+        },
+        colors: {
+          primary: {
+            50:  '#f0f4f8',
+            100: '#d9e2ec',
+            200: '#bcccdc',
+            300: '#9fb3c8',
+            400: '#829ab1',
+            500: '#627d98',
+            600: '#486581',
+            700: '#334e68',
+            800: '#243b53',
+            900: '#102a43'
+          },
+          accent: {
+            50:  '#fdf8ec',
+            100: '#faedc4',
+            200: '#f5db8e',
+            300: '#eec258',
+            400: '#e0a530',
+            500: '#c98a1f',
+            600: '#a86c17',
+            700: '#855316',
+            800: '#6b4318',
+            900: '#5a3818'
+          }
+        },
+        boxShadow: {
+          card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --doc-primary: #243b53;
+    --doc-primary-dark: #102a43;
+    --doc-primary-soft: #f0f4f8;
+    --doc-accent: #a86c17;
+    --doc-accent-soft: #faedc4;
+    --doc-text: #1b2a38;
+    --doc-text-muted: #52697e;
+    --doc-border: #d9e2ec;
+    --doc-bg: #f7f9fb;
+    --doc-surface: #ffffff;
+    --doc-code-bg: #0f2438;
+    --doc-code-text: #d8e6f0;
+  }
+  :root[data-theme="dark"] {
+    --doc-primary: #bcccdc;
+    --doc-primary-dark: #f0f4f8;
+    --doc-primary-soft: #17293b;
+    --doc-accent: #eec258;
+    --doc-accent-soft: #3a2c10;
+    --doc-text: #dbe4ec;
+    --doc-text-muted: #93a8bd;
+    --doc-border: #2c4054;
+    --doc-bg: #0b1a29;
+    --doc-surface: #12233590;
+    --doc-code-bg: #08131f;
+    --doc-code-text: #cfe0ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- 滚动条 ---------- */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--doc-border);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+  /* ---------- 正文排版容器 ---------- */
+  .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+  .doc-prose > *:first-child { margin-top: 0; }
+
+  .doc-prose h1 {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: var(--doc-primary-dark);
+    letter-spacing: 0.01em;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--doc-primary);
+  }
+  .doc-prose h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin: 2.4rem 0 1rem;
+    padding: 0.1rem 0 0.6rem;
+    border-bottom: 1px solid var(--doc-border);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .doc-prose h2::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+    flex: none;
+  }
+  .doc-prose h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.8rem 0 0.75rem;
+  }
+  .doc-prose h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.4rem 0 0.6rem;
+    opacity: 0.9;
+  }
+  .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+  .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+  .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-prose a:hover { color: var(--doc-accent); }
+
+  .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.35rem 0; }
+  .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+  .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+  .doc-prose hr {
+    border: none;
+    border-top: 1px dashed var(--doc-border);
+    margin: 2rem 0;
+  }
+
+  /* ---------- 表格 ---------- */
+  .doc-prose table, .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.9rem;
+    background: var(--doc-surface);
+  }
+  .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+  .doc-prose th, .doc-table th {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    white-space: nowrap;
+  }
+  .doc-prose td, .doc-table td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    vertical-align: top;
+    color: var(--doc-text);
+  }
+  .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+  .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+  /* ---------- 行内代码 / 代码块 ---------- */
+  .doc-prose code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--doc-border);
+  }
+  .doc-prose pre {
+    background: var(--doc-code-bg);
+    color: var(--doc-code-text);
+    padding: 1rem 1.15rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+  }
+  .doc-prose pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ---------- 引用块 ---------- */
+  .doc-prose blockquote {
+    margin: 1.1rem 0;
+    padding: 0.7rem 1.1rem;
+    background: var(--doc-primary-soft);
+    border-left: 4px solid var(--doc-accent);
+    color: var(--doc-text-muted);
+    border-radius: 0 6px 6px 0;
+  }
+  .doc-prose blockquote p { margin: 0.3rem 0; }
+
+  /* ---------- Mermaid 图容器 ---------- */
+  .doc-prose pre.mermaid, pre.mermaid {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+  .doc-card {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+  }
+  .doc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    border: 1px solid var(--doc-border);
+  }
+  .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+
+  /* ---------- 导航栏 ---------- */
+  .doc-nav {
+    background: var(--doc-surface);
+    border-bottom: 1px solid var(--doc-border);
+    padding: 0.8rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 1px 2px 0 rgba(16, 42, 67, 0.06);
+  }
+  .doc-nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .doc-nav-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--doc-primary-dark);
+    letter-spacing: 0.02em;
+  }
+  .doc-nav-links {
+    display: flex;
+    gap: 0.1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .doc-nav-link {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: var(--doc-text-muted);
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+  }
+  .doc-nav-link:hover {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary);
+  }
+  .doc-nav-link.active {
+    background: var(--doc-accent-soft);
+    color: var(--doc-accent);
+    font-weight: 600;
+    border-color: var(--doc-accent);
+  }
+
+  /* ---------- 首页专属：Hero / 全景图 / 文档卡片网格 ---------- */
+  .doc-hero {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.75rem;
+  }
+  .doc-hero-eyebrow {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--doc-accent);
+    margin-bottom: 0.5rem;
+  }
+  .doc-hero h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--doc-primary-dark);
+    line-height: 1.5;
+    margin: 0 0 0.9rem;
+  }
+  .doc-hero p {
+    color: var(--doc-text-muted);
+    font-size: 0.98rem;
+    line-height: 1.85;
+    margin: 0;
+  }
+  .doc-map-card {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+    padding: 1.5rem 1.5rem 1rem;
+    margin-bottom: 2rem;
+  }
+  .doc-map-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .doc-map-title::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .doc-section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .doc-section-title::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .doc-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.1rem;
+  }
+  @media (max-width: 900px) {
+    .doc-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .doc-grid { grid-template-columns: 1fr; }
+  }
+  .doc-doc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+    padding: 1.15rem 1.25rem;
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .doc-doc-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--doc-accent);
+    box-shadow: 0 4px 12px rgba(16,42,67,0.12);
+  }
+  .doc-doc-card-num {
+    display: inline-flex;
+    align-self: flex-start;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    border: 1px solid var(--doc-border);
+  }
+  .doc-doc-card-title {
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+  }
+  .doc-doc-card-desc {
+    font-size: 0.85rem;
+    color: var(--doc-text-muted);
+    line-height: 1.6;
+    flex: 1;
+  }
+  .doc-doc-card-arrow {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--doc-accent);
+  }
+  .doc-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px dashed var(--doc-border);
+    font-size: 0.82rem;
+    color: var(--doc-text-muted);
+    text-align: center;
+  }
+</style>
+
+<!-- ---------- Mermaid ---------- -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+</script>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="doc-nav">
+  <div class="doc-nav-content">
+    <div class="doc-nav-title">互动式技术教程平台（ITTP）· 设计说明书</div>
+    <div class="doc-nav-links">
+      <a href="index.html" class="doc-nav-link active">首页</a>
+      <a href="00-overview.html" class="doc-nav-link">00 系统设计总览</a>
+      <a href="01-architecture.html" class="doc-nav-link">01 总体架构设计</a>
+      <a href="02-dataflow.html" class="doc-nav-link">02 数据流设计</a>
+      <a href="03-database.html" class="doc-nav-link">03 数据库设计</a>
+      <a href="04-api.html" class="doc-nav-link">04 接口/API 设计</a>
+      <a href="05-security.html" class="doc-nav-link">05 安全设计</a>
+      <a href="06-ops.html" class="doc-nav-link">06 运维与部署设计</a>
+      <a href="07-nfr.html" class="doc-nav-link">07 非功能性/性能与容量设计</a>
+      <a href="08-integration.html" class="doc-nav-link">08 集成/对接设计</a>
+    </div>
+  </div>
+</nav>
+
+<!-- 正文 -->
+<main style="max-width: 1200px; margin: 2.5rem auto; padding: 0 1.5rem 3rem;">
+
+  <!-- Hero -->
+  <section class="doc-hero">
+    <div class="doc-hero-eyebrow">阶段③设计 · 说明书首页</div>
+    <h1>互动式技术教程平台：内容与引擎分离、以 JSON 配置（TutorialPackage）驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。</h1>
+    <p>
+      对标 Vue3 官方互动教程的内部自用教程工具。核心价值是「内容与引擎分离」——教学内容以 JSON 配置驱动，引擎只做渲染与交互，
+      成败判据是「新增一个 <code>vue.json</code> 即可跑通新主题、引擎代码零改动」（R8）。首个主题 React（62 篇笔记/8 章，MVP 先精做 9 篇样板），
+      预留 Vue/JS/算法扩展。产品形态经 2026-07-17 决策 D4 范式转向：忠于 Vue3「左讲解+右沙箱、靠内容引导、全程不拦人」，砍掉高亮/等待/聚光灯（R3/R4/R5）。
+      设计目标为内容引擎解耦、真实可运行沙箱、一键看答案（R10）、shadcn 灰阶克制视觉（D5）与三档响应式。
+    </p>
+  </section>
+
+  <!-- 设计全景 / 文档地图 -->
+  <div class="doc-map-card">
+    <div class="doc-map-title">设计全景 / 文档地图</div>
+    <pre class="mermaid">
+graph TB
+  REQ["原始需求 + 原型 specs<br/>01-需求 / 02-原型-v2"] --> D00
+
+  D00["00 系统设计总览<br/>目标·范围·模块划分"] --> D01
+  D01["01 总体架构设计<br/>分层单体·技术基线"] --> D02
+  D01 --> D03
+  D01 --> D04
+  D01 --> D08
+
+  D02["02 数据流设计<br/>TutorialPackage 全链路流转"] --> D03
+  D02 --> D04
+
+  D03["03 数据库设计<br/>users · learning_progress"]
+  D04["04 接口/API 设计<br/>HTTP 契约 · 引擎契约"] --> D08
+  D08["08 集成/对接设计<br/>Sandpack · Clerk · Vercel"]
+
+  D01 -. 横切约束 .-> D05["05 安全设计"]
+  D01 -. 横切约束 .-> D06["06 运维与部署设计"]
+  D01 -. 横切约束 .-> D07["07 非功能性设计"]
+  D03 -. 部署对象 .-> D06
+  D04 -. 鉴权/合规 .-> D05
+  D07 -. 容量目标 .-> D06
+
+  classDef core fill:#f0f4f8,stroke:#243b53,color:#102a43,stroke-width:1.5px;
+  classDef cross fill:#faedc4,stroke:#a86c17,color:#5a3818,stroke-width:1.5px;
+  classDef src fill:#ffffff,stroke:#d9e2ec,color:#52697e,stroke-dasharray: 3 3;
+  class REQ src;
+  class D00,D01,D02,D03,D04,D08 core;
+  class D05,D06,D07 cross;
+    </pre>
+  </div>
+
+  <!-- 文档清单 -->
+  <h2 class="doc-section-title">设计文档清单</h2>
+  <div class="doc-grid">
+
+    <a href="00-overview.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">00</span>
+      <span class="doc-doc-card-title">系统设计总览</span>
+      <span class="doc-doc-card-desc">唯一真源汇总：系统概述、设计目标、架构形态建议、技术约束、成败判据（R8）与五大功能模块总览。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="01-architecture.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">01</span>
+      <span class="doc-doc-card-title">总体架构设计</span>
+      <span class="doc-doc-card-desc">分层单体（Next.js 15 全栈）架构落地：模块边界、技术基线（Sandpack/Clerk/Drizzle/Vercel）与内容引擎解耦原则。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="02-dataflow.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">02</span>
+      <span class="doc-doc-card-title">数据流设计</span>
+      <span class="doc-doc-card-desc">TutorialPackage 从内容源到左讲解/右沙箱渲染的全链路流转，及 selector/waitFor 已删、solution 新增后的数据形态。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="03-database.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">03</span>
+      <span class="doc-doc-card-title">数据库设计</span>
+      <span class="doc-doc-card-desc">PostgreSQL + Drizzle ORM：仅 users 与 learning_progress 两类核心数据，迁移幂等，进度从 localStorage 到 MVP 一次做全套。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="04-api.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">04</span>
+      <span class="doc-doc-card-title">接口/API 设计</span>
+      <span class="doc-doc-card-desc">对外 HTTP 契约 + 对内引擎契约，以现行 TutorialPackage Schema 为唯一真源，不重复架构/数据库设计。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="05-security.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">05</span>
+      <span class="doc-doc-card-title">安全设计</span>
+      <span class="doc-doc-card-desc">Vercel 公有云、内部自用合规基线：无信创/无内网/无专网/无等保定级/无数据不出域，禁止套用政企内网安全模板。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="06-ops.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">06</span>
+      <span class="doc-doc-card-title">运维与部署设计</span>
+      <span class="doc-doc-card-desc">公有云 Vercel 部署与运维实践，如实记录内部自用属性，禁止套用政企内网/国产化运维模板。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="07-nfr.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">07</span>
+      <span class="doc-doc-card-title">非功能性/性能与容量设计</span>
+      <span class="doc-doc-card-desc">性能指标、并发与容量估算、可用性 SLA、伸缩性、关键路径性能预算与压测目标、缓存限流降级策略。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+    <a href="08-integration.html" class="doc-doc-card">
+      <span class="doc-doc-card-num">08</span>
+      <span class="doc-doc-card-title">集成/对接设计</span>
+      <span class="doc-doc-card-desc">Sandpack、Clerk、PostgreSQL/Drizzle、Vercel 等外部集成点的契约与边界，严格遵循架构技术基线。</span>
+      <span class="doc-doc-card-arrow">查看文档 →</span>
+    </a>
+
+  </div>
+
+  <div class="doc-footer">
+    阶段③设计说明书 · 互动式技术教程平台（ITTP）· 范式基线 2026-07-17 决策 D4/D5
+  </div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>03 数据库设计 · 技术设计说明书</title>
+
+<!-- ============================================================
+     ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+     用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+     置于 <title> 之后、页面自有 <style>（如有）之前。
+     ============================================================ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+        },
+        colors: {
+          primary: {
+            50:  '#f0f4f8',
+            100: '#d9e2ec',
+            200: '#bcccdc',
+            300: '#9fb3c8',
+            400: '#829ab1',
+            500: '#627d98',
+            600: '#486581',
+            700: '#334e68',
+            800: '#243b53',
+            900: '#102a43'
+          },
+          accent: {
+            50:  '#fdf8ec',
+            100: '#faedc4',
+            200: '#f5db8e',
+            300: '#eec258',
+            400: '#e0a530',
+            500: '#c98a1f',
+            600: '#a86c17',
+            700: '#855316',
+            800: '#6b4318',
+            900: '#5a3818'
+          }
+        },
+        boxShadow: {
+          card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --doc-primary: #243b53;
+    --doc-primary-dark: #102a43;
+    --doc-primary-soft: #f0f4f8;
+    --doc-accent: #a86c17;
+    --doc-accent-soft: #faedc4;
+    --doc-text: #1b2a38;
+    --doc-text-muted: #52697e;
+    --doc-border: #d9e2ec;
+    --doc-bg: #f7f9fb;
+    --doc-surface: #ffffff;
+    --doc-code-bg: #0f2438;
+    --doc-code-text: #d8e6f0;
+  }
+  :root[data-theme="dark"] {
+    --doc-primary: #bcccdc;
+    --doc-primary-dark: #f0f4f8;
+    --doc-primary-soft: #17293b;
+    --doc-accent: #eec258;
+    --doc-accent-soft: #3a2c10;
+    --doc-text: #dbe4ec;
+    --doc-text-muted: #93a8bd;
+    --doc-border: #2c4054;
+    --doc-bg: #0b1a29;
+    --doc-surface: #12233590;
+    --doc-code-bg: #08131f;
+    --doc-code-text: #cfe0ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- 滚动条 ---------- */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--doc-border);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+  /* ---------- 正文排版容器 ---------- */
+  .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+  .doc-prose > *:first-child { margin-top: 0; }
+
+  .doc-prose h1 {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: var(--doc-primary-dark);
+    letter-spacing: 0.01em;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--doc-primary);
+  }
+  .doc-prose h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin: 2.4rem 0 1rem;
+    padding: 0.1rem 0 0.6rem;
+    border-bottom: 1px solid var(--doc-border);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .doc-prose h2::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+    flex: none;
+  }
+  .doc-prose h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.8rem 0 0.75rem;
+  }
+  .doc-prose h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.4rem 0 0.6rem;
+    opacity: 0.9;
+  }
+  .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+  .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+  .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-prose a:hover { color: var(--doc-accent); }
+
+  .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.35rem 0; }
+  .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+  .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+  .doc-prose hr {
+    border: none;
+    border-top: 1px dashed var(--doc-border);
+    margin: 2rem 0;
+  }
+
+  /* ---------- 表格 ---------- */
+  .doc-prose table, .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.9rem;
+    background: var(--doc-surface);
+  }
+  .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+  .doc-prose th, .doc-table th {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    white-space: nowrap;
+  }
+  .doc-prose td, .doc-table td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    vertical-align: top;
+    color: var(--doc-text);
+  }
+  .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+  .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+  /* ---------- 行内代码 / 代码块 ---------- */
+  .doc-prose code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--doc-border);
+  }
+  .doc-prose pre {
+    background: var(--doc-code-bg);
+    color: var(--doc-code-text);
+    padding: 1rem 1.15rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+  }
+  .doc-prose pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ---------- 引用块 ---------- */
+  .doc-prose blockquote {
+    margin: 1.1rem 0;
+    padding: 0.7rem 1.1rem;
+    background: var(--doc-primary-soft);
+    border-left: 4px solid var(--doc-accent);
+    color: var(--doc-text-muted);
+    border-radius: 0 6px 6px 0;
+  }
+  .doc-prose blockquote p { margin: 0.3rem 0; }
+
+  /* ---------- Mermaid 图容器 ---------- */
+  .doc-prose pre.mermaid, pre.mermaid {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+  .doc-card {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+  }
+  .doc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    border: 1px solid var(--doc-border);
+  }
+  .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+
+  /* 导航栏样式 */
+  .doc-nav {
+    border-bottom: 1px solid var(--doc-border);
+    background: var(--doc-surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .doc-nav-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  .doc-nav-title {
+    font-size: 0.85rem;
+    color: var(--doc-text-muted);
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--doc-border);
+    margin: 0;
+  }
+  .doc-nav-links {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 0;
+    list-style: none;
+    margin: 0;
+  }
+  .doc-nav-links li {
+    margin: 0;
+  }
+  .doc-nav-links a {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    color: var(--doc-text-muted);
+    border: 1px solid transparent;
+  }
+  .doc-nav-links a:hover {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary);
+  }
+  .doc-nav-links a.active {
+    background: var(--doc-accent-soft);
+    color: var(--doc-accent);
+    border-color: var(--doc-accent);
+  }
+</style>
+
+<!-- ---------- Mermaid ---------- -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+</script>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="doc-nav">
+        <div class="doc-nav-inner">
+            <h2 class="doc-nav-title">互动式技术教程平台（ITTP）· 技术设计说明书</h2>
+            <ul class="doc-nav-links">
+                <li><a href="00-overview.html">00 系统设计总览</a></li>
+                <li><a href="01-architecture.html">01 总体架构设计</a></li>
+                <li><a href="02-dataflow.html">02 数据流设计</a></li>
+                <li><a href="03-database.html" class="active">03 数据库设计</a></li>
+                <li><a href="04-api.html">04 接口/API 设计</a></li>
+                <li><a href="05-security.html">05 安全设计</a></li>
+                <li><a href="06-ops.html">06 运维与部署设计</a></li>
+                <li><a href="07-nfr.html">07 非功能性/性能与容量设计</a></li>
+                <li><a href="08-integration.html">08 集成/对接设计</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 正文容器 -->
+    <main style="max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem;">
+        <article class="doc-prose">
+
+<h1>数据库设计</h1>
+
+<blockquote>
+<p>阶段③设计 · 数据库维度。上游唯一真源：<code>00-系统设计总览.md</code>、<code>01-architecture.md</code>、原型 specs（<code>02-原型-v2/specs/</code>：code-sandbox / learning-progress / theme-library / learning-workspace）、<code>manifest.proto.json</code>。<br>
+产品：<strong>互动式技术教程平台（ITTP）</strong>——内容与引擎分离、以 <code>TutorialPackage</code> JSON 驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。<br>
+技术基线锁定：PostgreSQL（Vercel Postgres / Neon 兼容）+ Drizzle ORM，<strong>仅 <code>users</code> 与 <code>learning_progress</code> 两类核心数据</strong>，迁移幂等；进度分期：原型 localStorage → MVP PostgreSQL 一次做全套。</p>
+</blockquote>
+
+<hr>
+
+<h2>一、设计第一性原理：内容不入库</h2>
+
+<p>本维度最重要的一条约束，来自 R8（内容-引擎分离）与 D-C（内容存 JSON 文件、不入 CMS/不强制入库）：</p>
+
+<blockquote>
+<p><strong><code>TutorialPackage</code> / <code>Chapter</code> / <code>Step</code> / <code>StepFiles</code> / <code>StepSolution</code> 五个内容侧实体，全部以 JSON 文件（<code>content/react.json</code> 等）为唯一真源，随仓库/构建产物走，不落任何数据库表。</strong></p>
+</blockquote>
+
+<p>因此本系统的「领域实体」与「物理数据表」是<strong>两个不重合的集合</strong>：</p>
+
+<table>
+<thead>
+<tr>
+<th>领域实体</th>
+<th>承载形态</th>
+<th>是否入库</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TutorialPackage 教程包</td>
+<td>JSON 文件（<code>content/*.json</code>）</td>
+<td>❌ 否</td>
+<td>R8 唯一注入通道是 Package Loader 读 JSON；入库会多一层与「JSON 即真源」冲突的写入面</td>
+</tr>
+<tr>
+<td>Chapter 章节</td>
+<td>JSON 内嵌 <code>chapters[]</code></td>
+<td>❌ 否</td>
+<td>章节是包的子结构，随包一起版本化</td>
+</tr>
+<tr>
+<td>Step 步骤</td>
+<td>JSON 内嵌 <code>chapters[].steps[]</code></td>
+<td>❌ 否</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>StepFiles 初始代码</td>
+<td>JSON 内嵌 <code>step.files</code></td>
+<td>❌ 否</td>
+<td>Sandpack 多文件 <code>Record&lt;path,content&gt;</code>，内容工程产物</td>
+</tr>
+<tr>
+<td>StepSolution 答案代码</td>
+<td>JSON 内嵌 <code>step.solution</code></td>
+<td>❌ 否</td>
+<td>R10 答案，内容工程产物</td>
+</tr>
+<tr>
+<td><strong>User 用户</strong></td>
+<td><strong>PostgreSQL <code>users</code> 表</strong></td>
+<td>✅ <strong>是</strong></td>
+<td>Clerk 身份的本地镜像，进度归属主体</td>
+</tr>
+<tr>
+<td><strong>LearningProgress 学习进度</strong></td>
+<td><strong>PostgreSQL <code>learning_progress</code> 表</strong></td>
+<td>✅ <strong>是</strong></td>
+<td>唯一需要跨端持久化的可变业务数据</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>为什么不给内容也建表？</strong>（简洁守则「三问」自检）</p>
+
+<ul>
+<li>哪个角色/场景在用？——没有。内容读取走 RSC 静态化读 JSON，管理靠 git（内部工具，Owner 即内容维护者）。</li>
+<li>不做会怎样？——不会怎样。内容量小（React 62 篇/MVP 9 篇）、天然版本化、只读。</li>
+<li>以后好删吗？——建了反而难删（要维护迁移、同步 JSON↔表两份真源）。</li>
+</ul>
+
+<p>结论：<strong>内容侧零表</strong>。这不是偷懒，是让 JSON 保持唯一真源、避免「JSON 与内容表双写」这类假修（用户明令禁止的反模式）。数据量级验证见 §八。</p>
+
+<blockquote>
+<p>数据量级佐证（nfrDrivers）：内容侧 62 篇/8 章（MVP 9 篇）纯只读小文件；进度侧「每用户每主题一条断点 + 已完成步骤集合」，DB 量可忽略——完全不构成建内容表的性能理由。</p>
+</blockquote>
+
+<hr>
+
+<h2>二、领域实体与 ER 模型</h2>
+
+<p>ER 图同时表达两个域：<strong>内容域（JSON，虚线框，不落库）</strong> 与 <strong>持久域（PostgreSQL，实线框，落库）</strong>。两域通过「弱引用」相连——<code>learning_progress</code> 里存的 <code>package_id / chapter_id / step_id</code> 都是<strong>指向 JSON 内标识的字符串</strong>，<strong>不建数据库外键</strong>（跨越了「表↔文件」边界，无法也不应建 FK）。</p>
+
+<pre class="mermaid">
+erDiagram
+    TUTORIAL_PACKAGE ||--o{ CHAPTER : "chapters[]"
+    CHAPTER ||--o{ STEP : "steps[]"
+    STEP ||--o| STEP_FILES : "files (可选)"
+    STEP ||--o| STEP_SOLUTION : "solution (可选)"
+
+    USERS ||--o{ LEARNING_PROGRESS : "一个用户多条进度"
+    LEARNING_PROGRESS }o..|| TUTORIAL_PACKAGE : "package_id 弱引用(非FK)"
+    LEARNING_PROGRESS }o..o| STEP : "current_step_id 弱引用(非FK)"
+
+    TUTORIAL_PACKAGE {
+        string id PK "如 react / vue，不枚举限定"
+        string meta_title "主题标题"
+        string meta_description "简介"
+        string meta_language "Sandpack template: react/vanilla/vue"
+        string meta_defaultCode "包级兜底代码"
+        object dependencies "npm 依赖 Record<name,version> 可选"
+        enum status "active / maintenance / draft"
+        array chapters "章节数组"
+    }
+    CHAPTER {
+        string id PK "章节标识"
+        string title "章节标题"
+        int order "声明顺序(或数组序)"
+        array steps "步骤数组"
+    }
+    STEP {
+        string id PK "步骤标识"
+        string title "步骤标题"
+        string description "MDX/Markdown 讲解正文"
+        int order "声明顺序"
+        object files "初始代码 Record<path,content> 可选"
+        object solution "答案代码 Record<path,content> 可选"
+    }
+    STEP_FILES {
+        string filePath PK "如 /App.js"
+        string content "文件内容"
+    }
+    STEP_SOLUTION {
+        string filePath PK "如 /App.js"
+        string content "答案内容"
+    }
+
+    USERS {
+        text id PK "Clerk userId, 如 user_2ab...(非自增)"
+        text email "Clerk 主邮箱, 可空"
+        text display_name "展示名, 可空"
+        timestamptz created_at "创建时间"
+        timestamptz updated_at "更新时间"
+        timestamptz last_seen_at "最近活跃, 可空"
+    }
+    LEARNING_PROGRESS {
+        bigint id PK "自增代理主键"
+        text user_id FK "→ users.id"
+        text package_id "TutorialPackage.id 弱引用"
+        text current_chapter_id "断点所在章节"
+        text current_step_id "断点所在步骤(续学锚点)"
+        jsonb completed_step_ids "已完成步骤集合 string[] 去重只增"
+        timestamptz last_visited_at "最近进入该包时间"
+        timestamptz created_at "创建时间"
+        timestamptz updated_at "更新时间"
+    }
+</pre>
+
+<p><strong>读图要点</strong>：</p>
+
+<ul>
+<li>虚线关系 <code>}o..||</code>（<code>LEARNING_PROGRESS</code> → <code>TUTORIAL_PACKAGE</code>/<code>STEP</code>）表示<strong>跨域弱引用</strong>：进度表里的 <code>package_id</code>、<code>current_step_id</code>、<code>completed_step_ids</code> 都是 JSON 里的标识字符串，<strong>数据库层不建外键</strong>。引擎侧读进度时以 JSON 结构为准做校验；JSON 里已不存在的 stepId 静默忽略（对齐 learning-progress spec §3.5）。</li>
+<li>实线关系 <code>||--o{</code>（<code>USERS</code> → <code>LEARNING_PROGRESS</code>）是<strong>唯一的真·数据库外键</strong>。</li>
+<li><code>STEP_FILES</code> / <code>STEP_SOLUTION</code> 在 JSON 里是 <code>Record&lt;path, content&gt;</code> 的对象，ER 里拆成实体只为表达「一步多文件」的结构，<strong>物理上不是表、不是行</strong>。</li>
+</ul>
+
+<hr>
+
+<h2>三、物理数据表设计</h2>
+
+<h3>3.1 <code>users</code>（用户 · Clerk 身份本地镜像）</h3>
+
+<p>Clerk 托管身份是权威源；本表是<strong>轻量镜像</strong>，存在的唯一理由是给 <code>learning_progress.user_id</code> 提供一个可建外键的本地锚点，并便于按用户聚合查询与展示（内部工具无需重复用户资料）。经 Clerk Webhook 同步（见 §六）。</p>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>约束</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>text</code></td>
+<td><strong>PK</strong></td>
+<td>Clerk <code>userId</code>（形如 <code>user_2ab...</code>）。<strong>非自增</strong>——直接用 Clerk 的 id 做主键，天然全局唯一，避免多一层映射</td>
+</tr>
+<tr>
+<td><code>email</code></td>
+<td><code>text</code></td>
+<td>NULL 允许</td>
+<td>Clerk 主邮箱，仅展示/排障用；不做登录凭证（登录归 Clerk）</td>
+</tr>
+<tr>
+<td><code>display_name</code></td>
+<td><code>text</code></td>
+<td>NULL 允许</td>
+<td>展示名，可空</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NOT NULL, DEFAULT <code>now()</code></td>
+<td>首次同步入库时间</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NOT NULL, DEFAULT <code>now()</code></td>
+<td>Webhook 更新时间</td>
+</tr>
+<tr>
+<td><code>last_seen_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NULL 允许</td>
+<td>最近一次访问进度接口的时间；可空</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>索引</strong>：仅主键 <code>users_pkey (id)</code>。用户量极小（内部单人/小团队），<code>email</code> 无需唯一索引（Clerk 已保证），也无按 email 查询的接口 → 不建。</p>
+
+<blockquote>
+<p>⚠️ 合规如实记录：本表<strong>不存</strong>任何 PII 加密字段、不存密码/token；<code>email</code> 是内部同事邮箱、公有云可出域场景（无信创/无等保/无数据不出域约束）。下游禁止套用政企内网的字段级加密/脱敏模板。</p>
+</blockquote>
+
+<h3>3.2 <code>learning_progress</code>（学习进度 · 唯一核心可变业务表）</h3>
+
+<p>一个用户 × 一个教程包 = <strong>一行</strong>。断点（<code>current_*</code>）与完成集合（<code>completed_step_ids</code>）是两个独立职责的字段（对齐 learning-progress spec §3.3）。</p>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>约束</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>bigint</code></td>
+<td><strong>PK</strong>, GENERATED ALWAYS AS IDENTITY</td>
+<td>自增代理主键</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td><code>text</code></td>
+<td><strong>NOT NULL</strong>, <strong>FK → <code>users(id)</code> ON DELETE CASCADE</strong></td>
+<td>进度归属主体（Clerk userId）</td>
+</tr>
+<tr>
+<td><code>package_id</code></td>
+<td><code>text</code></td>
+<td><strong>NOT NULL</strong></td>
+<td><code>TutorialPackage.id</code>（如 <code>react</code>）；弱引用 JSON，<strong>无 FK</strong></td>
+</tr>
+<tr>
+<td><code>current_chapter_id</code></td>
+<td><code>text</code></td>
+<td>NULL 允许</td>
+<td>断点所在章节 id；续学定位/大纲自动展开用</td>
+</tr>
+<tr>
+<td><code>current_step_id</code></td>
+<td><code>text</code></td>
+<td>NULL 允许</td>
+<td>断点所在步骤 id（续学锚点）。首访无记录时为 NULL</td>
+</tr>
+<tr>
+<td><code>completed_step_ids</code></td>
+<td><code>jsonb</code></td>
+<td>NOT NULL, DEFAULT <code>'[]'::jsonb</code></td>
+<td>已完成步骤 id 数组，<strong>去重、只增不减</strong>（仅整体重置清空）。应用层保证去重</td>
+</tr>
+<tr>
+<td><code>last_visited_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NOT NULL, DEFAULT <code>now()</code></td>
+<td>最近进入该包时间；多包「继续学习」排序用</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NOT NULL, DEFAULT <code>now()</code></td>
+<td>首次为该包建进度的时间</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td><code>timestamptz</code></td>
+<td>NOT NULL, DEFAULT <code>now()</code></td>
+<td>每次写进度更新</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>约束与索引</strong>：</p>
+
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>类型</th>
+<th>定义</th>
+<th>服务的查询</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>learning_progress_pkey</code></td>
+<td>PK</td>
+<td><code>(id)</code></td>
+<td>主键</td>
+</tr>
+<tr>
+<td><code>uq_progress_user_package</code></td>
+<td><strong>UNIQUE</strong></td>
+<td><code>(user_id, package_id)</code></td>
+<td><strong>核心</strong>：保证「一用户一包一行」；同时作为 <code>GET /api/progress?packageId=</code> 的覆盖索引；其 btree 前缀 <code>user_id</code> 直接服务「列出我的全部进度」（课程库卡片），故<strong>无需</strong>再单建 <code>user_id</code> 单列索引</td>
+</tr>
+<tr>
+<td><code>fk_progress_user</code></td>
+<td>FK</td>
+<td><code>user_id → users(id) ON DELETE CASCADE</code></td>
+<td>用户删除级联清进度</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>为什么 <code>completed_step_ids</code> 用 <code>jsonb</code> 数组、而不是拆 <code>progress_step</code> 明细表？</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>单包完成步骤规模</th>
+<th>读写形态</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>jsonb 数组（选用）</strong></td>
+<td>≤62（MVP≤9）</td>
+<td>单行 UPSERT 一次落全部；读单行拿全集，零 JOIN</td>
+<td>✅ 数据量微小，一行装得下；进度是「整体读写」而非「按步骤查询」，无需明细行</td>
+</tr>
+<tr>
+<td>明细表 <code>progress_step(user_id,package_id,step_id)</code></td>
+<td>每完成一步一行</td>
+<td>每步 INSERT，读需聚合</td>
+<td>❌ 过度规范化：为「勾选一个集合」引入一张表 + JOIN，违背简洁守则「删 > 加」</td>
+</tr>
+</tbody>
+</table>
+
+<p>在本量级下 jsonb 数组是正解；<strong>何时才该重构成明细表</strong>——当出现「按 step_id 跨用户聚合统计」这类分析需求时（当前明确 out-of-scope：进度不对外暴露、不分析，见 learning-progress spec §0）。当场标注为潜在技术债，不预留、不空建。</p>
+
+<blockquote>
+<p><code>jsonb</code> 而非 <code>text[]</code> 的取舍：Drizzle 对 jsonb 的类型映射（<code>string[]</code>）更顺滑、跨 Vercel Postgres/Neon 行为一致、未来若需存「完成时间戳」等富信息可平滑演进为对象数组；当前只存 <code>string[]</code>。数据量小，jsonb 的存储/查询开销可忽略。</p>
+</blockquote>
+
+<h3>3.3 不做的事（显式记录，防下游顺手加）</h3>
+
+<table>
+<thead>
+<tr>
+<th>不做</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内容表（package/chapter/step/files/solution）</td>
+<td>JSON 即真源（§一），入库=双写假修</td>
+</tr>
+<tr>
+<td>分库 / 分表 / 分区</td>
+<td>单表数据量以「用户数 × 主题数」计，个位数～数十行，谈不上分（§八）</td>
+</tr>
+<tr>
+<td>读写分离 / 只读副本</td>
+<td>并发个位数~两位数，Vercel Postgres 单实例足够</td>
+</tr>
+<tr>
+<td>Redis / 物化视图 / 缓存表</td>
+<td>完成度是本地/单行即时计算，无预聚合需求（对齐架构 D-E 无 Redis）</td>
+</tr>
+<tr>
+<td>软删除 <code>deleted_at</code></td>
+<td>「从头开始」语义是<strong>真删该包进度行或清空集合</strong>，不是留墓碑；留墓碑反而违反 spec「二次确认后清空」</td>
+</tr>
+<tr>
+<td>审计日志表</td>
+<td>内部工具、进度非敏感，无审计要求</td>
+</tr>
+<tr>
+<td><code>guest_id</code> / 匿名进度表</td>
+<td>原型期进度只在 localStorage（无身份）；MVP 起进度必属登录用户，无匿名落库态（对齐进度分期，不留半吊子/双写垫片）</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>四、字典与编码</h2>
+
+<p>系统里的枚举值<strong>几乎全在内容 JSON 侧</strong>（不入库），DB 侧无 enum 列——如实记录，避免下游误建 enum 类型表。</p>
+
+<table>
+<thead>
+<tr>
+<th>编码</th>
+<th>取值</th>
+<th>归属</th>
+<th>是否入库</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TutorialPackage.status</code></td>
+<td><code>active</code>（可进入）/ <code>maintenance</code>（维护中，卡片置灰）/ <code>draft</code>（筹备中，章节为空，置灰）</td>
+<td>内容 JSON</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><code>TutorialPackage.meta.language</code>（Sandpack <code>template</code>）</td>
+<td><code>react</code> / <code>vanilla</code> /（未来）<code>vue</code>——<strong>不枚举限定死</strong>，新主题可扩（R8）</td>
+<td>内容 JSON</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>大纲节点 <code>displayState</code></td>
+<td><code>done</code>（对勾）/ <code>current</code>（高亮）/ <code>idle</code>（空心圆）——<strong>无 <code>locked</code> 态</strong>（D4 不拦人）</td>
+<td>前端派生态</td>
+<td>❌（由 <code>completed_step_ids</code> + <code>current_step_id</code> 实时派生）</td>
+</tr>
+<tr>
+<td><code>id</code> 命名规约（<code>package_id</code>/<code>chapter_id</code>/<code>step_id</code>）</td>
+<td>小写短横线 slug，如 <code>react</code> / <code>ch-jsx</code> / <code>st-first-component</code>；<strong>字符串、不枚举限定</strong>（R8 要求新主题零改动）</td>
+<td>跨域约定</td>
+<td>进度表存字符串</td>
+</tr>
+<tr>
+<td>时间</td>
+<td>全部 <code>timestamptz</code>，UTC 存储，展示层按 UTC+8 渲染</td>
+<td>DB</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong><code>displayState</code> 派生规则</strong>（前端计算，不落库，对齐 theme-library spec §6）：</p>
+
+<pre><code>displayState(step) =
+  step.id === progress.current_step_id           → "current"
+  else step.id ∈ progress.completed_step_ids      → "done"
+  else                                            → "idle"   // 永不 "locked"</code></pre>
+
+<hr>
+
+<h2>五、读写模式与冷热数据</h2>
+
+<h3>5.1 访问路径一览</h3>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>触发</th>
+<th>SQL 形态</th>
+<th>频度</th>
+<th>命中索引</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>读单包进度（进入工作台/续学提示）</td>
+<td><code>GET /api/progress?packageId=react</code></td>
+<td><code>SELECT ... WHERE user_id=$1 AND package_id=$2</code></td>
+<td>低（每次进包一次）</td>
+<td><code>uq_progress_user_package</code></td>
+</tr>
+<tr>
+<td>读全部进度（课程库卡片完成度）</td>
+<td><code>GET /api/progress</code></td>
+<td><code>SELECT ... WHERE user_id=$1</code></td>
+<td>低（进主题库一次）</td>
+<td><code>uq_progress_user_package</code>（前缀 <code>user_id</code>）</td>
+</tr>
+<tr>
+<td>写进度（前进/后退/跳转/勾选完成）</td>
+<td><code>PUT /api/progress</code></td>
+<td><strong>UPSERT</strong>（见 5.2）</td>
+<td>中低（步骤导航时，前端防抖后写）</td>
+<td><code>uq_progress_user_package</code>（冲突键）</td>
+</tr>
+<tr>
+<td>从头开始 / 重新学习（重置）</td>
+<td><code>DELETE /api/progress?packageId=</code></td>
+<td><code>DELETE ... WHERE user_id=$1 AND package_id=$2</code></td>
+<td>极低</td>
+<td><code>uq_progress_user_package</code></td>
+</tr>
+<tr>
+<td>用户同步</td>
+<td>Clerk Webhook</td>
+<td><code>users</code> UPSERT / DELETE</td>
+<td>极低</td>
+<td><code>users_pkey</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>写多于读的场景不存在；即便步骤导航频繁，前端对 <code>PUT /api/progress</code> 做<strong>防抖</strong>（对齐 learning-progress spec：本地乐观更新、不等服务端确认），落库压力可忽略。</p>
+
+<h3>5.2 进度写 = 幂等 UPSERT（核心写路径）</h3>
+
+<p><code>current_*</code> 用最新值覆盖；<code>completed_step_ids</code> 用<strong>并集去重</strong>（只增不减，对齐 spec F3）。用 <code>INSERT ... ON CONFLICT</code> 一句完成，天然幂等（重复写同一步不产生副作用）：</p>
+
+<pre><code class="language-sql">INSERT INTO learning_progress
+  (user_id, package_id, current_chapter_id, current_step_id, completed_step_ids, last_visited_at, updated_at)
+VALUES ($1, $2, $3, $4, $5::jsonb, now(), now())
+ON CONFLICT (user_id, package_id) DO UPDATE SET
+  current_chapter_id = EXCLUDED.current_chapter_id,
+  current_step_id    = EXCLUDED.current_step_id,
+  -- 已完成集合取并集去重，绝不因回看/倒退而缩小
+  completed_step_ids = (
+    SELECT COALESCE(jsonb_agg(DISTINCT e), '[]'::jsonb)
+    FROM jsonb_array_elements_text(
+           learning_progress.completed_step_ids || EXCLUDED.completed_step_ids
+         ) AS e
+  ),
+  last_visited_at    = now(),
+  updated_at         = now();</code></pre>
+
+<blockquote>
+<p>「最后写入者生效、不加锁」是既定策略（多标签页并发轻量竞争可接受，spec §3.5）——UPSERT 语义天然满足，无需行锁/乐观版本号。</p>
+</blockquote>
+
+<p>进度读写时序：</p>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant B as 浏览器(工作台/进度模块)
+    participant MW as middleware.ts (Clerk)
+    participant RH as Route Handler /api/progress
+    participant DR as Drizzle
+    participant PG as PostgreSQL
+
+    Note over B: 学习者点「下一步」→本地乐观更新目录打勾/进度条
+    B->>MW: PUT /api/progress {packageId, chapterId, stepId, completedStepIds}
+    MW->>MW: 校验 Clerk 会话, 注入 userId
+    alt 未登录
+        MW-->>B: 401 (仅进度接口受保护, 内容接口可匿名)
+    else 已登录
+        MW->>RH: 转发 + userId
+        RH->>DR: upsertProgress(userId, packageId, ...)
+        DR->>PG: INSERT ... ON CONFLICT(user_id,package_id) DO UPDATE (并集去重)
+        PG-->>DR: 1 row affected
+        DR-->>RH: ok
+        RH-->>B: 200 {updatedAt}
+    end
+
+    Note over B: 进入某包 / 打开课程库
+    B->>MW: GET /api/progress?packageId=react
+    MW->>RH: + userId
+    RH->>DR: findProgress(userId, packageId)
+    DR->>PG: SELECT ... WHERE user_id=$1 AND package_id=$2
+    PG-->>RH: {currentStepId, completedStepIds, ...} 或空
+    RH-->>B: 200 (空则前端按「从零开始」兜底渲染)
+</pre>
+
+<h3>5.3 冷热数据</h3>
+
+<p>数据整体是「温」的小数据集，<strong>无冷热分层需求</strong>：</p>
+
+<ul>
+<li><strong>热</strong>：当前登录用户正在学的那 1~N 条 <code>learning_progress</code>（N=主题数，≤4）。全部走主键/唯一索引单行命中，PG 缓存页即覆盖。</li>
+<li><strong>温</strong>：历史用户的进度行——量级仍是「用户数 × 主题数」，几十到几百行，不需要归档。</li>
+<li><strong>冷</strong>：无。不设归档表、不设 TTL 清理（进度是断点续学资产，删了就是「换设备从头学」，属可接受但不主动做）。</li>
+</ul>
+
+<p>数据量级估算见 §八，结论是「单表一屏 <code>SELECT *</code> 就能看完」，任何分区/冷热策略都是过度设计。</p>
+
+<hr>
+
+<h2>六、Clerk 身份同步（users 表如何有数据）</h2>
+
+<p><code>users</code> 表不由业务代码直接写，而是 Clerk Webhook 驱动，保证与 Clerk 权威源最终一致；进度接口首次访问时兜底 upsert（防 Webhook 漏发）。</p>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant CK as Clerk(托管身份)
+    participant WH as Route Handler /api/webhooks/clerk
+    participant PG as PostgreSQL users
+
+    CK->>WH: user.created / user.updated (Svix 签名)
+    WH->>WH: 验签 (CLERK_WEBHOOK_SECRET)
+    WH->>PG: UPSERT users(id, email, display_name, updated_at) ON CONFLICT(id) DO UPDATE
+    CK->>WH: user.deleted
+    WH->>PG: DELETE FROM users WHERE id=$1  (级联删该用户 learning_progress)
+
+    Note over WH,PG: 兜底: /api/progress 首次命中某 userId 若 users 无行,<br/>即用 auth() 上下文 upsert 一条最小 users 记录 (last_seen_at=now())
+</pre>
+
+<blockquote>
+<p><code>ON DELETE CASCADE</code>：Clerk 删用户 → <code>users</code> 行删 → 该用户全部 <code>learning_progress</code> 自动级联清除。符合「用户即进度归属主体、无孤儿进度」。</p>
+</blockquote>
+
+<hr>
+
+<h2>七、Drizzle Schema 与幂等迁移</h2>
+
+<h3>7.1 Drizzle Schema（<code>db/schema.ts</code>）</h3>
+
+<pre><code class="language-ts">import {
+  pgTable, text, bigint, jsonb, timestamp, unique, index,
+} from "drizzle-orm/pg-core";
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),                    // Clerk userId, 非自增
+  email: text("email"),
+  displayName: text("display_name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+});
+
+export const learningProgress = pgTable(
+  "learning_progress",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    userId: text("user_id").notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    packageId: text("package_id").notNull(),       // 弱引用 JSON, 无 FK
+    currentChapterId: text("current_chapter_id"),
+    currentStepId: text("current_step_id"),
+    completedStepIds: jsonb("completed_step_ids")
+      .$type<string[]>().notNull().default([]),
+    lastVisitedAt: timestamp("last_visited_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    uqUserPackage: unique("uq_progress_user_package").on(t.userId, t.packageId),
+  }),
+);
+</code></pre>
+
+<h3>7.2 幂等迁移 SQL（<code>drizzle/0000_init.sql</code>）</h3>
+
+<p>用户偏好「幂等迁移」：全部 <code>IF NOT EXISTS</code>，可重复跑不报错。Drizzle Kit 生成后人工确认为幂等形态：</p>
+
+<pre><code class="language-sql">-- users: Clerk 身份本地镜像
+CREATE TABLE IF NOT EXISTS users (
+  id           text        PRIMARY KEY,
+  email        text,
+  display_name text,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  last_seen_at timestamptz
+);
+
+-- learning_progress: 一用户一包一行
+CREATE TABLE IF NOT EXISTS learning_progress (
+  id                 bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id            text        NOT NULL,
+  package_id         text        NOT NULL,
+  current_chapter_id text,
+  current_step_id    text,
+  completed_step_ids jsonb       NOT NULL DEFAULT '[]'::jsonb,
+  last_visited_at    timestamptz NOT NULL DEFAULT now(),
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
+-- 外键: 用户删除级联清进度 (容错: 已存在则跳过)
+DO $$ BEGIN
+  ALTER TABLE learning_progress
+    ADD CONSTRAINT fk_progress_user
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- 唯一约束: 一用户一包一行 (兼作 (user_id[,package_id]) 查询索引)
+DO $$ BEGIN
+  ALTER TABLE learning_progress
+    ADD CONSTRAINT uq_progress_user_package UNIQUE (user_id, package_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+</code></pre>
+
+<blockquote>
+<p>迁移只有一支 <code>0000_init</code>；两表结构稳定，后续演进（如 <code>completed_step_ids</code> 升级为对象数组）再走增量迁移，同样以 <code>IF NOT EXISTS</code> / <code>ADD COLUMN IF NOT EXISTS</code> 保持幂等。</p>
+</blockquote>
+
+<hr>
+
+<h2>八、数据量级与容量测算（论证「无需任何扩展性设计」）</h2>
+
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>行数模型</th>
+<th>悲观估算</th>
+<th>单行大小</th>
+<th>表总大小</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>users</code></td>
+<td>= 内部用户数</td>
+<td>~20 人</td>
+<td>~0.2 KB</td>
+<td><strong>~4 KB</strong></td>
+</tr>
+<tr>
+<td><code>learning_progress</code></td>
+<td>用户数 × 主题数</td>
+<td>20 × 4 = 80 行</td>
+<td>~1 KB（含 62 元素 jsonb 数组约 0.9 KB）</td>
+<td><strong>~80 KB</strong></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>全库业务数据 <strong>&lt; 100 KB</strong>，常驻内存、无 I/O 压力；<code>SELECT * FROM learning_progress</code> 一次拉全表都无感。</li>
+<li><code>completed_step_ids</code> 最坏情况 = 单包 62 篇全完成 = 62 个短字符串，jsonb &lt; 1 KB，远未触及 TOAST 阈值。</li>
+<li>并发峰值个位数~两位数写，PG 单实例余量数个数量级。</li>
+</ul>
+
+<p><strong>结论</strong>：分库分表、分区、读写分离、缓存层、冷热分层——<strong>全部为过度设计，本设计一律不做</strong>（对齐 nfrDrivers「首要目标是主题可扩展性 R8 而非性能」，架构 D-E/§三）。真正要扛的可扩展性在<strong>内容侧 JSON 的 R8 零改动</strong>，与数据库无关。</p>
+
+<hr>
+
+<h2>九、原型 → MVP 进度迁移（localStorage → PostgreSQL）</h2>
+
+<p>进度分期是既定约束：<strong>原型 localStorage → MVP PostgreSQL 一次做全套，不留半吊子、不做长期双写垫片</strong>。迁移是<strong>一次性导入</strong>，不是双写兼容层。</p>
+
+<p>原型侧 localStorage 结构（key <code>ittp:progress</code>，来自 learning-progress spec §3.1）：</p>
+
+<pre><code class="language-json">{
+  "react": {
+    "currentStepId": "st-props",
+    "completedStepIds": ["st-first-component", "st-jsx"],
+    "lastVisitedAt": "2026-07-18T10:20:00Z"
+  }
+}
+</code></pre>
+
+<p>字段映射与一次性导入逻辑：</p>
+
+<table>
+<thead>
+<tr>
+<th>localStorage 字段</th>
+<th>→ <code>learning_progress</code> 字段</th>
+<th>转换</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>（对象 key）<code>tutorialId</code></td>
+<td><code>package_id</code></td>
+<td>直接取 key</td>
+</tr>
+<tr>
+<td><code>currentStepId</code></td>
+<td><code>current_step_id</code></td>
+<td>直接映射</td>
+</tr>
+<tr>
+<td>—（localStorage 无 chapterId）</td>
+<td><code>current_chapter_id</code></td>
+<td><strong>由 Package Loader 读 JSON，反查 <code>currentStepId</code> 所属章节</strong>回填</td>
+</tr>
+<tr>
+<td><code>completedStepIds</code></td>
+<td><code>completed_step_ids</code></td>
+<td>去重后转 jsonb 数组</td>
+</tr>
+<tr>
+<td><code>lastVisitedAt</code></td>
+<td><code>last_visited_at</code></td>
+<td>ISO 字符串 → timestamptz</td>
+</tr>
+<tr>
+<td>（当前 Clerk 会话）</td>
+<td><code>user_id</code></td>
+<td>取 <code>auth().userId</code></td>
+</tr>
+</tbody>
+</table>
+
+<pre class="mermaid">
+graph LR
+    LS["localStorage<br/>ittp:progress"] -->|"MVP 首次登录后<br/>一次性读取"| MIG["前端迁移器<br/>(仅跑一次, 成功即清标记)"]
+    JSON["package JSON<br/>(反查 stepId→chapterId)"] --> MIG
+    MIG -->|"逐包 PUT /api/progress"| RH["Route Handler"]
+    RH --> PG[("learning_progress")]
+    MIG -.->|"导入成功后打标<br/>ittp:migrated=1, 不再重复"| LS
+
+    classDef n fill:#f4f4f4,stroke:#666,color:#111
+    class LS,MIG,JSON,RH n
+</pre>
+
+<p>迁移规则（对齐用户「不留半吊子」偏好）：</p>
+
+<ul>
+<li><strong>触发一次</strong>：MVP 上线后用户首次登录，检测 <code>localStorage.ittp:progress</code> 存在且未打 <code>ittp:migrated</code> 标记 → 逐包调 <code>PUT /api/progress</code> 导入 → 成功后打标，<strong>之后进度只读写 PostgreSQL</strong>，localStorage 不再作为进度真源。</li>
+<li><strong>不双写</strong>：迁移完成即切换，不维护 localStorage↔PG 长期同步（那是被否决的兼容垫片）。</li>
+<li><strong>降级</strong>：localStorage 无数据/不可用 → 无迁移，直接以 PG 空态从头开始，不报错。</li>
+</ul>
+
+<hr>
+
+<h2>十、真实样例数据（贴合 React 首主题 · 9 篇样板形态）</h2>
+
+<p>内容侧（JSON，<strong>不入库</strong>）——<code>content/react.json</code> 节选，体现 <code>meta</code> / <code>chapters[].steps[]</code> / <code>files</code> / <code>solution</code> 真实形态：</p>
+
+<pre><code class="language-json">{
+  "id": "react",
+  "status": "active",
+  "meta": {
+    "title": "React 入门",
+    "description": "从 JSX 到 Hooks，跟着可运行沙箱学 React。",
+    "language": "react",
+    "defaultCode": "export default function App(){ return &lt;h1&gt;Hello&lt;/h1&gt; }",
+    "dependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" }
+  },
+  "chapters": [
+    {
+      "id": "ch-jsx", "title": "JSX 与组件", "order": 1,
+      "steps": [
+        {
+          "id": "st-first-component", "title": "你的第一个组件", "order": 1,
+          "description": "React 组件就是返回 JSX 的函数。修改下面的文本，点 Run 看变化。",
+          "files": { "/App.js": "export default function App(){\n  return &lt;h1&gt;Hello React&lt;/h1&gt;\n}" }
+        },
+        {
+          "id": "st-props", "title": "用 Props 传递数据", "order": 2,
+          "description": "组件通过 props 接收外部数据。给 &lt;Welcome&gt; 传一个 name 试试。",
+          "files": {
+            "/App.js": "function Welcome(props){\n  return &lt;h2&gt;Hi, {/* 在此使用 props.name */}&lt;/h2&gt;\n}\nexport default function App(){\n  return &lt;Welcome name=\"演示用户\" /&gt;\n}"
+          },
+          "solution": {
+            "/App.js": "function Welcome(props){\n  return &lt;h2&gt;Hi, {props.name}&lt;/h2&gt;\n}\nexport default function App(){\n  return &lt;Welcome name=\"演示用户\" /&gt;\n}"
+          }
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
+
+<p>持久侧（PostgreSQL，<strong>入库</strong>）——对应一条真实进度行：</p>
+
+<p><code>users</code></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>email</th>
+<th>display_name</th>
+<th>last_seen_at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user_2ab5Kf9QwErTyU</code></td>
+<td>demo@example.com</td>
+<td>演示用户</td>
+<td>2026-07-19 09:12:00+08</td>
+</tr>
+</tbody>
+</table>
+
+<p><code>learning_progress</code></p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>user_id</th>
+<th>package_id</th>
+<th>current_chapter_id</th>
+<th>current_step_id</th>
+<th>completed_step_ids</th>
+<th>last_visited_at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>user_2ab5Kf9QwErTyU</code></td>
+<td><code>react</code></td>
+<td><code>ch-jsx</code></td>
+<td><code>st-props</code></td>
+<td><code>["st-first-component"]</code></td>
+<td>2026-07-19 09:12:00+08</td>
+</tr>
+</tbody>
+</table>
+
+<p>由此派生（前端计算，不落库）：</p>
+
+<ul>
+<li><code>st-first-component</code> → <code>displayState = done</code>（对勾）</li>
+<li><code>st-props</code> → <code>displayState = current</code>（高亮）</li>
+<li>章节 <code>ch-jsx</code> 完成度 = 1/2 = 50%；包完成度 = 已完成步数 / 总步数（读 JSON 得总步数）。</li>
+</ul>
+
+<hr>
+
+<h2>十一、设计自检（对齐技术基线与简洁守则）</h2>
+
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>选型是否符合基线</td>
+<td>✅ PostgreSQL + Drizzle，仅两表，迁移幂等，无 Redis/MQ/分区</td>
+</tr>
+<tr>
+<td>是否只落 users / learning_progress</td>
+<td>✅ 内容五实体全在 JSON，零内容表</td>
+</tr>
+<tr>
+<td>是否与 R8 内容-引擎分离一致</td>
+<td>✅ 进度表对内容只做字符串弱引用、无 FK，新增 vue.json 不需任何 DB 改动</td>
+</tr>
+<tr>
+<td>是否触碰 D4 禁令</td>
+<td>✅ 无 <code>waitFor</code>/门禁字段；完成是「经过即勾选」，DB 只记集合不做校验</td>
+</tr>
+<tr>
+<td>是否引入过度设计</td>
+<td>✅ 已显式列出并拒绝分库分表/软删/审计/匿名进度表（§3.3）</td>
+</tr>
+<tr>
+<td>合规基线</td>
+<td>✅ 公有云、无 PII 加密列、无信创/内网/等保模板；如实记录 email 明文存内部同事邮箱</td>
+</tr>
+<tr>
+<td>进度分期</td>
+<td>✅ localStorage→PG 一次性导入、不双写垫片（§九）</td>
+</tr>
+<tr>
+<td>迁移幂等</td>
+<td>✅ 全 <code>IF NOT EXISTS</code> + <code>duplicate_object</code> 容错，可重复跑（§7.2）</td>
+</tr>
+</tbody>
+</table>
+
+        </article>
+    </main>
+</body>
+</html>

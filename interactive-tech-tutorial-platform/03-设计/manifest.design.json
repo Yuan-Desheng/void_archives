@@ -1,0 +1,106 @@
+{
+  "createdAt": "2026-07-19T15:09:06+08:00",
+  "stage": "design",
+  "workflow": "proto-to-design",
+  "product": "互动式技术教程平台：内容与引擎分离、以 JSON 配置(TutorialPackage)驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。",
+  "inputs": {
+    "protoDir": "prototype",
+    "reqFiles": [
+      "{\"reqFiles\": \"/Users/cuizhanwei/yuandesheng/void_archives/interactive-tech-tutorial-platform/01-需求/原始需求.md",
+      "/Users/cuizhanwei/yuandesheng/void_archives/interactive-tech-tutorial-platform/01-需求/内容组织决策-Q3Q4.md",
+      "/Users/cuizhanwei/yuandesheng/void_archives/interactive-tech-tutorial-platform/99-会议与决策/2026-07-17-参考站实地考察与范式转向.md\"",
+      "\"protoDir\": \"/Users/cuizhanwei/yuandesheng/void_archives/interactive-tech-tutorial-platform/02-原型-v2\"",
+      "\"outDir\": \"/Users/cuizhanwei/yuandesheng/void_archives/interactive-tech-tutorial-platform/03-设计\"",
+      "\"dims\": \"all\"",
+      "\"style\": \"auto\"}"
+    ]
+  },
+  "outputs": {
+    "dir": "design",
+    "specs": [
+      "design/specs/00-系统设计总览.md",
+      "design/specs/01-architecture.md",
+      "design/specs/02-dataflow.md",
+      "design/specs/03-database.md",
+      "design/specs/04-api.md",
+      "design/specs/05-security.md",
+      "design/specs/06-ops.md",
+      "design/specs/07-nfr.md",
+      "design/specs/08-integration.md"
+    ],
+    "pages": [
+      "design/00-overview.html",
+      "design/01-architecture.html",
+      "design/02-dataflow.html",
+      "design/03-database.html",
+      "design/04-api.html",
+      "design/05-security.html",
+      "design/06-ops.html",
+      "design/07-nfr.html",
+      "design/08-integration.html"
+    ],
+    "entry": "design/index.html"
+  },
+  "handoff": {
+    "styleKey": "gov",
+    "techBaseline": "架构风格：分层单体（Next.js 15 全栈单体，App Router）。「内容-引擎分离」是模块边界与配置驱动原则，非服务拆分——引擎层零主题分支，一切主题差异外移到 TutorialPackage JSON，经唯一入口 Package Loader（zod 校验）注入，此为 R8 成败判据物理落点，须 CI 静态门禁强制。前端：Next.js 15 + React 19 + TypeScript 5 + Tailwind v4 + shadcn/ui，RSC 优先、沙箱为 Client Component，视觉锁定 shadcn neutral 灰阶 + 亮暗双主题 + WCAG AA + 375/768/1440 三档响应式，严禁蒙层/聚光灯/高亮/waitFor（D4）与高饱和撞色（D5）。后端：无独立后端服务，用 Next.js Route Handler（/api/packages 只读内容、/api/progress 进度读写），服务端不打包代码。沙箱运行时：Sandpack（@codesandbox/sandpack-react）客户端浏览器内 bundler，template=meta.language、依赖=meta.dependencies，组件零主题字面量，R10 看答案走「快照→填 solution→自动 Run→切回」。数据库：PostgreSQL（Vercel Postgres/Neon 兼容）+ Drizzle ORM，仅 users 与 learning_progress 两类核心数据，量级可忽略，迁移幂等。缓存：仅 HTTP/CDN 缓存 + RSC 静态化，无 Redis。消息：无消息队列。网关：无独立 API 网关，用 Vercel Edge/CDN + Next.js 路由，鉴权用 Clerk middleware.ts 保护进度接口、内容接口可匿名。鉴权：Clerk 托管身份（MVP/Q5），userId 为进度归属主体。内容存储：TutorialPackage JSON 文件随仓库/构建产物为唯一真源，不入 CMS。部署形态：单一 Vercel 项目（前端+SSR+Route Handler 同源同部署），PostgreSQL/Clerk/Sandpack 依赖 CDN 为托管外部服务。合规基线：公有云、内部自用，无信创/无内网/无专网/无等保定级/无数据不出域，下游禁止套用政企内网模板。进度分期：原型 localStorage → MVP PostgreSQL 一次做全套，不留半吊子、不做长期双写垫片。非功能首要目标是主题可扩展性（R8）而非性能，计算重心在客户端，服务端负载轻，Vercel 默认可用性即满足。",
+    "dimensions": [
+      {
+        "key": "architecture",
+        "title": "总体架构设计"
+      },
+      {
+        "key": "dataflow",
+        "title": "数据流设计"
+      },
+      {
+        "key": "database",
+        "title": "数据库设计"
+      },
+      {
+        "key": "api",
+        "title": "接口/API 设计"
+      },
+      {
+        "key": "security",
+        "title": "安全设计"
+      },
+      {
+        "key": "ops",
+        "title": "运维与部署设计"
+      },
+      {
+        "key": "nfr",
+        "title": "非功能性/性能与容量设计"
+      },
+      {
+        "key": "integration",
+        "title": "集成/对接设计"
+      }
+    ],
+    "modules": [
+      {
+        "key": "theme-library",
+        "name": "主题课程库"
+      },
+      {
+        "key": "learning-workspace",
+        "name": "学习工作台"
+      },
+      {
+        "key": "code-sandbox",
+        "name": "代码沙箱"
+      },
+      {
+        "key": "learning-progress",
+        "name": "学习进度"
+      },
+      {
+        "key": "appearance-theme",
+        "name": "外观与主题"
+      }
+    ],
+    "dbSpec": "design/specs/03-database.md",
+    "apiSpec": "design/specs/04-api.md"
+  }
+}

@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据流设计 · 互动式技术教程平台设计说明书</title>
+
+<!-- ============================================================
+     ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+     用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+     置于 <title> 之后、页面自有 <style>（如有）之前。
+     ============================================================ -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+        },
+        colors: {
+          primary: {
+            50:  '#f0f4f8',
+            100: '#d9e2ec',
+            200: '#bcccdc',
+            300: '#9fb3c8',
+            400: '#829ab1',
+            500: '#627d98',
+            600: '#486581',
+            700: '#334e68',
+            800: '#243b53',
+            900: '#102a43'
+          },
+          accent: {
+            50:  '#fdf8ec',
+            100: '#faedc4',
+            200: '#f5db8e',
+            300: '#eec258',
+            400: '#e0a530',
+            500: '#c98a1f',
+            600: '#a86c17',
+            700: '#855316',
+            800: '#6b4318',
+            900: '#5a3818'
+          }
+        },
+        boxShadow: {
+          card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --doc-primary: #243b53;
+    --doc-primary-dark: #102a43;
+    --doc-primary-soft: #f0f4f8;
+    --doc-accent: #a86c17;
+    --doc-accent-soft: #faedc4;
+    --doc-text: #1b2a38;
+    --doc-text-muted: #52697e;
+    --doc-border: #d9e2ec;
+    --doc-bg: #f7f9fb;
+    --doc-surface: #ffffff;
+    --doc-code-bg: #0f2438;
+    --doc-code-text: #d8e6f0;
+  }
+  :root[data-theme="dark"] {
+    --doc-primary: #bcccdc;
+    --doc-primary-dark: #f0f4f8;
+    --doc-primary-soft: #17293b;
+    --doc-accent: #eec258;
+    --doc-accent-soft: #3a2c10;
+    --doc-text: #dbe4ec;
+    --doc-text-muted: #93a8bd;
+    --doc-border: #2c4054;
+    --doc-bg: #0b1a29;
+    --doc-surface: #12233590;
+    --doc-code-bg: #08131f;
+    --doc-code-text: #cfe0ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--doc-bg);
+    color: var(--doc-text);
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- 滚动条 ---------- */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--doc-border);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+  /* ---------- 正文排版容器 ---------- */
+  .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+  .doc-prose > *:first-child { margin-top: 0; }
+
+  .doc-prose h1 {
+    font-size: 1.85rem;
+    font-weight: 900;
+    color: var(--doc-primary-dark);
+    letter-spacing: 0.01em;
+    line-height: 1.35;
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--doc-primary);
+  }
+  .doc-prose h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--doc-primary-dark);
+    margin: 2.4rem 0 1rem;
+    padding: 0.1rem 0 0.6rem;
+    border-bottom: 1px solid var(--doc-border);
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .doc-prose h2::before {
+    content: '';
+    width: 5px;
+    height: 1.05em;
+    background: var(--doc-accent);
+    border-radius: 2px;
+    display: inline-block;
+    flex: none;
+  }
+  .doc-prose h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.8rem 0 0.75rem;
+  }
+  .doc-prose h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--doc-primary);
+    margin: 1.4rem 0 0.6rem;
+    opacity: 0.9;
+  }
+  .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+  .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+  .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-prose a:hover { color: var(--doc-accent); }
+
+  .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+  .doc-prose ul { list-style: disc; }
+  .doc-prose ol { list-style: decimal; }
+  .doc-prose li { margin: 0.35rem 0; }
+  .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+  .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+  .doc-prose hr {
+    border: none;
+    border-top: 1px dashed var(--doc-border);
+    margin: 2rem 0;
+  }
+
+  /* ---------- 表格 ---------- */
+  .doc-prose table, .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.9rem;
+    background: var(--doc-surface);
+  }
+  .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+  .doc-prose th, .doc-table th {
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    font-weight: 700;
+    text-align: left;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    white-space: nowrap;
+  }
+  .doc-prose td, .doc-table td {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--doc-border);
+    vertical-align: top;
+    color: var(--doc-text);
+  }
+  .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+  .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+  /* ---------- 行内代码 / 代码块 ---------- */
+  .doc-prose code {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--doc-border);
+  }
+  .doc-prose pre {
+    background: var(--doc-code-bg);
+    color: var(--doc-code-text);
+    padding: 1rem 1.15rem;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 1.1rem 0 1.4rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+  }
+  .doc-prose pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ---------- 引用块 ---------- */
+  .doc-prose blockquote {
+    margin: 1.1rem 0;
+    padding: 0.7rem 1.1rem;
+    background: var(--doc-primary-soft);
+    border-left: 4px solid var(--doc-accent);
+    color: var(--doc-text-muted);
+    border-radius: 0 6px 6px 0;
+  }
+  .doc-prose blockquote p { margin: 0.3rem 0; }
+
+  /* ---------- Mermaid 图容器 ---------- */
+  .doc-prose pre.mermaid, pre.mermaid {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+  .doc-card {
+    background: var(--doc-surface);
+    border: 1px solid var(--doc-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+  }
+  .doc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--doc-primary-soft);
+    color: var(--doc-primary-dark);
+    border: 1px solid var(--doc-border);
+  }
+  .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+</style>
+
+<!-- ---------- Mermaid ---------- -->
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+</script>
+</head>
+<body class="bg-doc-bg">
+
+<!-- ============================================================
+     顶部导航栏
+     ============================================================ -->
+<nav class="sticky top-0 z-50 bg-doc-surface border-b border-doc-border shadow-card">
+  <div class="max-w-7xl mx-auto px-6 py-4">
+    <div class="text-sm font-medium text-doc-text-muted mb-3">
+      互动式技术教程平台（ITTP）· 设计说明书
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <a href="00-overview.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        00 系统设计总览
+      </a>
+      <a href="01-architecture.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        01 总体架构设计
+      </a>
+      <span class="px-3 py-1.5 rounded-md text-sm font-bold text-doc-primary-dark bg-doc-accent-soft border border-doc-accent">
+        02 数据流设计
+      </span>
+      <a href="03-database.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        03 数据库设计
+      </a>
+      <a href="04-api.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        04 接口/API 设计
+      </a>
+      <a href="05-security.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        05 安全设计
+      </a>
+      <a href="06-ops.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        06 运维与部署设计
+      </a>
+      <a href="07-nfr.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        07 非功能性设计
+      </a>
+      <a href="08-integration.html" class="px-3 py-1.5 rounded-md text-sm font-medium text-doc-text hover:bg-doc-primary-soft transition">
+        08 集成/对接设计
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     正文容器
+     ============================================================ -->
+<div class="bg-doc-bg min-h-screen">
+  <div class="max-w-4xl mx-auto px-6 py-12">
+    <article class="doc-prose">
+
+<h1>数据流设计</h1>
+
+<blockquote>
+<p>阶段③设计 · 资深系统设计专家产出。上游唯一真源：<code>00-系统设计总览.md</code>、<code>01-architecture.md</code>、原型 specs（<code>02-原型-v2/specs/</code>）、<code>manifest.proto.json</code>、<code>99-会议与决策/</code>。<br>产品：<strong>互动式技术教程平台（ITTP）</strong>——内容与引擎分离、以 JSON 配置（<code>TutorialPackage</code>）驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。<br>范式基线：2026-07-17 决策 <strong>D4/D5</strong> 生效版本——忠于 Vue3 官方互动教程「左讲解 + 右沙箱、靠内容引导、全程不拦人」；已砍 R3/R4/R5（高亮/等待/聚光灯），Schema 已删 <code>selector</code>/<code>waitFor</code>、<code>codeSnippet</code>→多文件 <code>files</code>、新增 <code>solution</code>。</p>
+</blockquote>
+
+<hr>
+
+<h2>一、数据流总纲</h2>
+
+<p>本系统的数据流有一条与常规业务系统不同的基线：<strong>计算重心在客户端，服务端几乎不承载业务计算</strong>。代码打包运行发生在浏览器内的 Sandpack bundler，服务端只做「页面渲染 + 内容读取 + 进度读写」三件轻活。因此本设计不追求高吞吐/低延迟，而是围绕三条数据主线把「谁产生、经谁处理、落到哪、被谁消费」讲清楚。</p>
+
+<h3>1.1 三条数据主线（数据域划分）</h3>
+
+<table>
+<thead>
+<tr>
+<th>数据域</th>
+<th>内容</th>
+<th>产生方</th>
+<th>存储</th>
+<th>消费方</th>
+<th>处理模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>内容域 Content</strong></td>
+<td><code>TutorialPackage</code> JSON（meta/chapters/steps/files/solution）</td>
+<td>内容维护者（离线内容工程：小满zs 笔记 → MDX → steps）</td>
+<td>仓库内 JSON 文件（随构建产物），<strong>非入库</strong></td>
+<td>引擎层遍历渲染 + 沙箱初始化</td>
+<td><strong>批处理</strong>（构建期一次性固化，运行期只读）</td>
+</tr>
+<tr>
+<td><strong>进度域 Progress</strong></td>
+<td>断点 <code>currentStepId</code> + 已完成集合 <code>completedStepIds</code> + <code>lastVisitedAt</code></td>
+<td>学习者的导航行为（下一步/跳转）</td>
+<td>原型：<code>localStorage</code>；MVP：PostgreSQL <code>learning_progress</code></td>
+<td>进度指示器、目录树打勾、课程库卡片完成度</td>
+<td><strong>流式增量</strong>（每次导航即时写，只增不减）</td>
+</tr>
+<tr>
+<td><strong>沙箱运行时域 Sandbox</strong></td>
+<td><code>currentFiles</code> / <code>activeFile</code> / <code>isShowingAnswer</code> / <code>ownCodeSnapshot</code> 等</td>
+<td>学习者的编辑与「Run/看答案」交互</td>
+<td><strong>纯前端内存态，不持久化</strong></td>
+<td>Sandpack bundler → iframe 预览</td>
+<td><strong>流式瞬态</strong>（会话内存，切步即弃）</td>
+</tr>
+</tbody>
+</table>
+
+<p>三域的<strong>边界清晰、耦合极弱</strong>：内容域是只读输入，进度域只记「学到哪」，沙箱域完全瞬态。这种弱耦合正是 R8「内容-引擎分离」在数据层的体现——引擎不缓存主题状态，一切主题差异随内容域 JSON 流入，用完即走。</p>
+
+<h3>1.2 批处理 / 流处理边界</h3>
+
+<pre class="mermaid">
+graph LR
+    subgraph Batch["批处理边界（构建期 · 离线）"]
+        A["小满zs 62篇笔记<br/>(MDX/Markdown)"] -->|"人工内容工程"| B["react.json<br/>TutorialPackage"]
+        B -->|"构建期打包"| C["构建产物<br/>随部署固化"]
+    end
+    subgraph Stream["流处理边界（运行期 · 在线）"]
+        D["学习者导航"] -->|"即时增量"| E["进度写入"]
+        F["学习者编辑/Run"] -->|"客户端瞬时"| G["Sandpack 编译预览"]
+    end
+    C -.->|"运行期只读加载"| H["Package Loader (zod)"]
+    H --> D
+    H --> F
+
+    classDef batch fill:#e8e8e8,stroke:#555,color:#111
+    classDef stream fill:#f4f4f4,stroke:#666,color:#111
+    class A,B,C batch
+    class D,E,F,G stream
+</pre>
+
+<ul>
+<li><strong>批处理侧</strong>：内容工程是离线人工管道（非运行时集成），产出的 <code>react.json</code> 在<strong>构建期一次性固化</strong>进部署产物，运行期绝不动态生成/修改内容。这条边界保证内容是「编译进系统的常量」，可静态化、可 CDN 缓存。</li>
+<li><strong>流处理侧</strong>：进度写入与沙箱编译都是运行期的<strong>增量/瞬时</strong>事件，无批量聚合、无定时任务、无消息队列——事件规模是「单人每分钟几次点击」，直接同步处理即可，引入流式中间件属过度设计。</li>
+</ul>
+
+<hr>
+
+<h2>二、全局数据流拓扑</h2>
+
+<p>一张图看清「采集/接入 → 处理/计算 → 存储 → 消费/展示」的完整路径。注意左半是<strong>客户端计算重心</strong>，右半 Vercel 服务端只做轻量读写。</p>
+
+<pre class="mermaid">
+graph TB
+    subgraph Author["① 采集/接入 · 内容工程（离线批处理）"]
+        NOTES["小满zs React 笔记<br/>62篇 / MDX"]
+        AUTHORING["内容工程<br/>笔记→steps 切分<br/>补 files/solution"]
+        PKG["react.json<br/>(MVP 先 9 篇样板)"]
+        NOTES --> AUTHORING --> PKG
+    end
+
+    subgraph Vercel["Vercel 公有云（服务端 · 负载轻）"]
+        LOADER["Package Loader<br/>zod Schema 校验<br/>【R8 唯一注入通道】"]
+        RSC["RSC 渲染<br/>大纲树/讲解 SSR"]
+        API_PKG["GET /api/packages/:id<br/>(只读内容 · 可匿名)"]
+        API_PROG["GET/PUT /api/progress<br/>(进度读写 · Clerk 保护)"]
+        MW["middleware.ts<br/>Clerk 鉴权"]
+        DRZ["Drizzle ORM"]
+    end
+
+    subgraph Client["② 处理/计算 · 浏览器（计算重心在此）"]
+        RENDER["配置遍历渲染器<br/>package→chapter→step"]
+        WORKSPACE["学习工作台壳<br/>左讲解+右沙箱+底部导航"]
+        SANDBOX["代码沙箱 (Client)<br/>Sandpack bundler"]
+        IFRAME["iframe/srcdoc 预览"]
+        PROGRESS["进度记忆逻辑"]
+        SANDBOX --> IFRAME
+    end
+
+    subgraph Store["③ 存储"]
+        JSONFILE[("内容: JSON 文件<br/>随构建产物<br/>唯一真源")]
+        LS[("进度(原型): localStorage<br/>ittp:progress")]
+        PG[("进度(MVP): PostgreSQL<br/>users / learning_progress")]
+    end
+
+    subgraph Ext["外部托管服务"]
+        SPCDN["Sandpack 依赖 CDN<br/>模板/npm 拉取"]
+        CLERK["Clerk 托管身份"]
+    end
+
+    PKG -->|"构建期固化"| JSONFILE
+    JSONFILE -->|"运行期只读"| LOADER
+    LOADER --> RSC --> RENDER --> WORKSPACE
+    LOADER --> API_PKG --> RENDER
+    WORKSPACE -->|"传当前 step files"| SANDBOX
+    SANDBOX -.->|"拉模板/依赖"| SPCDN
+    WORKSPACE --> PROGRESS
+    PROGRESS -.->|"原型期"| LS
+    PROGRESS -->|"MVP: PUT"| API_PROG
+    API_PROG --> MW -.->|"验会话"| CLERK
+    API_PROG --> DRZ --> PG
+
+    classDef store fill:#ddd,stroke:#444,color:#111
+    class JSONFILE,LS,PG store
+</pre>
+
+<p><strong>读数据流（消费主路径）</strong>：<code>JSON 文件 → Package Loader(zod) → RSC/API → 遍历渲染器 → 工作台 → 沙箱</code>，全程只读、可缓存。<br><strong>写数据流（仅进度一条）</strong>：<code>学习者导航 → 进度逻辑 → localStorage（原型）/ PUT /api/progress → Drizzle → PostgreSQL（MVP）</code>。<br><strong>沙箱运行流（纯客户端闭环）</strong>：<code>step.files → Sandpack bundler（拉 CDN 依赖）→ iframe 预览</code>，<strong>服务端零参与</strong>。</p>
+
+<hr>
+
+<h2>三、内容域数据流（批处理 · 只读）</h2>
+
+<h3>3.1 内容生命周期：从笔记到可渲染配置</h3>
+
+<pre class="mermaid">
+graph LR
+    S1["原始笔记<br/>小满zs MDX"] -->|"① 章节切分"| S2["8章结构<br/>chapters[]"]
+    S2 -->|"② 步骤切分"| S3["steps[]<br/>title+description(MDX)"]
+    S3 -->|"③ 补初始代码"| S4["files<br/>Record&lt;path,content&gt;"]
+    S3 -->|"④ 补答案(R10)"| S5["solution<br/>Record&lt;path,content&gt;"]
+    S4 & S5 --> S6["react.json<br/>TutorialPackage"]
+    S6 -->|"⑤ zod 校验"| S7{"Schema 通过?"}
+    S7 -->|"否"| S8["构建失败<br/>CI 门禁拦截"]
+    S7 -->|"是"| S9["纳入构建产物<br/>可被引擎无差别渲染"]
+</pre>
+
+<p><strong>关键点</strong>：内容工程是<strong>人工离线管道</strong>，不是运行时服务；<code>react.json</code> 一旦生成即为静态资产。新增 <code>vue.json</code> 走的是同一条 ⑤ zod 校验通道进入引擎——这是 R8「新增 JSON 零改动引擎」的数据层落点：引擎只认 Schema，不认主题。</p>
+
+<h3>3.2 TutorialPackage 数据结构（唯一真源 · ER 视图）</h3>
+
+<pre class="mermaid">
+erDiagram
+    TutorialPackage ||--o{ Chapter : "aggregates"
+    Chapter ||--o{ Step : "aggregates"
+    Step ||--o| StepFiles : "has (optional)"
+    Step ||--o| StepSolution : "has (optional)"
+
+    TutorialPackage {
+        string id "主题标识 react/vue (不枚举限定)"
+        string meta_title "教程标题"
+        string meta_description "简介"
+        string meta_language "沙箱模板 react/vanilla/vue"
+        string meta_defaultCode "包级兜底代码"
+        object dependencies "可选 npm 依赖 {pkg:version}"
+        enum status "active/maintenance/draft"
+    }
+    Chapter {
+        string id "章节标识"
+        string title "章节标题"
+        int order "顺序(数组序为准)"
+    }
+    Step {
+        string id "步骤标识(进度归属键)"
+        string title "步骤标题"
+        string description "MDX 讲解正文"
+        int order "顺序"
+    }
+    StepFiles {
+        string filePath "如 App.js / styles.css"
+        string content "初始代码内容"
+    }
+    StepSolution {
+        string filePath "答案文件路径"
+        string content "答案代码内容(R10)"
+    }
+</pre>
+
+<h3>3.3 真实样板数据（React · useState 计数器步骤）</h3>
+
+<p>以下是一条<strong>真实可信</strong>的 step 形态（非占位），对应「小满zs」React 笔记中的 <code>useState</code> 章节，用于校准下游设计：</p>
+
+<pre class="mermaid">
+</pre>
+
+<pre><code class="language-json">{
+  "id": "react",
+  "meta": {
+    "title": "React 从入门到上手",
+    "description": "跟着 62 篇笔记，边读边跑，把 React 核心概念一次学通。",
+    "language": "react",
+    "defaultCode": "export default function App(){ return &lt;h1&gt;Hello&lt;/h1&gt; }"
+  },
+  "chapters": [
+    {
+      "id": "ch-hooks",
+      "title": "第三章 · 状态与 Hooks",
+      "steps": [
+        {
+          "id": "step-usestate-counter",
+          "title": "用 useState 做一个计数器",
+          "description": "## useState\n\n`useState` 返回一个「当前值」和一个「更新函数」。点击按钮修改 count，React 会自动重渲染。试着把初始值改成 10，点 Run 看变化。",
+          "files": {
+            "/App.js": "import { useState } from 'react';\n\nexport default function App() {\n  const [count, setCount] = useState(0);\n  return (\n    &lt;button onClick={() =&gt; setCount(count + 1)}&gt;\n      点了 {count} 次\n    &lt;/button&gt;\n  );\n}\n",
+            "/styles.css": "button{padding:8px 16px;font-size:16px}"
+          },
+          "solution": {
+            "/App.js": "import { useState } from 'react';\n\nexport default function App() {\n  const [count, setCount] = useState(10);\n  return (\n    &lt;button onClick={() =&gt; setCount(count + 1)}&gt;\n      点了 {count} 次\n    &lt;/button&gt;\n  );\n}\n",
+            "/styles.css": "button{padding:8px 16px;font-size:16px}"
+          }
+        }
+      ]
+    }
+  ]
+}</code></pre>
+
+<p>字段口径说明：</p>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>是否必填</th>
+<th>缺失降级</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>meta.language</code></td>
+<td>必填</td>
+<td>—（决定 Sandpack <code>template</code>，R8 硬绑定）</td>
+</tr>
+<tr>
+<td><code>meta.defaultCode</code></td>
+<td>必填</td>
+<td>—（<code>files</code> 缺失时的沙箱兜底）</td>
+</tr>
+<tr>
+<td><code>dependencies</code></td>
+<td>可选</td>
+<td>无则不加载额外 npm 包</td>
+</tr>
+<tr>
+<td><code>step.description</code></td>
+<td>必填</td>
+<td>空则讲解区留白（不崩）</td>
+</tr>
+<tr>
+<td><code>step.files</code></td>
+<td>可选</td>
+<td>用 <code>meta.defaultCode</code> 兜底</td>
+</tr>
+<tr>
+<td><code>step.solution</code></td>
+<td>可选</td>
+<td>「给我看答案」按钮置灰（正常态，非异常）</td>
+</tr>
+<tr>
+<td><code>chapters</code> = <code>[]</code></td>
+<td>—</td>
+<td>课程库卡片置灰、禁用点击（<code>draft</code>）</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>四、内容读取时序（打开教程 → 渲染 → 学习）</h2>
+
+<p>服务端只做 zod 校验 + RSC 渲染，<code>GET /api/packages</code> 可匿名、可 CDN 缓存。</p>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 学习者(浏览器)
+    participant Edge as Vercel Edge/CDN
+    participant SSR as Next.js RSC
+    participant Loader as Package Loader(zod)
+    participant JSON as JSON 文件(构建产物)
+    participant SP as Sandpack(客户端)
+    participant CDN as Sandpack 依赖 CDN
+
+    U->>Edge: GET /learn/react/step-usestate-counter
+    Edge->>SSR: 转发(未命中缓存)
+    SSR->>Loader: loadPackage("react")
+    Loader->>JSON: 读取 react.json
+    JSON-->>Loader: 原始 JSON
+    Loader->>Loader: zod 校验 + 类型收敛
+    alt Schema 校验失败
+        Loader-->>SSR: 抛错(构建期已拦，运行期兜底 500 页)
+    else 校验通过
+        Loader-->>SSR: TutorialPackage(强类型)
+    end
+    SSR->>SSR: 遍历渲染器→大纲树+讲解(RSC)
+    SSR-->>Edge: HTML(含当前 step 的 files 作为 Client props)
+    Edge-->>U: 首屏(讲解已渲染, 沙箱待水合)
+    Note over U,SP: 沙箱为 Client Component, 水合后接管
+    U->>SP: 用 step.files 初始化 Sandpack(template=meta.language)
+    SP->>CDN: 拉取 react 模板 + dependencies
+    CDN-->>SP: 模板/依赖
+    SP->>SP: bundler 打包(浏览器内)
+    SP-->>U: iframe 预览渲染
+</pre>
+
+<p><strong>要点</strong>：</p>
+<ul>
+<li>讲解区（MDX）由 <strong>RSC 服务端渲染</strong>，首屏无需等待 JS；沙箱是 <strong>Client Component</strong>，水合后才发起 Sandpack 编译。</li>
+<li><code>template</code> 恒等于 <code>meta.language</code>、依赖恒等于 <code>meta.dependencies</code>——组件内<strong>零主题字面量</strong>（R8 静态门禁校验点）。</li>
+<li>Sandpack 拉模板/依赖走<strong>客户端 → Sandpack CDN</strong>，不经 Vercel 服务端，服务端无编译压力。</li>
+</ul>
+
+<hr>
+
+<h2>五、沙箱运行时数据流（客户端闭环 · R10 看答案）</h2>
+
+<h3>5.1 沙箱状态机（我的代码 ↔ 看答案）</h3>
+
+<p>沙箱是纯受控组件，只响应四类指令：<code>初始化 / Run / 看答案 / 切回</code>。核心是「看答案」时的<strong>快照-还原</strong>机制。</p>
+
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> MyCode: 进入步骤(用 step.files 初始化)
+    MyCode --> MyCode: 编辑代码 / 点 Run(重新打包预览)
+    MyCode --> ShowingAnswer: 点「给我看答案」<br/>①快照 currentFiles→ownCodeSnapshot<br/>②填入 solution ③自动 Run
+    ShowingAnswer --> ShowingAnswer: 在答案上编辑(不保留)
+    ShowingAnswer --> MyCode: 点「切回我的代码」<br/>①还原 ownCodeSnapshot<br/>②自动 Run ③清空快照
+    MyCode --> [*]: 切换上/下一步(丢弃当前编辑)
+    ShowingAnswer --> [*]: 切换步骤<br/>(强制退出看答案态)
+
+    note right of ShowingAnswer
+        solution 缺失时
+        本状态不可达
+        (按钮置灰)
+    end note
+</pre>
+
+<h3>5.2 R10「给我看答案」时序</h3>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 学习者
+    participant SB as 沙箱组件(Client)
+    participant SP as Sandpack bundler
+    participant IF as iframe 预览
+
+    Note over SB: 当前 isShowingAnswer=false, currentFiles=用户编辑内容
+    U->>SB: 点击「给我看答案」
+    alt step.solution 未声明
+        SB-->>U: 按钮置灰不可点(正常态, 不报错)
+    else solution 存在
+        SB->>SB: ownCodeSnapshot = {...currentFiles} (快照)
+        SB->>SB: currentFiles = {...step.solution} (完整替换)
+        SB->>SB: isShowingAnswer = true
+        SB->>SP: 用 solution 重新打包
+        SP->>IF: 刷新预览(答案效果)
+        IF-->>U: 看到"正确写法"
+    end
+    U->>SB: 点击「切回我的代码」
+    SB->>SB: currentFiles = ownCodeSnapshot (还原, 丢弃答案上的编辑)
+    SB->>SB: isShowingAnswer=false; ownCodeSnapshot=null
+    SB->>SP: 用还原内容重新打包
+    SP->>IF: 刷新预览(回到自己的代码)
+    IF-->>U: 回到编辑前状态
+</pre>
+
+<h3>5.3 沙箱状态字段（前端内存态 · 不持久化）</h3>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>生命周期</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>currentFiles</code></td>
+<td><code>Record&lt;path,content&gt;</code></td>
+<td>步骤内存活，切步重置</td>
+<td>编辑区实际内容</td>
+</tr>
+<tr>
+<td><code>activeFile</code></td>
+<td>string</td>
+<td>步骤内</td>
+<td>当前选中文件 Tab</td>
+</tr>
+<tr>
+<td><code>isShowingAnswer</code></td>
+<td>boolean</td>
+<td>步骤内</td>
+<td>是否看答案态；切步强制 false</td>
+</tr>
+<tr>
+<td><code>ownCodeSnapshot</code></td>
+<td><code>Record&lt;path,content&gt;</code> | null</td>
+<td>看答案期间</td>
+<td>看答案前的用户快照，供还原</td>
+</tr>
+<tr>
+<td><code>isRunning</code> / <code>hasError</code> / <code>errorMessage</code></td>
+<td>—</td>
+<td>单次 Run</td>
+<td>运行反馈；报错展示 Sandpack 原生堆栈，不吞错</td>
+</tr>
+<tr>
+<td><code>theme</code></td>
+<td><code>light</code>|<code>dark</code></td>
+<td>跟随平台</td>
+<td>联动明暗，无独立开关</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>边界处理</strong>（切步即弃，不做草稿持久化）：</p>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未点 Run 就切步</td>
+<td>未运行编辑内容随切步丢弃，不自动存草稿</td>
+</tr>
+<tr>
+<td>切步时处于看答案态</td>
+<td>强制退出，用新步 <code>files</code> 渲染，不带入上一步状态</td>
+</tr>
+<tr>
+<td><code>files</code>/<code>solution</code> 格式非法</td>
+<td>保留上一步状态，控制台告警，不弹用户错误</td>
+</tr>
+<tr>
+<td>Sandpack 编译失败</td>
+<td>iframe 展示原生错误堆栈，Run 可再点</td>
+</tr>
+<tr>
+<td>依赖加载失败/离线</td>
+<td>预览区提示"无法加载运行环境"，编辑区仍可编辑</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>六、进度域数据流（唯一的写路径 · 分期）</h2>
+
+<p>进度是全系统<strong>唯一的持久化写数据</strong>。分两期：原型 <code>localStorage</code> → MVP <code>PostgreSQL</code>，<strong>一次切换、不做长期双写垫片</strong>（遵循分期基线）。</p>
+
+<h3>6.1 进度状态流转：步骤完成判定（对齐 D4「不拦人」）</h3>
+
+<pre class="mermaid">
+stateDiagram-v2
+    [*] --> NotStarted: 步骤默认态
+    NotStarted --> Current: 进入该步(更新 currentStepId)
+    Current --> Completed: 点「下一步」离开<br/>(标记 completed, 只增不减)
+    Current --> NotStarted: 目录跳走(不追溯标记)
+    Completed --> Current: 回看(不撤销完成态)
+    Completed --> Completed: 再次经过
+    Current --> [*]: F9 整体重置(清空)
+    Completed --> [*]: F9 整体重置(清空)
+
+    note right of Completed
+        完成 = 学习者点下一步经过
+        非代码正确性判定
+        无 waitFor 校验(D4)
+    end note
+</pre>
+
+<p><strong>判定口径</strong>（源自 learning-progress spec 3.2）：</p>
+<ul>
+<li>步骤完成 = 点「下一步」离开该步，<strong>不校验代码正确性、不判断沙箱运行结果</strong>。</li>
+<li>目录树直接跳转仅更新 <code>currentStepId</code>，<strong>不追溯补全</strong>中间跳过步骤的完成标记（避免「跳着看」被误判学完）。</li>
+<li><code>completedStepIds</code> <strong>只增不减</strong>，回看不撤销；仅 F9 整体重置才清空。</li>
+<li><code>currentStepId</code>（续学定位）与 <code>completedStepIds</code>（完成率）是<strong>两个独立字段</strong>。</li>
+</ul>
+
+<h3>6.2 原型期：localStorage 时序</h3>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 学习者
+    participant WS as 工作台
+    participant PR as 进度逻辑
+    participant LS as localStorage(ittp:progress)
+
+    U->>WS: 点击「下一步」(从 stepA→stepB)
+    WS->>PR: onStepChange(from:stepA, to:stepB)
+    PR->>PR: completedStepIds += stepA (去重)
+    PR->>PR: currentStepId = stepB; lastVisitedAt = now
+    PR->>LS: 写 ittp:progress[tutorialId] (乐观更新)
+    Note over PR,LS: 目录树立即打勾, 不等任何确认
+    LS-->>PR: (localStorage 同步返回)
+    alt localStorage 不可用(隐私模式/超限)
+        PR->>PR: 降级为会话内存态
+        Note over PR: 当次指示正常, 刷新后续学/完成度不生效, 不报错
+    end
+</pre>
+
+<p>存储结构（按 <code>tutorialId</code> 隔离，F10）：</p>
+
+<pre><code class="language-json">// key: "ittp:progress"
+{
+  "react": {
+    "currentStepId": "step-usestate-counter",
+    "completedStepIds": ["step-jsx-intro", "step-props-basic"],
+    "lastVisitedAt": 1721376000000
+  },
+  "vue": {
+    "currentStepId": "step-ref-basic",
+    "completedStepIds": ["step-template-syntax"],
+    "lastVisitedAt": 1721289600000
+  }
+}</code></pre>
+
+<h3>6.3 MVP 期：PostgreSQL + Clerk 时序</h3>
+
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as 学习者
+    participant PR as 进度逻辑(Client)
+    participant MW as middleware.ts(Clerk)
+    participant API as PUT /api/progress
+    participant DRZ as Drizzle ORM
+    participant PG as PostgreSQL
+
+    U->>PR: 点击「下一步」
+    PR->>PR: 本地乐观更新(先打勾, 不阻塞UI)
+    PR->>MW: PUT /api/progress {tutorialId, currentStepId, completedStepIds}
+    MW->>MW: 校验 Clerk 会话
+    alt 未登录/会话失效
+        MW-->>PR: 401
+        Note over PR: 保留本地乐观态, 静默重试或降级
+    else 已鉴权(注入 userId)
+        MW->>API: 转发(带 userId)
+        API->>DRZ: upsert(userId, packageId)
+        DRZ->>PG: INSERT ... ON CONFLICT(userId,packageId) DO UPDATE<br/>current_step_id, completed_step_ids, last_visited_at
+        PG-->>DRZ: ok
+        DRZ-->>API: ok
+        API-->>PR: 200
+    end
+</pre>
+
+<p><strong>读进度</strong>（进入教程 / 课程库卡片）：<code>GET /api/progress?tutorialId=react</code> → 经 Clerk 取 <code>userId</code> → 查 <code>learning_progress</code> → 返回断点与完成集合 → 驱动「继续学习」提示与卡片完成度。</p>
+
+<h3>6.4 进度表结构（MVP · Drizzle/PostgreSQL）</h3>
+
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>关键列</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>users</code></td>
+<td><code>id</code>（Clerk userId 映射）, <code>created_at</code></td>
+<td>身份由 Clerk 托管，本表仅存归属主体引用</td>
+</tr>
+<tr>
+<td><code>learning_progress</code></td>
+<td><code>user_id</code>, <code>package_id</code>, <code>current_step_id</code>, <code>completed_step_ids</code>(jsonb/text[]), <code>last_visited_at</code>, 唯一约束 <code>(user_id, package_id)</code></td>
+<td>单用户单主题一条；<code>completed_step_ids</code> 存 stepId 数组</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>数据量级可忽略（每用户每主题一行），<strong>无分区/索引优化需求</strong>，唯一约束 <code>(user_id, package_id)</code> 即支撑 upsert。</li>
+<li>迁移幂等：<code>CREATE TABLE IF NOT EXISTS</code> + 容错 ALTER，可重复跑。</li>
+</ul>
+
+<h3>6.5 原型 → MVP 迁移边界</h3>
+
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>原型（localStorage）</th>
+<th>MVP（PostgreSQL）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>归属主体</td>
+<td>当前浏览器（无 userId）</td>
+<td>Clerk <code>userId</code></td>
+</tr>
+<tr>
+<td>存储</td>
+<td><code>ittp:progress</code> 单 key</td>
+<td><code>learning_progress</code> 表</td>
+</tr>
+<tr>
+<td>跨端</td>
+<td>不支持（清缓存即丢，可接受代价）</td>
+<td>跨端同步</td>
+</tr>
+<tr>
+<td>切换方式</td>
+<td><strong>一次性切换</strong>，不双写、不留兼容垫片</td>
+<td>Q5 决策一次做全套后端</td>
+</tr>
+<tr>
+<td>数据迁移</td>
+<td>原型进度<strong>不迁移</strong>（原型级本地数据丢弃可接受）</td>
+<td>从零开始记录</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>七、数据生命周期总表</h2>
+
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>创建</th>
+<th>流转/更新</th>
+<th>存储位置</th>
+<th>归档/销毁</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TutorialPackage JSON</td>
+<td>内容工程离线产出</td>
+<td>版本随 git 演进；运行期<strong>只读不改</strong></td>
+<td>仓库 / 构建产物</td>
+<td>主题下线 = 删 JSON 文件；<code>status=maintenance</code> 软置灰</td>
+</tr>
+<tr>
+<td>沙箱 currentFiles</td>
+<td>进入步骤时由 <code>files</code> 初始化</td>
+<td>学习者编辑 / Run / 看答案切换</td>
+<td>前端内存</td>
+<td><strong>切步即销毁</strong>，永不持久化</td>
+</tr>
+<tr>
+<td>ownCodeSnapshot</td>
+<td>点「看答案」时快照</td>
+<td>「切回」时消费</td>
+<td>前端内存</td>
+<td>切回或切步即清空</td>
+</tr>
+<tr>
+<td>进度 currentStepId</td>
+<td>首次进入某步</td>
+<td>每次导航更新</td>
+<td>localStorage → PG</td>
+<td>F9 重置 / 清缓存 / 换设备</td>
+</tr>
+<tr>
+<td>进度 completedStepIds</td>
+<td>首次完成某步</td>
+<td>只增不减</td>
+<td>localStorage → PG</td>
+<td>仅 F9 整体重置清空</td>
+</tr>
+<tr>
+<td>Clerk 会话</td>
+<td>登录</td>
+<td>会话有效期内</td>
+<td>Clerk 托管</td>
+<td>登出 / 过期</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>八、一致性、并发与失败处理</h2>
+
+<table>
+<thead>
+<tr>
+<th>议题</th>
+<th>策略</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>进度写一致性</td>
+<td><strong>乐观更新</strong>：本地先打勾，再异步落库，不阻塞 UI</td>
+<td>内部工具、并发个位数，无需强一致</td>
+</tr>
+<tr>
+<td>多标签并发写同一进度</td>
+<td><strong>最后写入者生效</strong>，不加锁</td>
+<td>轻量数据竞争可接受，加锁属过度设计</td>
+</tr>
+<tr>
+<td>localStorage 不可用</td>
+<td>降级为<strong>会话内存态</strong>，指示仍工作，续学/完成度失效，不报错</td>
+<td>learning-progress 3.5</td>
+</tr>
+<tr>
+<td>教程结构变更致 stepId 失效</td>
+<td>失效 stepId 不参与完成率、不触发续学，<strong>静默忽略</strong></td>
+<td>不报错、不阻断</td>
+</tr>
+<tr>
+<td>Schema 校验失败</td>
+<td><strong>构建期 CI 门禁拦截</strong>为主；运行期 Loader 兜底错误页</td>
+<td>R8 唯一注入通道</td>
+</tr>
+<tr>
+<td>沙箱编译失败</td>
+<td>iframe 展示 Sandpack 原生堆栈，<strong>不吞错</strong>，Run 可重试</td>
+<td>code-sandbox F11</td>
+</tr>
+<tr>
+<td>进度接口鉴权失败(401)</td>
+<td>保留本地乐观态，静默处理，不打断学习</td>
+<td>进度非关键路径</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>九、数据流对 R8 的支撑（架构级收口）</h2>
+
+<p>数据流层面，R8「新增 JSON 零改动引擎」由三条数据约束共同保证，与 <code>01-architecture.md</code> 第三节的架构证明一一对应：</p>
+
+<ol>
+<li><strong>单一注入通道</strong>：所有主题数据只经 <code>Package Loader</code>（zod）流入，引擎渲染函数入参恒为 <code>TutorialPackage</code>，无第二条主题注入通道 → 新 <code>vue.json</code> 与 <code>react.json</code> 走<strong>完全相同的数据路径</strong>。</li>
+<li><strong>数据决定行为，非分支决定</strong>：沙箱 <code>template = meta.language</code>、依赖 <code>= meta.dependencies</code>，运行时行为由数据字段驱动，引擎代码零主题字面量 → CI 静态扫描 <code>lib/engine/**</code>、<code>components/**</code> 命中 <code>react|vue|vanilla</code> 分支数必须为 0。</li>
+<li><strong>Schema 即契约</strong>：只要新主题 JSON 通过 zod 校验，即保证可被引擎无差别遍历渲染，无需改一行 <code>.ts/.tsx</code>（门禁：放入最小 <code>vue.json</code> 跑构建冒烟，<code>git diff</code> 仅新增 JSON）。</li>
+</ol>
+
+<blockquote>
+<p>一句话收口：<strong>内容是流入引擎的数据，不是编译进引擎的分支</strong>。这就是本系统数据流设计与 R8 成败判据的物理绑定点。</p>
+</blockquote>
+
+    </article>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05 安全设计 — ITTP 技术设计说明书</title>
+
+  <!-- ============================================================
+       ITTP 技术设计说明书 · 统一视觉系统 (gov 风格)
+       用法：原样粘贴进每个设计说明书 HTML 的 <head> 内，
+       置于 <title> 之后、页面自有 <style>（如有）之前。
+       ============================================================ -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace']
+          },
+          colors: {
+            primary: {
+              50:  '#f0f4f8',
+              100: '#d9e2ec',
+              200: '#bcccdc',
+              300: '#9fb3c8',
+              400: '#829ab1',
+              500: '#627d98',
+              600: '#486581',
+              700: '#334e68',
+              800: '#243b53',
+              900: '#102a43'
+            },
+            accent: {
+              50:  '#fdf8ec',
+              100: '#faedc4',
+              200: '#f5db8e',
+              300: '#eec258',
+              400: '#e0a530',
+              500: '#c98a1f',
+              600: '#a86c17',
+              700: '#855316',
+              800: '#6b4318',
+              900: '#5a3818'
+            }
+          },
+          boxShadow: {
+            card: '0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --doc-primary: #243b53;
+      --doc-primary-dark: #102a43;
+      --doc-primary-soft: #f0f4f8;
+      --doc-accent: #a86c17;
+      --doc-accent-soft: #faedc4;
+      --doc-text: #1b2a38;
+      --doc-text-muted: #52697e;
+      --doc-border: #d9e2ec;
+      --doc-bg: #f7f9fb;
+      --doc-surface: #ffffff;
+      --doc-code-bg: #0f2438;
+      --doc-code-text: #d8e6f0;
+    }
+    :root[data-theme="dark"] {
+      --doc-primary: #bcccdc;
+      --doc-primary-dark: #f0f4f8;
+      --doc-primary-soft: #17293b;
+      --doc-accent: #eec258;
+      --doc-accent-soft: #3a2c10;
+      --doc-text: #dbe4ec;
+      --doc-text-muted: #93a8bd;
+      --doc-border: #2c4054;
+      --doc-bg: #0b1a29;
+      --doc-surface: #12233590;
+      --doc-code-bg: #08131f;
+      --doc-code-text: #cfe0ee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --doc-primary: #bcccdc;
+        --doc-primary-dark: #f0f4f8;
+        --doc-primary-soft: #17293b;
+        --doc-accent: #eec258;
+        --doc-accent-soft: #3a2c10;
+        --doc-text: #dbe4ec;
+        --doc-text-muted: #93a8bd;
+        --doc-border: #2c4054;
+        --doc-bg: #0b1a29;
+        --doc-surface: #12233590;
+        --doc-code-bg: #08131f;
+        --doc-code-text: #cfe0ee;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--doc-bg);
+      color: var(--doc-text);
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ---------- 滚动条 ---------- */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--doc-border);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background-color: #829ab1; background-clip: content-box; }
+
+    /* ---------- 正文排版容器 ---------- */
+    .doc-prose { color: var(--doc-text); line-height: 1.75; font-size: 15.5px; }
+    .doc-prose > *:first-child { margin-top: 0; }
+
+    .doc-prose h1 {
+      font-size: 1.85rem;
+      font-weight: 900;
+      color: var(--doc-primary-dark);
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 3px solid var(--doc-primary);
+    }
+    .doc-prose h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--doc-primary-dark);
+      margin: 2.4rem 0 1rem;
+      padding: 0.1rem 0 0.6rem;
+      border-bottom: 1px solid var(--doc-border);
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    .doc-prose h2::before {
+      content: '';
+      width: 5px;
+      height: 1.05em;
+      background: var(--doc-accent);
+      border-radius: 2px;
+      display: inline-block;
+      flex: none;
+    }
+    .doc-prose h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--doc-primary);
+      margin: 1.8rem 0 0.75rem;
+    }
+    .doc-prose h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--doc-primary);
+      margin: 1.4rem 0 0.6rem;
+      opacity: 0.9;
+    }
+    .doc-prose p { margin: 0.85rem 0; color: var(--doc-text); }
+    .doc-prose strong { color: var(--doc-primary-dark); font-weight: 700; }
+    .doc-prose a { color: var(--doc-accent-700, #855316); text-decoration: underline; text-underline-offset: 2px; }
+    .doc-prose a:hover { color: var(--doc-accent); }
+
+    .doc-prose ul, .doc-prose ol { margin: 0.85rem 0; padding-left: 1.4rem; }
+    .doc-prose ul { list-style: disc; }
+    .doc-prose ol { list-style: decimal; }
+    .doc-prose li { margin: 0.35rem 0; }
+    .doc-prose li::marker { color: var(--doc-primary); font-weight: 600; }
+    .doc-prose li > ul, .doc-prose li > ol { margin: 0.35rem 0; }
+
+    .doc-prose hr {
+      border: none;
+      border-top: 1px dashed var(--doc-border);
+      margin: 2rem 0;
+    }
+
+    /* ---------- 表格 ---------- */
+    .doc-prose table, .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.1rem 0 1.4rem;
+      font-size: 0.9rem;
+      background: var(--doc-surface);
+    }
+    .doc-prose caption { caption-side: top; text-align: left; font-size: 0.85rem; color: var(--doc-text-muted); margin-bottom: 0.4rem; }
+    .doc-prose th, .doc-table th {
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      font-weight: 700;
+      text-align: left;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--doc-border);
+      white-space: nowrap;
+    }
+    .doc-prose td, .doc-table td {
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--doc-border);
+      vertical-align: top;
+      color: var(--doc-text);
+    }
+    .doc-prose tbody tr:nth-child(even), .doc-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--doc-primary-soft) 45%, transparent); }
+    .doc-prose tbody tr:hover, .doc-table tbody tr:hover { background: var(--doc-accent-soft); }
+
+    /* ---------- 行内代码 / 代码块 ---------- */
+    .doc-prose code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.86em;
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid var(--doc-border);
+    }
+    .doc-prose pre {
+      background: var(--doc-code-bg);
+      color: var(--doc-code-text);
+      padding: 1rem 1.15rem;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 1.1rem 0 1.4rem;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      box-shadow: var(--tw-shadow, 0 1px 2px rgba(16,42,67,0.06));
+    }
+    .doc-prose pre code {
+      background: transparent;
+      border: none;
+      color: inherit;
+      padding: 0;
+      font-size: 1em;
+    }
+
+    /* ---------- 引用块 ---------- */
+    .doc-prose blockquote {
+      margin: 1.1rem 0;
+      padding: 0.7rem 1.1rem;
+      background: var(--doc-primary-soft);
+      border-left: 4px solid var(--doc-accent);
+      color: var(--doc-text-muted);
+      border-radius: 0 6px 6px 0;
+    }
+    .doc-prose blockquote p { margin: 0.3rem 0; }
+
+    /* ---------- Mermaid 图容器 ---------- */
+    .doc-prose pre.mermaid, pre.mermaid {
+      background: var(--doc-surface);
+      border: 1px solid var(--doc-border);
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    /* ---------- 常用卡片/徽标（章节导航、状态标签等） ---------- */
+    .doc-card {
+      background: var(--doc-surface);
+      border: 1px solid var(--doc-border);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px 0 rgba(16,42,67,0.06), 0 1px 3px 0 rgba(16,42,67,0.08);
+    }
+    .doc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      border: 1px solid var(--doc-border);
+    }
+    .doc-badge--accent { background: var(--doc-accent-soft); color: var(--doc-accent); border-color: var(--doc-accent); }
+
+    /* 导航栏风格 */
+    .doc-nav {
+      background: var(--doc-surface);
+      border-bottom: 1px solid var(--doc-border);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .doc-nav-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+    .doc-nav-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--doc-text-muted);
+      margin-bottom: 0.6rem;
+    }
+    .doc-nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .doc-nav-links a {
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      background: var(--doc-primary-soft);
+      color: var(--doc-primary-dark);
+      text-decoration: none;
+      border: 1px solid var(--doc-border);
+      transition: all 0.2s;
+    }
+    .doc-nav-links a:hover {
+      background: var(--doc-accent-soft);
+      color: var(--doc-accent);
+      border-color: var(--doc-accent);
+    }
+    .doc-nav-links a.active {
+      background: var(--doc-accent);
+      color: white;
+      border-color: var(--doc-accent);
+    }
+  </style>
+
+  <!-- ---------- Mermaid ---------- -->
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  </script>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="doc-nav">
+    <div class="doc-nav-inner">
+      <div class="doc-nav-title">互动式技术教程平台（ITTP）设计说明书</div>
+      <div class="doc-nav-links">
+        <a href="00-overview.html">00 系统设计总览</a>
+        <a href="01-architecture.html">01 总体架构设计</a>
+        <a href="02-dataflow.html">02 数据流设计</a>
+        <a href="03-database.html">03 数据库设计</a>
+        <a href="04-api.html">04 接口/API 设计</a>
+        <a href="05-security.html" class="active">05 安全设计</a>
+        <a href="06-ops.html">06 运维与部署设计</a>
+        <a href="07-nfr.html">07 非功能性设计</a>
+        <a href="08-integration.html">08 集成/对接设计</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 正文 -->
+  <main class="doc-prose" style="max-width: 900px; margin: 2rem auto; padding: 0 1.5rem;">
+    <h1>安全设计</h1>
+
+    <blockquote>
+      <p>阶段③设计 · 资深安全设计专家产出。上游唯一真源：<code>00-系统设计总览.md</code>、<code>01-architecture.md</code>（技术基线 §九）、原型 specs（<code>02-原型-v2/specs/</code>）、<code>99-会议与决策/</code>。</p>
+      <p>产品：<strong>互动式技术教程平台（ITTP）</strong>——内容与引擎分离、以 JSON 配置（<code>TutorialPackage</code>）驱动的「左讲解 + 右可运行 Sandpack 沙箱」内部自用自主学习工具。</p>
+      <p>部署：<strong>Vercel 公有云</strong>，内部自用，<strong>无信创 / 无内网 / 无专网 / 无等保定级 / 无数据不出域</strong>。本维度设计严格遵循此合规基线，<strong>下游禁止套用政企内网安全模板</strong>。</p>
+    </blockquote>
+
+    <hr>
+
+    <h2>一、安全设计总纲与威胁边界</h2>
+
+    <h3>1.1 定位：一个「低敏感、公有云、客户端计算」的内部教具</h3>
+
+    <p>安全设计的第一性原理必须匹配系统真实画像，否则就是过度设计（违反简洁守则「删 > 加」）：</p>
+
+    <table>
+      <tr>
+        <th>事实</th>
+        <th>对安全设计的含义</th>
+      </tr>
+      <tr>
+        <td><strong>内部自用</strong>，用户是单人/小团队同事</td>
+        <td>无外部攻击者动机，威胁模型以「误操作 / 越权看他人进度 / 依赖投毒」为主，<strong>不是</strong>对抗有组织攻击</td>
+      </tr>
+      <tr>
+        <td><strong>数据低敏感</strong>：仅 <code>users</code>（Clerk 托管身份）+ <code>learning_progress</code>（断点+完成步骤集合）</td>
+        <td><strong>无客户 PII、无支付、无业务机密</strong>；进度数据泄露的最坏后果是「别人知道我 React 学到第几步」，属可接受</td>
+      </tr>
+      <tr>
+        <td><strong>计算重心在客户端</strong>：Sandpack 浏览器内 bundler 运行任意代码</td>
+        <td><strong>最大攻击面在浏览器沙箱侧</strong>（代码执行、iframe 逃逸、依赖投毒），而非服务端</td>
+      </tr>
+      <tr>
+        <td><strong>服务端只做</strong>：页面渲染 + 内容只读 + 进度读写</td>
+        <td>服务端攻击面窄：无文件上传、无代码执行、无复杂查询；主风险是<strong>进度接口水平越权（IDOR）</strong></td>
+      </tr>
+      <tr>
+        <td><strong>内容为可信真源</strong>：<code>TutorialPackage</code> JSON 随仓库/构建产物，经 PR 走查入库</td>
+        <td>内容注入风险由<strong>代码评审 + 构建期 zod 校验</strong>前置拦截，运行时不接受匿名用户投稿内容</td>
+      </tr>
+      <tr>
+        <td><strong>无等保 / 无信创 / 数据可出域</strong></td>
+        <td>不做国密算法、不做数据不出域、不做三级等保测评；用平台（Vercel/Clerk/Postgres）默认 TLS 与托管安全能力即满足</td>
+      </tr>
+    </table>
+
+    <h3>1.2 安全目标（按优先级）</h3>
+
+    <pre class="mermaid">graph TD
+    G0["安全总目标：以最小合规成本，守住内部工具的真实风险面"]
+    G1["P0 · 进度数据水平隔离<br/>userId 由 Clerk 会话派生，杜绝 IDOR 越权"]
+    G2["P0 · 沙箱代码执行隔离<br/>任意用户代码只在 sandboxed iframe 内跑，不触达宿主页/Cookie/接口"]
+    G3["P1 · 传输全程 TLS + 凭据不落库不入仓<br/>密钥走 Vercel 环境变量"]
+    G4["P1 · 输入唯一入口校验<br/>Package Loader(zod) + Route Handler 入参校验"]
+    G5["P2 · 最小审计<br/>平台日志留痕，日志不含密钥/会话令牌"]
+    G0 --> G1 & G2 & G3 & G4 & G5
+
+    classDef p0 fill:#e8e8e8,stroke:#555,color:#111
+    classDef p1 fill:#f0f0f0,stroke:#666,color:#111
+    classDef p2 fill:#f6f6f6,stroke:#888,color:#111
+    class G1,G2 p0
+    class G3,G4 p1
+    class G5 p2</pre>
+
+    <h3>1.3 信任边界拓扑</h3>
+
+    <pre class="mermaid">graph LR
+    subgraph Untrusted["不可信区 · 学习者浏览器"]
+        USER["学习者操作 / 编辑的沙箱代码"]
+        SPIFRAME["Sandpack 预览 iframe<br/>（跨源 / sandbox 属性隔离）<br/>运行任意代码"]
+    end
+
+    subgraph SemiTrust["半可信区 · 客户端应用运行时"]
+        UIAPP["Next.js 前端 React 组件<br/>宿主页面 · 持有会话 Cookie"]
+        SPEDIT["Sandpack 编辑器（CodeMirror）"]
+    end
+
+    subgraph Trusted["可信区 · Vercel 服务端"]
+        MW["middleware.ts · Clerk 鉴权"]
+        RHPKG["/api/packages（只读·可匿名）"]
+        RHPROG["/api/progress（读写·须登录）"]
+        LOADER["Package Loader（zod 校验）"]
+        JSON["TutorialPackage JSON（可信内容真源）"]
+    end
+
+    subgraph Managed["托管外部服务"]
+        CLERK["Clerk 身份"]
+        PG[("PostgreSQL<br/>users · learning_progress")]
+        SPCDN["Sandpack 依赖 CDN / bundler host"]
+    end
+
+    USER --> SPEDIT --> SPIFRAME
+    SPIFRAME -. "postMessage 受限通道" .-> UIAPP
+    SPIFRAME --> SPCDN
+    UIAPP -->|HTTPS| MW
+    MW --> RHPKG & RHPROG
+    MW -. 验证会话 .-> CLERK
+    RHPKG --> LOADER --> JSON
+    RHPROG -->|Drizzle · TLS| PG
+
+    classDef untrust fill:#dcdcdc,stroke:#444,color:#111
+    classDef semi fill:#ececec,stroke:#666,color:#111
+    classDef trust fill:#f4f4f4,stroke:#666,color:#111
+    class USER,SPIFRAME untrust
+    class UIAPP,SPEDIT semi
+    class MW,RHPKG,RHPROG,LOADER,JSON trust</pre>
+
+    <p><strong>三条信任边界</strong>：</p>
+    <ol>
+      <li><strong>沙箱 iframe ↔ 宿主页面</strong>：最关键边界。iframe 内运行的代码不可信（用户可任意编辑），必须靠浏览器 <code>sandbox</code> 属性 + 跨源隔离，使其无法读取宿主页的会话 Cookie、无法调用本站接口。</li>
+      <li><strong>浏览器 ↔ 服务端</strong>：全程 HTTPS；进度写操作必须在服务端重新鉴权，<strong>绝不信任客户端传来的 <code>userId</code></strong>。</li>
+      <li><strong>内容 JSON ↔ 引擎</strong>：内容虽随仓库属「可信」，但仍经 Package Loader 的 zod 校验作为唯一入口收敛，防止畸形配置导致渲染层异常。</li>
+    </ol>
+
+    <hr>
+
+    <h2>二、身份认证与会话管理</h2>
+
+    <h3>2.1 认证模型：Clerk 托管身份，内容匿名 / 进度须登录</h3>
+
+    <p>严格遵循技术基线：<strong>Clerk 托管身份（MVP/Q5），<code>userId</code> 为进度归属主体；<code>middleware.ts</code> 保护进度接口，内容接口可匿名</strong>。自建用户体系被 D-G 明确否决。</p>
+
+    <table>
+      <tr>
+        <th>资源</th>
+        <th>认证要求</th>
+        <th>理由</th>
+      </tr>
+      <tr>
+        <td>页面：主题库 / 学习工作台 / 沙箱</td>
+        <td><strong>匿名可访问</strong></td>
+        <td>教学内容对内部同事无秘密，登录墙徒增摩擦，违背「打开即学、不拦人」</td>
+      </tr>
+      <tr>
+        <td><code>GET /api/packages/*</code>（内容只读）</td>
+        <td><strong>匿名可访问</strong></td>
+        <td>内容是公开教材，无鉴权价值</td>
+      </tr>
+      <tr>
+        <td><code>GET /api/progress</code>（读自己进度）</td>
+        <td><strong>须登录</strong></td>
+        <td>进度归属 <code>userId</code>，须先确定「你是谁」</td>
+      </tr>
+      <tr>
+        <td><code>PUT /api/progress</code>（写自己进度）</td>
+        <td><strong>须登录</strong></td>
+        <td>同上，且写操作需防越权改他人</td>
+      </tr>
+      <tr>
+        <td>未来任何「他人进度 / 全站统计」</td>
+        <td><strong>不提供</strong>（learning-progress spec §0 明确：进度不对外暴露、不导出、不分析）</td>
+        <td>无此需求即不建接口，攻击面归零</td>
+      </tr>
+    </table>
+
+    <h3>2.2 会话机制：完全委托 Clerk</h3>
+
+    <ul>
+      <li><strong>会话载体</strong>：Clerk 签发的会话 Cookie（<code>HttpOnly</code> + <code>Secure</code> + <code>SameSite</code>，由 Clerk 默认配置保证），前端 JS 读不到会话令牌。</li>
+      <li><strong>会话校验</strong>：<code>middleware.ts</code> 用 Clerk <code>auth()</code> 在边缘/服务端校验会话，<strong>不自建 JWT 解析、不自建刷新逻辑</strong>——托管即最省，也最不容易写错。</li>
+      <li><strong>登出 / 过期</strong>：Clerk 托管；会话过期后访问受保护接口返回 401，前端引导重新登录，进度不丢（已在 DB）。</li>
+      <li><strong>原型期 → MVP 差异</strong>：原型期 <strong>无 Clerk、无登录</strong>，进度只在 <code>localStorage</code>（learning-progress spec §范围边界）；引入 Clerk 是 MVP 一次性动作，<strong>不做原型 localStorage 与 DB 的长期双写垫片</strong>（D-F）。</li>
+    </ul>
+
+    <h3>2.3 受保护接口的认证时序</h3>
+
+    <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant B as 浏览器（宿主页）
+    participant MW as middleware.ts (Clerk)
+    participant RH as /api/progress Route Handler
+    participant CK as Clerk
+    participant DB as PostgreSQL
+
+    Note over B,DB: 场景：学习者点「下一步」，写自己的进度
+    B->>MW: PUT /api/progress { packageId, currentStepId, completedStepIds }
+    Note right of B: 请求体不含 userId（即便含也被忽略）
+    MW->>CK: auth() 校验会话 Cookie
+    alt 会话无效/过期
+        CK-->>MW: 未认证
+        MW-->>B: 401 Unauthorized（前端引导登录，本地进度不丢）
+    else 会话有效
+        CK-->>MW: userId = user_2abc...
+        MW->>RH: 放行，注入 auth.userId
+        RH->>RH: 服务端以 auth.userId 为唯一归属主体<br/>丢弃客户端传入的任何 userId
+        RH->>RH: zod 校验请求体（packageId/stepId 形态）
+        RH->>DB: UPSERT learning_progress<br/>WHERE user_id = auth.userId AND package_id = ?
+        DB-->>RH: ok
+        RH-->>B: 200 { updated }
+    end</pre>
+
+    <p><strong>认证设计红线</strong>：</p>
+    <ul>
+      <li><code>userId</code> <strong>只能</strong>来自 Clerk 会话（<code>auth().userId</code>），<strong>永不</strong>来自请求体 / 查询参数 / 请求头。这是杜绝水平越权的单点。</li>
+      <li>Route Handler 内所有对 <code>learning_progress</code> 的读写，<code>WHERE</code> 条件<strong>强制</strong>带 <code>user_id = auth.userId</code>，无例外分支。</li>
+    </ul>
+
+    <hr>
+
+    <h2>三、权限模型（RBAC 与数据权限）</h2>
+
+    <h3>3.1 角色模型：极简，两个隐式角色</h3>
+
+    <p>内部工具无复杂组织结构，RBAC 保持最小（三问自检：不做会怎样？→ 无影响；以后好加吗？→ Clerk 支持角色，需要时再加）：</p>
+
+    <table>
+      <tr>
+        <th>角色</th>
+        <th>来源</th>
+        <th>能力</th>
+        <th>说明</th>
+      </tr>
+      <tr>
+        <td><strong>匿名访客</strong></td>
+        <td>无会话</td>
+        <td>浏览全部教学内容、使用沙箱运行代码</td>
+        <td>内容公开，沙箱是客户端本地计算，无需身份</td>
+      </tr>
+      <tr>
+        <td><strong>登录学习者</strong></td>
+        <td>Clerk 会话</td>
+        <td>匿名的一切 + 读写<strong>自己的</strong>进度</td>
+        <td>MVP 唯一需要鉴权的角色</td>
+      </tr>
+      <tr>
+        <td><del>管理员 / 内容运营角色</del></td>
+        <td>—</td>
+        <td><strong>不设</strong></td>
+        <td>内容经 Git PR 维护而非后台 CMS（D-C）；进度不做后台分析（spec §0）。无管理界面即无需管理员角色</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p>结论：<strong>不引入 RBAC 框架 / 权限表 / 角色表</strong>。角色差异仅体现为「接口是否被 <code>middleware.ts</code> 保护」这一布尔判断，落在 <code>middleware.ts</code> 的 matcher 配置里。任何提「加个权限管理模块」的需求须<strong>显式立项</strong>（简洁守则）。</p>
+    </blockquote>
+
+    <h3>3.2 数据权限：以 <code>userId</code> 为唯一水平隔离维度</h3>
+
+    <p>进度数据的权限模型是「<strong>行级归属</strong>」——每条 <code>learning_progress</code> 归属一个 <code>userId</code>，任何用户只能触达 <code>user_id = 自己会话 userId</code> 的行。</p>
+
+    <pre class="mermaid">erDiagram
+    USERS ||--o{ LEARNING_PROGRESS : "拥有(owns)"
+    USERS {
+        text id PK "Clerk userId(如 user_2abc)"
+        text email "Clerk 同步·仅内部同事"
+        timestamptz created_at
+    }
+    LEARNING_PROGRESS {
+        uuid id PK
+        text user_id FK "= Clerk 会话 userId，水平隔离键"
+        text package_id "教程包(react/vue)·非枚举"
+        text current_step_id "断点"
+        jsonb completed_step_ids "已完成步骤集合(只增不减)"
+        timestamptz last_visited_at
+    }</pre>
+
+    <p><strong>数据权限规则表</strong>：</p>
+
+    <table>
+      <tr>
+        <th>操作</th>
+        <th>SQL 归属约束</th>
+        <th>越权防护</th>
+      </tr>
+      <tr>
+        <td>读进度 <code>GET /api/progress?packageId=react</code></td>
+        <td><code>SELECT ... WHERE user_id = auth.userId AND package_id = ?</code></td>
+        <td>无 <code>user_id</code> 自由查询入口，无法传别人 id</td>
+      </tr>
+      <tr>
+        <td>写进度 <code>PUT /api/progress</code></td>
+        <td><code>INSERT ... ON CONFLICT(user_id, package_id) DO UPDATE</code> 且 <code>user_id = auth.userId</code></td>
+        <td><code>user_id</code> 由服务端注入，冲突键含 <code>user_id</code>，改不到他人行</td>
+      </tr>
+      <tr>
+        <td>唯一约束</td>
+        <td><code>UNIQUE(user_id, package_id)</code>（单用户单主题一条断点，对齐 spec）</td>
+        <td>防重复行、防串行覆盖歧义</td>
+      </tr>
+      <tr>
+        <td>删除 / 重置进度（对齐 F9「从头开始」）</td>
+        <td>MVP 语义为「清空自己该 package 的 completed 集合」，仍带 <code>user_id = auth.userId</code></td>
+        <td>重置只作用于本人本主题</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p><strong>内容侧无数据权限概念</strong>：<code>TutorialPackage</code> 全站共享只读，不存在「某用户能看某主题、不能看某主题」的分级需求，不做内容 ACL（无场景，不加）。</p>
+    </blockquote>
+
+    <hr>
+
+    <h2>四、传输与存储加密</h2>
+
+    <h3>4.1 传输加密：全链路 TLS，由平台托管</h3>
+
+    <table>
+      <tr>
+        <th>链路</th>
+        <th>加密</th>
+        <th>谁保证</th>
+      </tr>
+      <tr>
+        <td>浏览器 ↔ Vercel（页面 + <code>/api/*</code>）</td>
+        <td><strong>HTTPS / TLS 1.2+</strong>，HSTS</td>
+        <td>Vercel 平台默认强制，自动签发/续期证书</td>
+      </tr>
+      <tr>
+        <td>Route Handler ↔ PostgreSQL</td>
+        <td><strong>TLS</strong>（Vercel Postgres / Neon 连接串带 <code>sslmode=require</code>）</td>
+        <td>连接串配置，Drizzle 透传</td>
+      </tr>
+      <tr>
+        <td>服务端 ↔ Clerk API</td>
+        <td><strong>HTTPS</strong></td>
+        <td>Clerk SDK 默认</td>
+      </tr>
+      <tr>
+        <td>浏览器 ↔ Sandpack 依赖 CDN</td>
+        <td><strong>HTTPS</strong></td>
+        <td>Sandpack / CDN 默认</td>
+      </tr>
+    </table>
+
+    <ul>
+      <li><strong>强制项</strong>：DB 连接串必须 <code>sslmode=require</code>（禁止明文连库）；生产禁用任何 <code>http://</code> 回退。</li>
+      <li><strong>不做</strong>：无国密 SM2/SM3/SM4（无信创要求）；无自建 mTLS / 双向证书（单体同源部署，无跨服务内网调用，无场景）。</li>
+    </ul>
+
+    <h3>4.2 存储加密：低敏感数据 + 平台静态加密即足够</h3>
+
+    <table>
+      <tr>
+        <th>数据</th>
+        <th>存储位置</th>
+        <th>加密策略</th>
+        <th>理由</th>
+      </tr>
+      <tr>
+        <td><code>users</code>（Clerk userId、email）</td>
+        <td>PostgreSQL</td>
+        <td><strong>平台静态加密（at-rest）</strong>，不做字段级加密</td>
+        <td>email 是内部同事工作邮箱，非高敏 PII；字段级加密对低敏数据是过度设计</td>
+      </tr>
+      <tr>
+        <td><code>learning_progress</code>（断点、完成集合）</td>
+        <td>PostgreSQL</td>
+        <td>同上，明文列</td>
+        <td>进度非机密，无脱敏/加密必要</td>
+      </tr>
+      <tr>
+        <td>会话令牌</td>
+        <td>Clerk 托管（不落本系统库）</td>
+        <td>由 Clerk 加密管理</td>
+        <td>本系统不持有、不存储会话密钥材料</td>
+      </tr>
+      <tr>
+        <td>原型期进度</td>
+        <td>浏览器 <code>localStorage</code></td>
+        <td><strong>不加密</strong>（本地明文）</td>
+        <td>单机原型级记忆，威胁模型不含本地攻击者（spec §3.5 已接受清缓存丢失）</td>
+      </tr>
+      <tr>
+        <td>密钥 / 连接串</td>
+        <td>Vercel 环境变量（加密存储）</td>
+        <td>平台加密 + 运行时注入</td>
+        <td>见 §八</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p><strong>明确不做</strong>：不落库客户 PII（本系统根本不接触）、不存支付信息、不缓存敏感数据到 Redis（无 Redis）。存储加密止步于「平台 at-rest 加密」，符合低敏内部工具画像。</p>
+    </blockquote>
+
+    <hr>
+
+    <h2>五、敏感数据与脱敏</h2>
+
+    <h3>5.1 数据敏感度分级</h3>
+
+    <pre class="mermaid">graph TD
+    subgraph S3["高敏 · 本系统不接触"]
+        NONE["客户 PII / 手机号 / 地址 / 支付 / 有赞订单<br/>→ 与本系统零交集，从设计上排除"]
+    end
+    subgraph S2["中敏 · 凭据类"]
+        CRED["Clerk Secret Key · DB 连接串 · Clerk 会话令牌<br/>→ 环境变量 + 平台托管，永不入仓/入日志"]
+    end
+    subgraph S1["低敏 · 身份最小集"]
+        PII["Clerk userId · 内部同事 email<br/>→ at-rest 加密，日志中 email 打码"]
+    end
+    subgraph S0["公开 · 无敏感"]
+        OPEN["教学内容 JSON · 学习进度 · 沙箱代码<br/>→ 明文存储与传输(仍走 TLS)"]
+    end
+
+    classDef s3 fill:#d8d8d8,stroke:#333,color:#111
+    classDef s2 fill:#e4e4e4,stroke:#555,color:#111
+    classDef s1 fill:#eee,stroke:#777,color:#111
+    classDef s0 fill:#f7f7f7,stroke:#999,color:#111
+    class NONE s3
+    class CRED s2
+    class PII s1
+    class OPEN s0</pre>
+
+    <h3>5.2 脱敏规则（仅针对唯一的低敏字段 email）</h3>
+
+    <table>
+      <tr>
+        <th>场景</th>
+        <th>处理</th>
+      </tr>
+      <tr>
+        <td>应用日志 / 错误上报</td>
+        <td>只记 <code>userId</code>（<code>user_2abc...</code>，本身即不可逆标识），<strong>不记 email</strong>；确需关联时 email 打码为 <code>d***@example.com</code></td>
+      </tr>
+      <tr>
+        <td>前端展示</td>
+        <td>Clerk 组件展示登录者本人信息即可，<strong>不展示他人 email/进度</strong>（无此界面）</td>
+      </tr>
+      <tr>
+        <td>数据库导出 / 调试</td>
+        <td>内部工具无对外导出需求（spec §0：进度不导出）；开发调试查库遵守全局规则「PII 不回显到工具输出」</td>
+      </tr>
+      <tr>
+        <td>Clerk userId</td>
+        <td>视为不可逆技术标识，<strong>不视作需脱敏的 PII</strong>，可正常用于日志关联</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p><strong>不做</strong>：无需建「脱敏中间件 / 数据分类打标系统」——敏感字段只有 email 一个，一条打码约定即覆盖，建系统属过度设计。</p>
+    </blockquote>
+
+    <hr>
+
+    <h2>六、操作审计与日志留痕</h2>
+
+    <h3>6.1 审计定位：最小留痕，够排障即止</h3>
+
+    <p>内部工具、无合规审计义务（无等保、无对外交付），审计目标是<strong>排障与异常回溯</strong>，不是合规取证：</p>
+
+    <table>
+      <tr>
+        <th>审计事件</th>
+        <th>记录内容</th>
+        <th>载体</th>
+        <th>保留</th>
+      </tr>
+      <tr>
+        <td>进度写入 <code>PUT /api/progress</code></td>
+        <td><code>userId</code>、<code>packageId</code>、<code>currentStepId</code>、时间戳、结果码</td>
+        <td>Vercel 运行日志（<code>console</code> 结构化输出）</td>
+        <td>Vercel 平台默认保留期</td>
+      </tr>
+      <tr>
+        <td>认证失败（401）</td>
+        <td>命中路径、时间戳（<strong>不记令牌、不记会话内容</strong>）</td>
+        <td>Vercel 日志</td>
+        <td>同上</td>
+      </tr>
+      <tr>
+        <td>Package Loader 校验失败</td>
+        <td><code>packageId</code>、zod 错误摘要（哪个字段非法）</td>
+        <td>Vercel 日志 + 构建期 CI 输出</td>
+        <td>同上</td>
+      </tr>
+      <tr>
+        <td>服务端异常（5xx）</td>
+        <td>错误堆栈（脱敏后）、路由</td>
+        <td>Vercel 日志</td>
+        <td>同上</td>
+      </tr>
+      <tr>
+        <td><strong>不审计</strong></td>
+        <td>匿名内容浏览、沙箱运行/看答案（纯客户端行为，无服务端痕迹且无审计价值）</td>
+        <td>—</td>
+        <td>—</td>
+      </tr>
+    </table>
+
+    <h3>6.2 日志安全红线</h3>
+
+    <pre class="mermaid">graph LR
+    EVT["日志事件"] --> FILTER{"日志前置过滤"}
+    FILTER -->|"允许"| OK["userId · packageId · stepId · 路径 · 状态码 · 时间"]
+    FILTER -->|"禁止落日志"| BLOCK["Clerk Secret / DB 连接串 / 会话 Cookie / 令牌<br/>· 完整 email(打码后可) · 沙箱代码全文"]
+    OK --> SINK["Vercel 日志"]
+    BLOCK -. 拦截 .-> DROP["丢弃 / 打码"]
+
+    classDef ok fill:#eee,stroke:#777,color:#111
+    classDef bad fill:#d8d8d8,stroke:#444,color:#111
+    class OK,SINK ok
+    class BLOCK,DROP bad</pre>
+
+    <ul>
+      <li><strong>绝不回显 / 落日志</strong>：任何密钥、令牌、会话 Cookie、DB 连接串（对齐全局规则「跑命令不回显密钥」）。</li>
+      <li><strong>不建独立审计库</strong>：无 SIEM、无独立 audit 表——Vercel 平台日志即满足内部排障，独立审计设施是过度设计。若未来有合规需求再显式立项。</li>
+    </ul>
+
+    <hr>
+
+    <h2>七、攻击面与防护</h2>
+
+    <h3>7.1 攻击面全景与防护矩阵</h3>
+
+    <pre class="mermaid">graph TD
+    subgraph Client["客户端攻击面（主战场）"]
+        A1["沙箱任意代码执行"]
+        A2["沙箱依赖投毒（供应链）"]
+        A3["宿主页 XSS（内容渲染）"]
+    end
+    subgraph Server["服务端攻击面（窄）"]
+        A4["进度接口水平越权 IDOR"]
+        A5["SQL 注入"]
+        A6["畸形内容配置注入"]
+        A7["接口滥用 / DoS"]
+    end
+    subgraph Supply["供应链 / 凭据"]
+        A8["密钥泄露"]
+        A9["npm 依赖漏洞"]
+    end
+
+    A1 --> D1["iframe sandbox 属性 + 跨源隔离<br/>Sandpack 默认隔离预览"]
+    A2 --> D2["dependencies 白名单来自可信 JSON<br/>非用户自由输入包名"]
+    A3 --> D3["内容可信(仓库+PR) · MDX 组件白名单<br/>不渲染匿名用户内容 · CSP"]
+    A4 --> D4["userId 只源于 Clerk 会话<br/>SQL 强制 user_id 归属"]
+    A5 --> D5["Drizzle 参数化查询<br/>零字符串拼接 SQL"]
+    A6 --> D6["Package Loader zod 唯一入口校验"]
+    A7 --> D7["Vercel 边缘限流 + Clerk 登录墙<br/>内部低并发无需专门 WAF"]
+    A8 --> D8["Vercel 环境变量 · 不入仓 · 轮换"]
+    A9 --> D9["Dependabot/CI 审计 · 锁版本"]
+
+    classDef atk fill:#dcdcdc,stroke:#444,color:#111
+    classDef def fill:#f4f4f4,stroke:#666,color:#111
+    class A1,A2,A3,A4,A5,A6,A7,A8,A9 atk
+    class D1,D2,D3,D4,D5,D6,D7,D8,D9 def</pre>
+
+    <h3>7.2 沙箱代码执行隔离（本系统最大攻击面）</h3>
+
+    <p>Sandpack 在浏览器内 bundle 并在 <strong>iframe 预览区</strong>运行任意用户可编辑的代码——这是本系统独有且最需重视的攻击面。防护依赖浏览器隔离而非服务端：</p>
+
+    <table>
+      <tr>
+        <th>威胁</th>
+        <th>场景</th>
+        <th>防护</th>
+      </tr>
+      <tr>
+        <td>预览代码窃取宿主页会话</td>
+        <td>用户/答案代码里写 <code>document.cookie</code> 想读会话</td>
+        <td>预览 iframe 与宿主页<strong>跨源 / <code>sandbox</code> 属性隔离</strong>，读不到宿主 <code>HttpOnly</code> 会话 Cookie；Sandpack 预览默认在隔离 iframe 运行</td>
+      </tr>
+      <tr>
+        <td>预览代码打本站接口越权</td>
+        <td>iframe 内 <code>fetch('/api/progress')</code> 冒用会话</td>
+        <td>iframe 跨源 → 无同源 Cookie 携带；即便请求也无有效会话，落到 401</td>
+      </tr>
+      <tr>
+        <td>预览代码劫持宿主页 DOM/键盘</td>
+        <td>试图操纵父页面</td>
+        <td><code>sandbox</code> 无 <code>allow-top-navigation</code>、无 <code>allow-same-origin</code>（与宿主同源时才危险），限制 iframe 能力集</td>
+      </tr>
+      <tr>
+        <td>恶意 <code>postMessage</code> 注入宿主</td>
+        <td>iframe 向父页发消息篡改状态</td>
+        <td>宿主监听 <code>message</code> 时<strong>校验 <code>event.origin</code></strong>，只接受 Sandpack 预期源；忽略未知源消息</td>
+      </tr>
+      <tr>
+        <td>死循环 / 内存耗尽</td>
+        <td>代码 <code>while(true)</code> 卡死</td>
+        <td>影响仅限该 iframe 与本机浏览器标签页，<strong>不影响服务端</strong>；用户刷新/切步即恢复（沙箱切步完整替换文件，spec §业务规则2/5）</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p>关键结论：因用户代码<strong>只在自己浏览器里跑、不上服务端</strong>（服务端不打包，D-D），代码执行风险被天然约束在「用户害自己的浏览器标签页」范围内，不构成对平台或他人的威胁。防护重点是<strong>确保 iframe 拿不到宿主会话与本站有效凭据</strong>。</p>
+    </blockquote>
+
+    <h3>7.3 注入类防护</h3>
+
+    <table>
+      <tr>
+        <th>注入类型</th>
+        <th>本系统是否存在通道</th>
+        <th>防护</th>
+      </tr>
+      <tr>
+        <td><strong>SQL 注入</strong></td>
+        <td><code>/api/progress</code> 拼 SQL</td>
+        <td><strong>Drizzle ORM 参数化查询</strong>，全程无字符串拼接 SQL；<code>packageId</code>/<code>stepId</code> 均作为绑定参数，不进入 SQL 文本</td>
+      </tr>
+      <tr>
+        <td><strong>XSS（存储型）</strong></td>
+        <td>内容 JSON 的 <code>description</code>(MDX) 渲染进宿主页</td>
+        <td>内容为<strong>可信真源</strong>（仓库 + PR 走查，非匿名投稿）；MDX 渲染走<strong>组件白名单</strong>，不允许内容注入任意 <code>&lt;script&gt;</code>/事件处理器；配合 CSP 兜底</td>
+      </tr>
+      <tr>
+        <td><strong>XSS（反射型）</strong></td>
+        <td>查询参数回显</td>
+        <td>React 默认转义；不使用 <code>dangerouslySetInnerHTML</code> 渲染未净化内容</td>
+      </tr>
+      <tr>
+        <td><strong>配置注入 / 原型污染</strong></td>
+        <td>畸形 <code>TutorialPackage</code> JSON</td>
+        <td><strong>Package Loader zod 唯一入口</strong>：严格 schema，未知字段拒绝/剥离；<code>files</code>/<code>solution</code> 值须为 string，非法则保留上一步状态并告警（对齐 code-sandbox spec §6）</td>
+      </tr>
+      <tr>
+        <td><strong>路径穿越</strong></td>
+        <td><code>/api/packages/[id]</code> 读 JSON 文件</td>
+        <td><code>id</code> 经 zod 白名单校验（<code>^[a-z0-9-]+$</code>），<strong>禁止 <code>../</code></strong>；内容为构建产物按 id 映射，不做用户可控文件系统路径拼接</td>
+      </tr>
+      <tr>
+        <td><strong>命令注入</strong></td>
+        <td>无（服务端不执行代码/shell）</td>
+        <td>攻击面不存在</td>
+      </tr>
+      <tr>
+        <td><strong>文件上传</strong></td>
+        <td><strong>无上传功能</strong></td>
+        <td>内部工具无上传需求（内容走 Git，非用户上传），攻击面从设计上归零</td>
+      </tr>
+    </table>
+
+    <h3>7.4 内容安全策略（CSP）</h3>
+
+    <p>针对「宿主页 XSS + 沙箱 iframe 隔离」，配置 CSP（Next.js <code>next.config</code> / 响应头）：</p>
+
+    <table>
+      <tr>
+        <th>指令</th>
+        <th>值（示意）</th>
+        <th>目的</th>
+      </tr>
+      <tr>
+        <td><code>default-src</code></td>
+        <td><code>'self'</code></td>
+        <td>默认只信本源</td>
+      </tr>
+      <tr>
+        <td><code>frame-src</code></td>
+        <td>Sandpack 预览源（如 <code>*.codesandbox.io</code> / <code>csb.app</code>）</td>
+        <td>仅允许沙箱预览 iframe，白名单外 iframe 拒绝</td>
+      </tr>
+      <tr>
+        <td><code>connect-src</code></td>
+        <td><code>'self'</code> + Clerk 域 + Postgres 无（服务端调） + Sandpack CDN</td>
+        <td>限制前端可发起请求的目标</td>
+      </tr>
+      <tr>
+        <td><code>script-src</code></td>
+        <td><code>'self'</code> + Clerk + 必要 Sandpack</td>
+        <td>收敛脚本源；生产避免 <code>unsafe-inline</code>（Next 支持 nonce）</td>
+      </tr>
+      <tr>
+        <td><code>object-src</code></td>
+        <td><code>'none'</code></td>
+        <td>禁插件</td>
+      </tr>
+      <tr>
+        <td><code>frame-ancestors</code></td>
+        <td><code>'self'</code></td>
+        <td>防本站被第三方 iframe 嵌套（点击劫持）</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p>CSP 需与 Sandpack/Clerk 实际域名联调（二者均需若干外域）；原则是<strong>先按 Sandpack/Clerk 官方最小域名集放行，其余默认拒绝</strong>，不图省事写 <code>*</code>。</p>
+    </blockquote>
+
+    <h3>7.5 接口滥用与 DoS</h3>
+
+    <table>
+      <tr>
+        <th>面向</th>
+        <th>结论</th>
+      </tr>
+      <tr>
+        <td>高并发 DoS</td>
+        <td>内部工具并发个位数~两位数（nfrDrivers），<strong>不做专门 WAF / 限流中间件</strong>；Vercel 边缘天然抗突发，够用</td>
+      </tr>
+      <tr>
+        <td>进度接口刷写</td>
+        <td>受 Clerk 登录墙保护，非匿名可刷；写量小、幂等 UPSERT，无放大效应</td>
+      </tr>
+      <tr>
+        <td>内容接口爬取</td>
+        <td>内容本就是公开教材，被内部同事「爬」无损失，不设防</td>
+      </tr>
+    </table>
+
+    <hr>
+
+    <h2>八、密钥与凭据管理</h2>
+
+    <h3>8.1 凭据清单与存放</h3>
+
+    <p>严格遵循全局规则「凭据不裸贴对话、写脚本让服务读」与「不 commit <code>.env</code>」：</p>
+
+    <table>
+      <tr>
+        <th>凭据</th>
+        <th>用途</th>
+        <th>存放</th>
+        <th>暴露面</th>
+      </tr>
+      <tr>
+        <td><code>CLERK_SECRET_KEY</code></td>
+        <td>服务端校验会话</td>
+        <td><strong>Vercel 环境变量（Production/Preview 分环境）</strong></td>
+        <td>仅服务端运行时可读</td>
+      </tr>
+      <tr>
+        <td><code>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code></td>
+        <td>前端 Clerk SDK</td>
+        <td>环境变量（<code>NEXT_PUBLIC_</code> 前缀，<strong>设计上即公开</strong>）</td>
+        <td>可公开，无秘密价值</td>
+      </tr>
+      <tr>
+        <td><code>DATABASE_URL</code>（含密码，<code>sslmode=require</code>）</td>
+        <td>Drizzle 连库</td>
+        <td>Vercel 环境变量</td>
+        <td>仅服务端可读</td>
+      </tr>
+      <tr>
+        <td>Clerk Webhook Secret（如启用）</td>
+        <td>校验 Clerk 回调签名</td>
+        <td>Vercel 环境变量</td>
+        <td>仅服务端</td>
+      </tr>
+    </table>
+
+    <h3>8.2 凭据管理红线</h3>
+
+    <pre class="mermaid">graph TD
+    SRC["凭据来源"] --> ENV["Vercel 环境变量<br/>(加密存储·运行时注入)"]
+    ENV --> RUNTIME["Route Handler / middleware 运行时读取"]
+
+    GIT["Git 仓库"] -. 禁止 .-> SECRET1["CLERK_SECRET_KEY"]
+    GIT -. 禁止 .-> SECRET2["DATABASE_URL"]
+    GIT -. 禁止 .-> SECRET3[".env 文件"]
+    LOG["日志/工具输出"] -. 禁止回显 .-> SECRET1 & SECRET2
+
+    ENVLOCAL[".env.local(本地开发)"] --> GITIGNORE[".gitignore 排除·不入仓"]
+
+    classDef ok fill:#eee,stroke:#777,color:#111
+    classDef ban fill:#d8d8d8,stroke:#444,color:#111
+    class ENV,RUNTIME,GITIGNORE ok
+    class SECRET1,SECRET2,SECRET3 ban</pre>
+
+    <table>
+      <tr>
+        <th>规则</th>
+        <th>落地</th>
+      </tr>
+      <tr>
+        <td>密钥<strong>不入仓</strong></td>
+        <td><code>.env*</code> 全部进 <code>.gitignore</code>；仓库仅留 <code>.env.example</code>（键名占位、无值）</td>
+      </tr>
+      <tr>
+        <td>密钥<strong>不回显</strong></td>
+        <td>日志、CI 输出、终端均不打印 Secret（对齐全局规则）</td>
+      </tr>
+      <tr>
+        <td>分环境隔离</td>
+        <td>Vercel Production / Preview / Development 各自独立密钥；Preview 不复用生产库</td>
+      </tr>
+      <tr>
+        <td>泄露即轮换</td>
+        <td>一旦密钥出现在日志/仓库/对话，立即在 Clerk / 数据库控制台<strong>撤销并重签</strong>（对齐全局规则「看到泄露 token → 提醒立刻撤销」）</td>
+      </tr>
+      <tr>
+        <td>最小权限连库</td>
+        <td>DB 账号仅授予应用所需 DML 权限，不用超级用户连生产库</td>
+      </tr>
+      <tr>
+        <td>依赖供应链</td>
+        <td><code>package-lock</code>/lockfile 锁版本；CI 跑 <code>npm audit</code> / Dependabot；Sandpack 拉取的示例依赖仅在<strong>用户浏览器 iframe</strong>内，不污染服务端</td>
+      </tr>
+    </table>
+
+    <hr>
+
+    <h2>九、等保 / 合规基线（如实记录 · 反误套声明）</h2>
+
+    <blockquote>
+      <p><strong>⚠️ 本节是防止下游误套政企模板的显式声明，与典型信创/等保项目相反。</strong></p>
+    </blockquote>
+
+    <table>
+      <tr>
+        <th>合规项</th>
+        <th>本系统结论</th>
+        <th>依据</th>
+      </tr>
+      <tr>
+        <td>等级保护定级测评</td>
+        <td><strong>不适用 / 不做</strong></td>
+        <td>内部自用工具、无对外交付、公有云，无定级义务（techConstraints）</td>
+      </tr>
+      <tr>
+        <td>信创 / 国产化替代</td>
+        <td><strong>不适用</strong></td>
+        <td>选型锁定 Next.js/React/Postgres/Clerk/Vercel，无国产化要求</td>
+      </tr>
+      <tr>
+        <td>数据不出域 / 数据本地化</td>
+        <td><strong>不适用</strong></td>
+        <td>部署于 Vercel 公有云，数据可出域；无此限制</td>
+      </tr>
+      <tr>
+        <td>内网 / 专网 / 物理隔离</td>
+        <td><strong>不适用</strong></td>
+        <td>公网 SaaS 形态</td>
+      </tr>
+      <tr>
+        <td>国密算法（SM2/3/4）</td>
+        <td><strong>不做</strong></td>
+        <td>用平台标准 TLS / at-rest 加密即满足</td>
+      </tr>
+      <tr>
+        <td>个人信息保护（PIPL 视角）</td>
+        <td><strong>最小适用</strong>：仅内部同事 email + userId，遵循最小收集、内部使用、不对外共享</td>
+        <td>无客户 PII、无对外数据流转</td>
+      </tr>
+      <tr>
+        <td>流程规范</td>
+        <td>按 <strong>§3.4 简化流程</strong>，Owner 即定义者，无独立评审对象</td>
+        <td>techConstraints</td>
+      </tr>
+    </table>
+
+    <p><strong>一句话基线</strong>：本系统安全设计以「<strong>低敏内部工具 + 公有云托管安全能力</strong>」为坐标，<strong>不引入等保/信创/内网任何合规设施</strong>；安全投入集中在 §七 的真实攻击面（沙箱隔离、IDOR、注入、密钥）。</p>
+
+    <hr>
+
+    <h2>十、安全需求 → 落点对照（可验收）</h2>
+
+    <table>
+      <tr>
+        <th>#</th>
+        <th>安全需求</th>
+        <th>落点</th>
+        <th>验收方式</th>
+      </tr>
+      <tr>
+        <td>SEC-1</td>
+        <td>进度不可水平越权</td>
+        <td><code>middleware.ts</code> + Route Handler <code>WHERE user_id = auth.userId</code></td>
+        <td>用 A 会话请求携带 B 的 packageId/构造 userId，只能读写自己数据；自动化测试覆盖</td>
+      </tr>
+      <tr>
+        <td>SEC-2</td>
+        <td><code>userId</code> 只源于会话</td>
+        <td>Route Handler 忽略请求体 userId</td>
+        <td>代码评审 + 测试：请求体塞入他人 userId 无效</td>
+      </tr>
+      <tr>
+        <td>SEC-3</td>
+        <td>沙箱不触达宿主会话</td>
+        <td>iframe 跨源 / sandbox 属性 + <code>postMessage</code> origin 校验</td>
+        <td>在沙箱内写 <code>document.cookie</code>/<code>fetch('/api/progress')</code> 验证拿不到会话、落 401</td>
+      </tr>
+      <tr>
+        <td>SEC-4</td>
+        <td>无 SQL 注入</td>
+        <td>Drizzle 参数化</td>
+        <td>静态扫描无字符串拼接 SQL；注入用例测试</td>
+      </tr>
+      <tr>
+        <td>SEC-5</td>
+        <td>内容配置须过 zod</td>
+        <td>Package Loader 唯一入口</td>
+        <td>畸形 JSON 被拒并告警，不崩渲染层</td>
+      </tr>
+      <tr>
+        <td>SEC-6</td>
+        <td>全链路 TLS</td>
+        <td>Vercel HTTPS + <code>sslmode=require</code></td>
+        <td>生产无 http 回退；连库强制 SSL</td>
+      </tr>
+      <tr>
+        <td>SEC-7</td>
+        <td>密钥不入仓不回显</td>
+        <td><code>.gitignore</code> + 环境变量</td>
+        <td>仓库扫描无 Secret；CI secret-scan 通过</td>
+      </tr>
+      <tr>
+        <td>SEC-8</td>
+        <td>CSP 生效</td>
+        <td>响应头 CSP + frame-src 白名单</td>
+        <td>浏览器 CSP 报告无违规；白名单外资源被拦</td>
+      </tr>
+      <tr>
+        <td>SEC-9</td>
+        <td>路径穿越防护</td>
+        <td><code>packageId</code> zod 白名单正则</td>
+        <td><code>../</code> 类输入被拒</td>
+      </tr>
+      <tr>
+        <td>SEC-10</td>
+        <td>合规基线不误套</td>
+        <td>本文档 §九显式声明</td>
+        <td>评审确认无等保/信创/内网设施混入</td>
+      </tr>
+    </table>
+
+    <hr>
+
+    <h2>十一、刻意不做（简洁守则 · 防下游顺手加）</h2>
+
+    <table>
+      <tr>
+        <th>不做项</th>
+        <th>理由</th>
+      </tr>
+      <tr>
+        <td>RBAC 权限框架 / 角色表 / 权限表</td>
+        <td>仅两个隐式角色（匿名/学习者），一个布尔（接口是否保护）即覆盖</td>
+      </tr>
+      <tr>
+        <td>独立审计库 / SIEM</td>
+        <td>Vercel 平台日志满足内部排障；无合规取证义务</td>
+      </tr>
+      <tr>
+        <td>字段级 / 应用层加密</td>
+        <td>数据低敏（无 PII/无支付），at-rest 加密足够</td>
+      </tr>
+      <tr>
+        <td>WAF / 专用限流中间件</td>
+        <td>内部低并发 + Clerk 登录墙；Vercel 边缘够用</td>
+      </tr>
+      <tr>
+        <td>国密 / mTLS / 数据不出域</td>
+        <td>无信创/无内网/无等保要求（§九）</td>
+      </tr>
+      <tr>
+        <td>文件上传扫描 / 防病毒</td>
+        <td>无上传功能</td>
+      </tr>
+      <tr>
+        <td>服务端沙箱 / 代码执行隔离容器</td>
+        <td>代码只在客户端 iframe 跑，服务端不打包（D-D）</td>
+      </tr>
+      <tr>
+        <td>原型 localStorage 与 DB 双写安全垫片</td>
+        <td>MVP 一次切换，不留半吊子（D-F）</td>
+      </tr>
+    </table>
+
+    <blockquote>
+      <p>以上任一项若未来出现真实场景，须<strong>显式立项、拿 Owner 批准</strong>后再加，禁止前端顺手加 / 后端被动兜（全局简洁守则）。</p>
+    </blockquote>
+  </main>
+</body>
+</html>
