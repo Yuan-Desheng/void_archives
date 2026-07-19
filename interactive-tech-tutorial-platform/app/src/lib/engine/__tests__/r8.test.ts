@@ -51,3 +51,22 @@ describe('R8 门禁②：新增主题零引擎改动', () => {
     expect(flat[0].step.solution).toBeDefined()
   })
 })
+
+/**
+ * R8 门禁③ —— content/ 下每个真实教程包都通过 Schema 校验。
+ * zod Schema 是「引擎能吃什么」的契约；任何入库内容必须先过契约。
+ */
+const packages = import.meta.glob('../../../content/*.json', { eager: true })
+
+describe('R8 门禁③：所有 content JSON 通过 Schema 校验', () => {
+  it('content/ 下至少有一个包', () => {
+    expect(Object.keys(packages).length).toBeGreaterThan(0)
+  })
+
+  for (const [path, mod] of Object.entries(packages)) {
+    it(`${path} 能被 Loader 无差别加载`, () => {
+      const raw = (mod as { default: unknown }).default
+      expect(() => loadPackage(raw)).not.toThrow()
+    })
+  }
+})
