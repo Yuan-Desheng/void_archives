@@ -7,14 +7,14 @@
       extend: {
         colors: {
           primary: {
-            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
-            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
-            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+            50: '#F8FAFC', 100: '#F1F5F9', 200: '#E2E8F0', 300: '#CBD5E1',
+            400: '#94A3B8', 500: '#64748B', 600: '#475569',
+            700: '#334155', 800: '#1E293B', 900: '#0F172A'
           },
           accent: {
-            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
-            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
-            800: '#075259', 900: '#053C41'
+            50: '#F8FAFC', 100: '#F1F5F9', 200: '#E2E8F0', 300: '#CBD5E1',
+            400: '#94A3B8', 500: '#64748B', 600: '#475569', 700: '#334155',
+            800: '#1E293B', 900: '#0F172A'
           }
         },
         fontFamily: {
@@ -40,8 +40,8 @@
     --color-border: #E2E8F0;
     --color-text: #1E293B;
     --color-text-muted: #64748B;
-    --color-primary: #3B5BDB;
-    --color-accent: #0EA5B7;
+    --color-primary: #1E293B;
+    --color-accent: #475569;
     --radius-lg: 8px;
     --radius-xl: 12px;
   }
@@ -51,8 +51,8 @@
     --color-border: #2A3548;
     --color-text: #E2E8F0;
     --color-text-muted: #94A3B8;
-    --color-primary: #6478E8;
-    --color-accent: #2EC2CC;
+    --color-primary: #64748B;
+    --color-accent: #94A3B8;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -61,8 +61,8 @@
       --color-border: #2A3548;
       --color-text: #E2E8F0;
       --color-text-muted: #94A3B8;
-      --color-primary: #6478E8;
-      --color-accent: #2EC2CC;
+      --color-primary: #64748B;
+      --color-accent: #94A3B8;
     }
   }
   html, body {
@@ -377,14 +377,14 @@
     '.hamburger{display:none;width:28px;height:28px;align-items:center;justify-content:center;border-radius:8px;border:1px solid #E2E8F0;background:#fff;cursor:pointer;flex-shrink:0}',
     '.tabbar{display:none;gap:6px;padding:6px 10px;background:#fff;border-bottom:1px solid #E2E8F0;position:sticky;top:44px;z-index:40}',
     '.tabbtn{flex:1;padding:7px 0;border-radius:8px;font-size:12px;font-weight:500;text-align:center;border:1px solid #E2E8F0;background:#F8FAFC;color:#64748B;cursor:pointer}',
-    '.tabbtn.active{background:#3B5BDB;color:#fff;border-color:#3B5BDB}',
+    '.tabbtn.active{background:#1E293B;color:#fff;border-color:#1E293B}',
     '.shell{display:flex;min-height:552px;position:relative}',
     '.sidebar{background:#fff;border-right:1px solid #E2E8F0;width:240px;flex-shrink:0;overflow-y:auto;padding:12px}',
     '.scrim{display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:30}',
     '.grp{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#94A3B8;margin:10px 0 4px;padding:0 6px}',
     '.item{display:block;padding:6px 8px;border-radius:8px;color:#334155;text-decoration:none;font-size:12.5px;margin-bottom:1px}',
-    '.item.cur{background:rgba(59,91,219,.1);color:#3B5BDB;font-weight:600;position:relative}',
-    '.item.cur::before{content:"";position:absolute;left:-6px;top:2px;bottom:2px;width:3px;background:#3B5BDB;border-radius:0 3px 3px 0}',
+    '.item.cur{background:rgba(30,41,59,.1);color:#1E293B;font-weight:600;position:relative}',
+    '.item.cur::before{content:"";position:absolute;left:-6px;top:2px;bottom:2px;width:3px;background:#1E293B;border-radius:0 3px 3px 0}',
     '.layout-main{flex:1;display:flex;min-width:0}',
     '.panel{min-width:0;overflow-y:auto}',
     '.panel-explain{padding:16px;background:#fff}',
@@ -399,20 +399,20 @@
     'th{background:#F8FAFC;text-transform:uppercase;font-size:9.5px;color:#64748B;letter-spacing:.03em}',
     '.filebar{display:flex;border-bottom:1px solid #E2E8F0;margin-bottom:0;background:#fff;border-radius:10px 10px 0 0;overflow:hidden}',
     '.filetab{padding:8px 12px;font-size:11px;font-weight:500;color:#64748B;border-bottom:2px solid transparent;cursor:pointer}',
-    '.filetab.cur{color:#3B5BDB;border-color:#3B5BDB}',
+    '.filetab.cur{color:#1E293B;border-color:#1E293B}',
     '.editor{background:#1e1e2e;color:#cdd6f4;font-family:\'JetBrains Mono\',Menlo,monospace;font-size:11px;padding:12px;line-height:1.7;border-radius:0 0 0 0;overflow-x:auto;white-space:pre}',
     '.sandbox-card{background:#fff;border:1px solid #E2E8F0;border-radius:0 0 10px 10px}',
     '.runbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid #E2E8F0;background:#fff;border-radius:0 0 10px 10px}',
-    '.btn-primary{background:#3B5BDB;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:500;cursor:pointer}',
+    '.btn-primary{background:#1E293B;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:500;cursor:pointer}',
     '.btn-accent{color:#0B8494;background:transparent;border:none;font-size:11.5px;font-weight:500;cursor:pointer}',
     '.preview-box{padding:14px;border:1px solid #E2E8F0;border-top:none;background:#fff;border-radius:0 0 10px 10px}',
     '.hello-card{border:1px solid #E2E8F0;border-radius:10px;padding:14px;background:#F8FAFC}',
     '.bottomnav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#fff;border-top:1px solid #E2E8F0;position:sticky;bottom:0}',
     '.navbtn{border:1px solid #E2E8F0;background:#fff;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:500;color:#334155;cursor:pointer}',
-    '.navbtn.primary{background:#3B5BDB;border-color:#3B5BDB;color:#fff}',
+    '.navbtn.primary{background:#1E293B;border-color:#1E293B;color:#fff}',
     '.dot{width:7px;height:7px;border-radius:50%;background:#CBD5E1;display:inline-block;margin:0 2px}',
     '.dot.done{background:#B9C7F7}',
-    '.dot.now{background:#3B5BDB;width:9px;height:9px}',
+    '.dot.now{background:#1E293B;width:9px;height:9px}',
     '@media (max-width:767px){',
     '  .tabbar{display:flex}',
     '  .hamburger{display:flex}',
@@ -441,7 +441,7 @@
     '<div class="topbar">',
     '  <div class="hamburger" onclick="toggleDrawer()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#334155" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg></div>',
     '  <span style="font-weight:600;font-size:13px">React 学习工作台</span>',
-    '  <span style="margin-left:auto;font-size:11px;background:#EEF1FD;color:#3B5BDB;padding:2px 8px;border-radius:8px">第 3 步 / 共 8 步</span>',
+    '  <span style="margin-left:auto;font-size:11px;background:#F1F5F9;color:#1E293B;padding:2px 8px;border-radius:8px">第 3 步 / 共 8 步</span>',
     '</div>',
     '<div class="tabbar">',
     '  <div class="tabbtn active" id="tab-explain" onclick="setPanel(\'explain\')">讲解</div>',
