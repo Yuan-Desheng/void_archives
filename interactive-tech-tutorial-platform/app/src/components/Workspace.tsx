@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import type { TutorialPackage } from '@/lib/engine/schema'
 import { flattenSteps } from '@/lib/engine/loader'
 import {
   readPackageProgress,
   visitStep,
   completeStep,
+  resetPackage,
   completion,
   type PackageProgress,
 } from '@/lib/engine/progress'
@@ -22,17 +24,30 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
   const [idx, setIdx] = useState(0)
   const [progress, setProgress] = useState<PackageProgress | null>(null)
   const [ready, setReady] = useState(false)
+  const [showResume, setShowResume] = useState(false)
 
-  // 初始化：读 localStorage 进度，定位到断点
+  // 初始化：读 localStorage 进度，定位到断点（F7 续学：非第一步则提示）
   useEffect(() => {
     const p = readPackageProgress(pkg.id)
     setProgress(p)
     if (p?.currentStepId) {
       const i = flat.findIndex((f) => f.step.id === p.currentStepId)
-      if (i >= 0) setIdx(i)
+      if (i > 0) {
+        setIdx(i)
+        setShowResume(true)
+      }
     }
     setReady(true)
   }, [pkg.id, flat])
+
+  // F9 从头开始：二次确认后清空该包进度，回到第一步
+  const restart = () => {
+    if (!window.confirm('确定从头开始？这会清空本主题在本机的学习进度。')) return
+    resetPackage(pkg.id)
+    setProgress(null)
+    setShowResume(false)
+    setIdx(0)
+  }
 
   const cur = flat[idx]
 
@@ -57,6 +72,9 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
     <div className="h-screen flex flex-col">
       <header className="flex items-center justify-between px-4 md:px-6 h-14 border-b border-border bg-surface shrink-0">
         <div className="flex items-center gap-3">
+          <Link href="/" className="text-sm text-muted hover:text-fg transition shrink-0">
+            ← 主题库
+          </Link>
           <span className="font-semibold">{pkg.meta.title}</span>
           <span className="text-xs text-muted hidden sm:inline">
             {comp.done}/{comp.total} · {comp.percent}%
@@ -64,6 +82,22 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
         </div>
         <ThemeToggle />
       </header>
+
+      {showResume && (
+        <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-2 border-b border-border bg-surface-2 text-sm shrink-0">
+          <span className="text-fg truncate">
+            继续学习：{cur.chapterTitle} · {cur.step.title}
+          </span>
+          <div className="flex items-center gap-3 shrink-0">
+            <button onClick={restart} className="text-muted hover:text-fg transition">
+              从头开始
+            </button>
+            <button onClick={() => setShowResume(false)} className="text-primary font-medium">
+              继续
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-[220px_1fr] min-h-0">
         <aside className="border-b md:border-b-0 md:border-r border-border bg-surface p-4 overflow-y-auto">

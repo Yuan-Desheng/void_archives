@@ -1,0 +1,75 @@
+{
+  "id": "vue",
+  "status": "active",
+  "meta": {
+    "title": "Vue 3 入门",
+    "description": "用模板 + 响应式的方式构建界面。新增此包时引擎零改动，验证 R8。",
+    "language": "vite-vue",
+    "defaultCode": "<script setup>\nconst msg = 'Hello Vue'\n</script>\n\n<template>\n  <h1>{{ msg }}</h1>\n</template>",
+    "dependencies": { "vue": "^3.4.0" }
+  },
+  "chapters": [
+    {
+      "id": "ch-basics",
+      "title": "入门",
+      "order": 1,
+      "steps": [
+        {
+          "id": "st-template",
+          "title": "模板与插值",
+          "order": 1,
+          "description": "Vue 组件用 `<template>` 描述 UI，用 `{{ }}` 把 JS 变量插值进模板。\n\n`<script setup>` 里声明的变量可直接在模板里使用。试着把 `msg` 改成你的名字，右侧预览会实时更新。",
+          "files": {
+            "/src/App.vue": "<script setup>\nconst msg = 'Hello Vue'\n</script>\n\n<template>\n  <h1>{{ msg }}</h1>\n</template>"
+          },
+          "solution": {
+            "/src/App.vue": "<script setup>\nconst msg = '你好，Vue 3'\n</script>\n\n<template>\n  <h1>{{ msg }}</h1>\n</template>"
+          }
+        },
+        {
+          "id": "st-binding",
+          "title": "属性绑定与事件",
+          "order": 2,
+          "description": "用 `:attr` 绑定属性，用 `@event` 监听事件。\n\n下面把按钮的点击事件绑到一个函数上，点击时改变文本。补全 `@click`，看看点击后 `text` 怎么变。",
+          "files": {
+            "/src/App.vue": "<script setup>\nimport { ref } from 'vue'\nconst text = ref('还没点')\n</script>\n\n<template>\n  <button>点我</button>\n  <p>{{ text }}</p>\n</template>"
+          },
+          "solution": {
+            "/src/App.vue": "<script setup>\nimport { ref } from 'vue'\nconst text = ref('还没点')\nfunction onClick() {\n  text.value = '点过了！'\n}\n</script>\n\n<template>\n  <button @click=\"onClick\">点我</button>\n  <p>{{ text }}</p>\n</template>"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ch-reactivity",
+      "title": "响应式",
+      "order": 2,
+      "steps": [
+        {
+          "id": "st-ref",
+          "title": "ref 响应式状态",
+          "order": 1,
+          "description": "`ref()` 把一个值包成响应式引用，在 `<script>` 里用 `.value` 读写，在模板里自动解包。\n\n下面做一个计数器：点按钮让 `count` 加一。补全 `count.value++`。",
+          "files": {
+            "/src/App.vue": "<script setup>\nimport { ref } from 'vue'\nconst count = ref(0)\nfunction inc() {\n  // 让 count 加一\n}\n</script>\n\n<template>\n  <button @click=\"inc\">加一</button>\n  <p>当前：{{ count }}</p>\n</template>"
+          },
+          "solution": {
+            "/src/App.vue": "<script setup>\nimport { ref } from 'vue'\nconst count = ref(0)\nfunction inc() {\n  count.value++\n}\n</script>\n\n<template>\n  <button @click=\"inc\">加一</button>\n  <p>当前：{{ count }}</p>\n</template>"
+          }
+        },
+        {
+          "id": "st-computed",
+          "title": "computed 计算属性",
+          "order": 2,
+          "description": "`computed()` 基于其它响应式状态派生出一个只读值，依赖变化时自动重算。\n\n下面根据 `count` 派生出「是否为偶数」。补全 computed 的返回值。",
+          "files": {
+            "/src/App.vue": "<script setup>\nimport { ref, computed } from 'vue'\nconst count = ref(0)\nconst parity = computed(() => {\n  // 返回 '偶数' 或 '奇数'\n  return ''\n})\n</script>\n\n<template>\n  <button @click=\"count++\">加一</button>\n  <p>{{ count }} 是 {{ parity }}</p>\n</template>"
+          },
+          "solution": {
+            "/src/App.vue": "<script setup>\nimport { ref, computed } from 'vue'\nconst count = ref(0)\nconst parity = computed(() => (count.value % 2 === 0 ? '偶数' : '奇数'))\n</script>\n\n<template>\n  <button @click=\"count++\">加一</button>\n  <p>{{ count }} 是 {{ parity }}</p>\n</template>"
+          }
+        }
+      ]
+    }
+  ]
+}
