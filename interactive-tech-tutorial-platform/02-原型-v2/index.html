@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>互动式技术教程平台 - 原型中心</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+              400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+              700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+            },
+            accent: {
+              50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+              400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+              800: '#075259', 900: '#053C41'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace']
+          },
+          borderRadius: { lg: '8px', xl: '12px' },
+          boxShadow: {
+            sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+            md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-bg: #F5F7FA;
+      --color-surface: #FFFFFF;
+      --color-border: #E2E8F0;
+      --color-text: #1E293B;
+      --color-text-muted: #64748B;
+      --color-primary: #3B5BDB;
+      --color-accent: #0EA5B7;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+    }
+    :root[data-theme="dark"], html.dark {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --color-bg: #0F172A;
+        --color-surface: #1A2333;
+        --color-border: #2A3548;
+        --color-text: #E2E8F0;
+        --color-text-muted: #94A3B8;
+        --color-primary: #6478E8;
+        --color-accent: #2EC2CC;
+      }
+    }
+    html, body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+    .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+    .page-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1.25rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+    }
+    .page-card:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 12px -2px rgba(59, 91, 219, 0.15);
+      transform: translateY(-2px);
+    }
+    .page-card h3 {
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .page-card p {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+    .module-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .module-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+    .module-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 1.1rem;
+      background: var(--color-accent);
+      border-radius: 2px;
+    }
+    .page-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    @media (max-width: 768px) {
+      .page-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8 md:py-12">
+    <!-- Header -->
+    <div class="mb-12">
+      <h1 class="text-3xl md:text-4xl font-bold mb-3" style="color: var(--color-primary);">
+        互动式技术教程平台
+      </h1>
+      <p class="text-lg" style="color: var(--color-text-muted);">
+        内容与引擎分离、以 JSON 配置驱动的「左讲解 + 右可运行沙箱」自主学习工具
+      </p>
+      <div class="mt-6 p-4 surface rounded-lg">
+        <p style="color: var(--color-text-muted); margin: 0; font-size: 0.95rem; line-height: 1.6;">
+          本原型展示平台核心功能模块与交互设计。每个卡片对应一个高保真页面原型，可直接点击预览。系统采用「Gov」风格设计，支持深色/浅色模式自适应。
+        </p>
+      </div>
+    </div>
+
+    <!-- Module Groups -->
+    <div class="module-group">
+      <!-- 【主题课程库】 -->
+      <div>
+        <div class="module-title">主题课程库</div>
+        <div class="page-grid">
+          <a href="theme-library__theme-selection.html" class="page-card">
+            <h3>主题选择页</h3>
+            <p>展示全部课程主题，支持分类浏览、搜索、难度筛选</p>
+          </a>
+          <a href="theme-library__chapter-outline.html" class="page-card">
+            <h3>章节大纲面板</h3>
+            <p>课程各章节列表，显示进度、评分、时长等元数据</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- 【学习工作台】 -->
+      <div>
+        <div class="module-title">学习工作台</div>
+        <div class="page-grid">
+          <a href="learning-workspace__workspace.html" class="page-card">
+            <h3>学习工作台（核心页）</h3>
+            <p>主界面：左侧讲解内容，右侧可运行代码沙箱，中间可折叠分隔线</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- 【代码沙箱】 -->
+      <div>
+        <div class="module-title">代码沙箱</div>
+        <div class="page-grid">
+          <a href="code-sandbox__sandbox-panel.html" class="page-card">
+            <h3>沙箱主面板（桌面右栏）</h3>
+            <p>包含代码编辑区、输出控制台、运行按钮、重置功能</p>
+          </a>
+          <a href="code-sandbox__sandbox-mobile-tab.html" class="page-card">
+            <h3>移动端沙箱 Tab 视图</h3>
+            <p>响应式适配：沙箱以 Tab 形式展示，编辑/输出切换</p>
+          </a>
+          <a href="code-sandbox__sandbox-error-state.html" class="page-card">
+            <h3>沙箱异常态视图</h3>
+            <p>执行错误、网络超时、语法错误等异常状态展示</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- 【学习进度】 -->
+      <div>
+        <div class="module-title">学习进度</div>
+        <div class="page-grid">
+          <a href="learning-progress__progress-indicators.html" class="page-card">
+            <h3>进度指示器（嵌入式规范）</h3>
+            <p>进度条、里程碑、完成度等组件的设计规范与示例</p>
+          </a>
+          <a href="learning-progress__continue-learning.html" class="page-card">
+            <h3>继续学习提示与入口</h3>
+            <p>系统推荐、上次中断位置、快速恢复学习的交互设计</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- 【外观与主题】 -->
+      <div>
+        <div class="module-title">外观与主题</div>
+        <div class="page-grid">
+          <a href="appearance-theme__theme-switcher-panel.html" class="page-card">
+            <h3>外观设置面板</h3>
+            <p>深色/浅色模式切换、字体大小调整、高对比度选项</p>
+          </a>
+          <a href="appearance-theme__responsive-showcase.html" class="page-card">
+            <h3>响应式与移动端切换示例页</h3>
+            <p>展示各断点下的响应式布局、移动端优化效果</p>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-12 pt-8 border-t" style="border-color: var(--color-border);">
+      <p style="color: var(--color-text-muted); font-size: 0.875rem; margin: 0;">
+        原型导航中心 | <a href="README.md" style="color: var(--color-primary); text-decoration: none;">查看说明文档</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

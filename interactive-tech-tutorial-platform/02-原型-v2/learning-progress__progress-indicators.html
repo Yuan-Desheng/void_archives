@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>进度指示器（嵌入式规范） · 学习进度 · ITTP</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+<style>
+  .nav-link { color: var(--color-text-muted); }
+  .nav-link:hover { color: var(--color-text); background: rgba(148,163,184,0.12); }
+  .nav-link.active { color: var(--color-primary); font-weight: 600; background: color-mix(in srgb, var(--color-primary) 10%, transparent); }
+  .toc-row { position: relative; }
+  .toc-row.current { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .toc-row.current::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--color-primary); border-radius: 0 2px 2px 0;
+  }
+  .toc-row:hover:not(.current) { background: rgba(148,163,184,0.10); }
+  .ring-track { stroke: var(--color-border); }
+  .code-annot {
+    font-family: 'JetBrains Mono', Menlo, monospace; font-size: 11px;
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    color: var(--color-accent); padding: 1px 6px; border-radius: 6px;
+  }
+  .spec-callout {
+    border-left: 3px solid var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  }
+  .field-table td, .field-table th { border-color: var(--color-border); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 顶部导航条：模块一级 -->
+<header class="sticky top-0 z-40 h-14 surface border-b flex items-center px-4 md:px-6 gap-4" style="background:var(--color-surface); border-color:var(--color-border);">
+  <div class="flex items-center gap-2 shrink-0">
+    <div class="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center text-white font-bold text-sm">I</div>
+    <span class="font-semibold text-sm hidden sm:inline" style="color:var(--color-text);">ITTP 原型</span>
+    <span class="text-xs px-2 py-0.5 rounded-lg" style="color:var(--color-text-muted); background:rgba(148,163,184,0.12);">React 主题</span>
+  </div>
+  <nav class="flex-1 flex items-center gap-1 overflow-x-auto text-sm">
+    <a href="theme-library__theme-selection.html" class="nav-link px-3 py-1.5 rounded-lg whitespace-nowrap">主题课程库</a>
+    <a href="learning-workspace__workspace.html" class="nav-link px-3 py-1.5 rounded-lg whitespace-nowrap">学习工作台</a>
+    <a href="code-sandbox__sandbox-panel.html" class="nav-link px-3 py-1.5 rounded-lg whitespace-nowrap">代码沙箱</a>
+    <a href="learning-progress__progress-indicators.html" class="nav-link active px-3 py-1.5 rounded-lg whitespace-nowrap">学习进度</a>
+    <a href="appearance-theme__theme-switcher-panel.html" class="nav-link px-3 py-1.5 rounded-lg whitespace-nowrap">外观与主题</a>
+  </nav>
+  <button id="darkToggle" class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style="border:1px solid var(--color-border);" aria-label="切换亮暗主题">
+    <svg id="iconSun" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg id="iconMoon" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+  </button>
+</header>
+
+<!-- 二级导航：学习进度模块内页面 -->
+<div class="surface border-b" style="background:var(--color-surface); border-color:var(--color-border);">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 h-11 flex items-center gap-1 text-sm overflow-x-auto">
+    <a href="learning-progress__progress-indicators.html" class="nav-link active px-3 py-1.5 rounded-lg whitespace-nowrap">进度指示器（嵌入式规范）</a>
+    <a href="learning-progress__continue-learning.html" class="nav-link px-3 py-1.5 rounded-lg whitespace-nowrap">继续学习提示与入口</a>
+  </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-8">
+
+  <!-- 页面说明条 -->
+  <div class="spec-callout rounded-xl px-5 py-4 flex items-start gap-3">
+    <svg class="w-5 h-5 shrink-0 mt-0.5" style="color:var(--color-accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg>
+    <div class="text-sm leading-relaxed" style="color:var(--color-text);">
+      <p class="font-medium mb-1">本页是嵌入式 UI 规范，不是独立路由页面</p>
+      <p style="color:var(--color-text-muted);">「进度指示器」定义步骤导航进度条、章节目录完成勾选、教程包整体完成度三类组件在 <a href="learning-workspace__workspace.html" class="underline" style="color:var(--color-primary);">学习工作台</a> 与 <a href="theme-library__theme-selection.html" class="underline" style="color:var(--color-primary);">主题课程库</a> 页面中的实际呈现方式与数据来源。下方每个区块均可交互，用于演示状态变化逻辑；数据模型遵循 D4「不拦人」范式——完成判定不校验代码正确性，只以是否点击「下一步」经过该步骤为准。</p>
+    </div>
+  </div>
+
+  <!-- 区块一：步骤导航进度条 -->
+  <section class="surface rounded-xl overflow-hidden">
+    <div class="px-5 md:px-6 py-4 border-b flex items-center justify-between" style="border-color:var(--color-border);">
+      <div>
+        <h2 class="text-base font-semibold">区块一 · 学习工作台底部步骤导航进度条</h2>
+        <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">数据字段:<span class="code-annot ml-1">currentStepId</span> <span class="code-annot">totalSteps</span></p>
+      </div>
+      <span class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(148,163,184,0.12); color:var(--color-text-muted);">来源模块:learning-workspace</span>
+    </div>
+
+    <div class="p-5 md:p-6 space-y-5">
+      <p class="text-sm" style="color:var(--color-text-muted);">在实际页面中该组件吸底固定于学习工作台视口底部，高度 64px。此处以卡片形式演示同一组件在「前进 / 后退」时的实时行为，可点击下方按钮体验。</p>
+
+      <!-- 模拟的底部步骤导航条 -->
+      <div class="rounded-xl overflow-hidden" style="border:1px solid var(--color-border);">
+        <div class="h-16 flex items-center px-4 md:px-6 gap-4" style="background:var(--color-surface);">
+          <button id="btnPrev" class="h-9 px-4 rounded-lg text-sm font-medium shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" style="border:1px solid var(--color-border); color:var(--color-text);">
+            上一步
+          </button>
+
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-medium" style="color:var(--color-text-muted);">第 <span id="stepNumText" class="font-semibold" style="color:var(--color-primary);">3</span> 步 / 共 <span id="totalStepsText">15</span> 步</span>
+              <span id="stepTitleText" class="text-xs truncate max-w-[45%]" style="color:var(--color-text-muted);">状态提升（Lifting State Up）</span>
+            </div>
+            <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--color-border);">
+              <div id="progressBar" class="h-full rounded-full bg-primary-500" style="width:20%; transition: width 0.3s ease;"></div>
+            </div>
+            <!-- 进度点 -->
+            <div id="progressDots" class="flex items-center gap-1.5 mt-3 flex-wrap"></div>
+          </div>
+
+          <button id="btnNext" class="h-9 px-4 rounded-lg text-sm font-medium shrink-0 text-white bg-primary-500 hover:bg-primary-600">
+            下一步
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs" style="color:var(--color-text-muted);">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-primary-500 inline-block"></span>当前步（实心）</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="border:2px solid var(--color-primary);"></span>已完成（描边）</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="border:2px solid var(--color-border);"></span>未开始（空心灰）</span>
+      </div>
+
+      <div class="text-xs rounded-lg px-3 py-2" style="background:rgba(148,163,184,0.08); color:var(--color-text-muted);">
+        点击「下一步」时：当前步骤先被写入 <span class="code-annot">completedStepIds</span>（乐观更新，本地即时生效，不等待任何异步确认），随后 <span class="code-annot">currentStepId</span> 前移一位，进度条与「第 X 步」文案随之刷新。点击「上一步」仅回退 <span class="code-annot">currentStepId</span>，不会撤销已标记的完成状态。
+      </div>
+    </div>
+  </section>
+
+  <!-- 区块二：章节目录树完成标记 -->
+  <section class="surface rounded-xl overflow-hidden">
+    <div class="px-5 md:px-6 py-4 border-b flex items-center justify-between" style="border-color:var(--color-border);">
+      <div>
+        <h2 class="text-base font-semibold">区块二 · 章节目录树节点完成标记</h2>
+        <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">数据字段:<span class="code-annot ml-1">completedStepIds</span> <span class="code-annot">currentStepId</span> <span class="code-annot">chapterCompletionRate</span></p>
+      </div>
+      <span class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(148,163,184,0.12); color:var(--color-text-muted);">来源模块:learning-workspace / theme-library</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-0">
+      <!-- 目录树 -->
+      <div class="border-b md:border-b-0 md:border-r p-4" style="border-color:var(--color-border);">
+        <p class="text-xs mb-2" style="color:var(--color-text-muted);">点击任意步骤行可跳转「回看」——完成标记不代表锁定，跳转不会撤销已有完成状态。</p>
+        <div id="tocTree" class="text-sm space-y-4"></div>
+      </div>
+
+      <!-- 三态图例 + 完成率 -->
+      <div class="p-5 md:p-6 space-y-5">
+        <div>
+          <h3 class="text-sm font-semibold mb-3">节点三态视觉规范</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-lg px-3 py-3 flex items-center gap-2.5" style="border:1px solid var(--color-border);">
+              <svg class="w-5 h-5 shrink-0 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.15"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
+              <div>
+                <p class="text-xs font-medium">已完成</p>
+                <p class="text-[11px]" style="color:var(--color-text-muted);">打勾图标 + 常规字重</p>
+              </div>
+            </div>
+            <div class="rounded-lg px-3 py-3 flex items-center gap-2.5" style="border:1px solid var(--color-primary); background:color-mix(in srgb, var(--color-primary) 8%, transparent);">
+              <span class="w-2.5 h-2.5 rounded-full bg-primary-500 shrink-0"></span>
+              <div>
+                <p class="text-xs font-medium" style="color:var(--color-primary);">当前所在</p>
+                <p class="text-[11px]" style="color:var(--color-text-muted);">左侧 3px 竖条 + 高亮底色</p>
+              </div>
+            </div>
+            <div class="rounded-lg px-3 py-3 flex items-center gap-2.5" style="border:1px solid var(--color-border);">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="border:1.5px solid var(--color-text-muted);"></span>
+              <div>
+                <p class="text-xs font-medium" style="color:var(--color-text-muted);">未开始</p>
+                <p class="text-[11px]" style="color:var(--color-text-muted);">空心圆点 + 默认灰字</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold mb-3">章节完成率（当前章节）</h3>
+          <div class="rounded-lg p-4" style="border:1px solid var(--color-border);">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium">第 2 章 · 组件与 Props</span>
+              <span id="chapterRateText" class="text-sm font-semibold" style="color:var(--color-primary);">40%</span>
+            </div>
+            <div class="h-2 rounded-full overflow-hidden" style="background:var(--color-border);">
+              <div id="chapterRateBar" class="h-full rounded-full bg-primary-500" style="width:40%;"></div>
+            </div>
+            <p class="text-xs mt-2" style="color:var(--color-text-muted);">计算口径:<span class="code-annot">已完成步骤数 / 该章节总步骤数</span>，向下取整为整数百分比</p>
+          </div>
+        </div>
+
+        <div class="text-xs rounded-lg px-3 py-2" style="background:rgba(148,163,184,0.08); color:var(--color-text-muted);">
+          目录跳转（无论前跳或后跳）仅更新 <span class="code-annot">currentStepId</span>，不追溯补全被跳过步骤的完成标记，避免「跳着看」被误判为学完。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 区块三：教程包整体完成度展示 -->
+  <section class="surface rounded-xl overflow-hidden">
+    <div class="px-5 md:px-6 py-4 border-b flex items-center justify-between" style="border-color:var(--color-border);">
+      <div>
+        <h2 class="text-base font-semibold">区块三 · 教程包整体完成度展示（课程库卡片）</h2>
+        <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">数据字段:<span class="code-annot ml-1">tutorialCompletionRate</span></p>
+      </div>
+      <span class="text-xs px-2.5 py-1 rounded-lg" style="background:rgba(148,163,184,0.12); color:var(--color-text-muted);">来源模块:theme-library</span>
+    </div>
+
+    <div class="p-5 md:p-6 space-y-5">
+      <p class="text-sm" style="color:var(--color-text-muted);">主题课程库中每个教程包卡片以「环形指示器 + 条形指示器」两种候选形态展示完成度百分比，二者视信息密度择一使用，本规范同时列出供设计参照。</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- 卡片1：环形，未开始 -->
+        <div class="rounded-xl p-5 flex flex-col items-center text-center gap-3" style="border:1px solid var(--color-border);">
+          <div class="relative w-16 h-16">
+            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+              <circle class="ring-track" cx="18" cy="18" r="15.5" fill="none" stroke-width="3"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold" style="color:var(--color-text-muted);">0%</div>
+          </div>
+          <div>
+            <p class="text-sm font-semibold">Vue 3 组合式 API</p>
+            <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">共 48 篇 · 未开始</p>
+          </div>
+          <button class="w-full h-9 rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600">开始学习</button>
+        </div>
+
+        <!-- 卡片2：环形，进行中 -->
+        <div class="rounded-xl p-5 flex flex-col items-center text-center gap-3" style="border:1px solid var(--color-primary);">
+          <div class="relative w-16 h-16">
+            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+              <circle class="ring-track" cx="18" cy="18" r="15.5" fill="none" stroke-width="3"/>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="58.5"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold" style="color:var(--color-primary);">40%</div>
+          </div>
+          <div>
+            <p class="text-sm font-semibold">React 核心概念</p>
+            <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">共 62 篇 · 25 / 62 已完成</p>
+          </div>
+          <button class="w-full h-9 rounded-lg text-sm font-medium text-white bg-primary-500 hover:bg-primary-600">继续学习</button>
+        </div>
+
+        <!-- 卡片3：环形，已完成 -->
+        <div class="rounded-xl p-5 flex flex-col items-center text-center gap-3" style="border:1px solid var(--color-border);">
+          <div class="relative w-16 h-16">
+            <svg class="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+              <circle class="ring-track" cx="18" cy="18" r="15.5" fill="none" stroke-width="3"/>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="97.4" stroke-dashoffset="0"/>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <svg class="w-5 h-5" style="color:var(--color-accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-semibold">JavaScript 基础</p>
+            <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">共 30 篇 · 已全部完成</p>
+          </div>
+          <button class="w-full h-9 rounded-lg text-sm font-medium" style="border:1px solid var(--color-border); color:var(--color-text);">重新学习</button>
+        </div>
+      </div>
+
+      <div class="rounded-lg p-4" style="border:1px solid var(--color-border);">
+        <p class="text-xs font-medium mb-3" style="color:var(--color-text-muted);">条形指示器候选形态（紧凑列表场景）</p>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="text-sm w-32 shrink-0 truncate">算法与数据结构</span>
+            <div class="flex-1 h-2 rounded-full overflow-hidden" style="background:var(--color-border);"><div class="h-full bg-slate-400 rounded-full" style="width:0%"></div></div>
+            <span class="text-xs w-10 text-right shrink-0" style="color:var(--color-text-muted);">0%</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm w-32 shrink-0 truncate">React 核心概念</span>
+            <div class="flex-1 h-2 rounded-full overflow-hidden" style="background:var(--color-border);"><div class="h-full bg-primary-500 rounded-full" style="width:40%"></div></div>
+            <span class="text-xs w-10 text-right shrink-0" style="color:var(--color-primary); font-weight:600;">40%</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm w-32 shrink-0 truncate">JavaScript 基础</span>
+            <div class="flex-1 h-2 rounded-full overflow-hidden" style="background:var(--color-border);"><div class="h-full bg-accent-500 rounded-full" style="width:100%"></div></div>
+            <span class="text-xs w-10 text-right shrink-0" style="color:var(--color-accent); font-weight:600;">100%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-xs rounded-lg px-3 py-2" style="background:rgba(148,163,184,0.08); color:var(--color-text-muted);">
+        计算口径:<span class="code-annot">Σ各章节已完成步骤数 / Σ各章节总步骤数</span>，向下取整为整数百分比。全部完成时按钮文案变为「重新学习」，环形指示器实心并切换为强调色 + 打勾图标。
+      </div>
+    </div>
+  </section>
+
+  <!-- 数据字段汇总表 -->
+  <section class="surface rounded-xl overflow-hidden">
+    <div class="px-5 md:px-6 py-4 border-b" style="border-color:var(--color-border);">
+      <h2 class="text-base font-semibold">关键数据字段汇总</h2>
+      <p class="text-xs mt-0.5" style="color:var(--color-text-muted);">供内容维护者与开发对齐口径</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="field-table w-full text-sm">
+        <thead>
+          <tr class="text-xs uppercase" style="background:rgba(148,163,184,0.08); color:var(--color-text-muted);">
+            <th class="text-left px-5 py-2.5 font-medium">字段名</th>
+            <th class="text-left px-5 py-2.5 font-medium">类型</th>
+            <th class="text-left px-5 py-2.5 font-medium">说明</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y" style="border-color:var(--color-border);">
+          <tr><td class="px-5 py-2.5"><span class="code-annot">currentStepId</span></td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">string</td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">当前所在步骤，用于进度条「第 X 步」文案与目录树高亮定位</td></tr>
+          <tr><td class="px-5 py-2.5"><span class="code-annot">completedStepIds</span></td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">string[]</td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">已标记完成的步骤集合，去重、只增不减</td></tr>
+          <tr><td class="px-5 py-2.5"><span class="code-annot">totalSteps</span></td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">number</td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">教程包/章节步骤总数，来自 TutorialPackage 配置</td></tr>
+          <tr><td class="px-5 py-2.5"><span class="code-annot">chapterCompletionRate</span></td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">number (0-100)</td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">章节完成率，向下取整整数百分比</td></tr>
+          <tr><td class="px-5 py-2.5"><span class="code-annot">tutorialCompletionRate</span></td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">number (0-100)</td><td class="px-5 py-2.5" style="color:var(--color-text-muted);">教程包整体完成率，驱动课程库卡片百分比/环形/条形展示</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 空态 / 降级态演示 -->
+  <section class="surface rounded-xl p-5 md:p-6">
+    <h2 class="text-base font-semibold mb-3">边界态：localStorage 不可用时的降级展示</h2>
+    <div class="rounded-lg p-4 flex items-start gap-3" style="border:1px dashed var(--color-border);">
+      <svg class="w-5 h-5 shrink-0 mt-0.5" style="color:var(--color-text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      <div class="text-sm">
+        <p class="font-medium mb-1">当次会话内存态（不报错、不阻断）</p>
+        <p style="color:var(--color-text-muted);">隐私模式/浏览器禁用本地存储时，进度条与目录树在当前会话内仍正常显示；但刷新或重新打开后，续学提示与课程库完成度不生效，卡片按钮回退为「开始学习」。</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 md:px-6 py-6 text-xs text-center" style="color:var(--color-text-muted);">
+  ITTP 原型 · 学习进度模块 · 进度指示器为嵌入式 UI 规范，非独立路由页面
+</footer>
+
+<script>
+  // 亮暗主题切换
+  const darkToggle = document.getElementById('darkToggle');
+  const iconSun = document.getElementById('iconSun');
+  const iconMoon = document.getElementById('iconMoon');
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    iconSun.classList.toggle('hidden', theme === 'dark');
+    iconMoon.classList.toggle('hidden', theme !== 'dark');
+  }
+  const savedTheme = localStorage.getItem('ittp:theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+  darkToggle.addEventListener('click', () => {
+    const next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem('ittp:theme', next);
+    applyTheme(next);
+  });
+
+  // ---- 区块一:步骤导航进度条模拟 ----
+  const totalSteps = 15;
+  let currentStep = 3; // 1-indexed
+  let completed = new Set([1, 2]); // 已完成步骤（只增不减）
+
+  const stepTitles = {
+    1: 'JSX 与元素渲染', 2: '组件与 Props 传递', 3: '状态提升（Lifting State Up）',
+    4: 'useState 基础', 5: '事件处理与合成事件', 6: '列表渲染与 key',
+    7: '条件渲染模式', 8: 'useEffect 生命周期', 9: '受控组件与表单',
+    10: 'Context 跨层传值', 11: '自定义 Hook 封装', 12: 'useMemo / useCallback',
+    13: '错误边界（Error Boundary）', 14: 'Portal 与浮层渲染', 15: '综合练习:待办清单'
+  };
+
+  const stepNumText = document.getElementById('stepNumText');
+  const totalStepsText = document.getElementById('totalStepsText');
+  const stepTitleText = document.getElementById('stepTitleText');
+  const progressBar = document.getElementById('progressBar');
+  const progressDots = document.getElementById('progressDots');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+
+  totalStepsText.textContent = totalSteps;
+
+  function renderDots() {
+    progressDots.innerHTML = '';
+    for (let i = 1; i <= totalSteps; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'w-2 h-2 rounded-full inline-block cursor-pointer';
+      dot.title = `第 ${i} 步 · ${stepTitles[i] || ''}`;
+      if (i === currentStep) {
+        dot.style.background = 'var(--color-primary)';
+        dot.classList.add('scale-125');
+      } else if (completed.has(i)) {
+        dot.style.border = '2px solid var(--color-primary)';
+        dot.style.background = 'transparent';
+      } else {
+        dot.style.border = '1.5px solid var(--color-border)';
+        dot.style.background = 'transparent';
+      }
+      dot.addEventListener('click', () => {
+        // 目录/进度点跳转：仅更新 currentStepId，不追溯补全完成标记
+        currentStep = i;
+        render();
+      });
+      progressDots.appendChild(dot);
+    }
+  }
+
+  function render() {
+    stepNumText.textContent = currentStep;
+    stepTitleText.textContent = stepTitles[currentStep] || '';
+    progressBar.style.width = ((currentStep) / totalSteps * 100).toFixed(1) + '%';
+    btnPrev.disabled = currentStep <= 1;
+    renderDots();
+    renderToc();
+    renderChapterRate();
+  }
+
+  btnPrev.addEventListener('click', () => {
+    if (currentStep > 1) {
+      currentStep -= 1;
+      render();
+    }
+  });
+
+  btnNext.addEventListener('click', () => {
+    if (currentStep < totalSteps) {
+      // 乐观更新：本地立即写入完成标记，不等待任何服务端确认
+      completed.add(currentStep);
+      currentStep += 1;
+      render();
+    } else {
+      // 最后一步点击下一步：标记完成，不再前进
+      completed.add(currentStep);
+      render();
+    }
+  });
+
+  // ---- 区块二:目录树 ----
+  const tocData = [
+    { chapter: '第 1 章 · JSX 与渲染基础', steps: [
+      { id: 1, title: 'JSX 与元素渲染' },
+      { id: 2, title: '组件与 Props 传递' },
+    ]},
+    { chapter: '第 2 章 · 组件与 Props', steps: [
+      { id: 3, title: '状态提升（Lifting State Up）' },
+      { id: 4, title: 'useState 基础' },
+      { id: 5, title: '事件处理与合成事件' },
+      { id: 6, title: '列表渲染与 key' },
+      { id: 7, title: '条件渲染模式' },
+    ]},
+  ];
+
+  const tocTree = document.getElementById('tocTree');
+  function renderToc() {
+    tocTree.innerHTML = '';
+    tocData.forEach(group => {
+      const wrap = document.createElement('div');
+      const label = document.createElement('p');
+      label.className = 'text-xs uppercase tracking-wide mb-1.5';
+      label.style.color = 'var(--color-text-muted)';
+      label.textContent = group.chapter;
+      wrap.appendChild(label);
+
+      group.steps.forEach(s => {
+        const row = document.createElement('div');
+        const isCurrent = s.id === currentStep;
+        const isDone = completed.has(s.id);
+        row.className = 'toc-row flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer' + (isCurrent ? ' current' : '');
+        if (!isCurrent) row.style.color = isDone ? 'var(--color-text)' : 'var(--color-text-muted)';
+
+        let iconHtml = '';
+        if (isCurrent) {
+          iconHtml = `<span class="w-2 h-2 rounded-full bg-primary-500 inline-block shrink-0"></span>`;
+        } else if (isDone) {
+          iconHtml = `<svg class="w-3.5 h-3.5 shrink-0 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>`;
+        } else {
+          iconHtml = `<span class="w-2 h-2 rounded-full inline-block shrink-0" style="border:1.5px solid var(--color-text-muted);"></span>`;
+        }
+        row.innerHTML = `${iconHtml}<span class="truncate">${s.title}</span>`;
+        row.addEventListener('click', () => {
+          currentStep = s.id;
+          render();
+        });
+        wrap.appendChild(row);
+      });
+      tocTree.appendChild(wrap);
+    });
+  }
+
+  // ---- 章节完成率（第 2 章）----
+  const chapterRateText = document.getElementById('chapterRateText');
+  const chapterRateBar = document.getElementById('chapterRateBar');
+  function renderChapterRate() {
+    const chapter2Ids = [3, 4, 5, 6, 7];
+    const doneCount = chapter2Ids.filter(id => completed.has(id)).length;
+    const rate = Math.floor(doneCount / chapter2Ids.length * 100);
+    chapterRateText.textContent = rate + '%';
+    chapterRateBar.style.width = rate + '%';
+  }
+
+  render();
+</script>
+
+</body>
+</html>

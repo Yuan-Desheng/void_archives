@@ -1,0 +1,533 @@
+<title>沙箱异常态视图 · 代码沙箱 · 互动式技术教程平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+
+<style>
+  .code-editor {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .code-editor .ln { color: #585b70; user-select: none; width: 2.25rem; display: inline-block; text-align: right; margin-right: 1rem; }
+  .tok-kw { color: #cba6f7; }
+  .tok-str { color: #a6e3a1; }
+  .tok-fn { color: #89b4fa; }
+  .tok-com { color: #6c7086; font-style: italic; }
+  .tok-tag { color: #f38ba8; }
+  .tok-attr { color: #fab387; }
+  .err-stack { background: #1e1e2e; color: #f38ba8; font-family: 'JetBrains Mono', Menlo, monospace; font-size: 12.5px; line-height: 1.75; }
+  .spin { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .blink-dot { animation: blinkDot 1.4s ease-in-out infinite; }
+  @keyframes blinkDot { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+  [contenteditable]:focus { outline: none; }
+</style>
+
+<div class="min-h-screen flex flex-col">
+
+  <!-- 顶部导航条 56px -->
+  <header class="h-14 shrink-0 surface border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="h-8 w-8 rounded-lg bg-primary-600 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4l-6 8 6 8M16 4l6 8-6 8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold leading-tight truncate">互动式技术教程平台</p>
+        <p class="text-xs leading-tight truncate" style="color:var(--color-text-muted)">主题：React · 沙箱异常态视图</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="sidebarToggle" class="md:hidden h-9 w-9 rounded-lg border flex items-center justify-center" style="border-color:var(--color-border)" aria-label="展开目录">
+        <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+      </button>
+      <div class="relative hidden sm:block">
+        <button id="themeMenuBtn" class="h-9 pl-3 pr-2 rounded-lg border text-sm flex items-center gap-1.5" style="border-color:var(--color-border)">
+          <span>React 主题</span>
+          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div id="themeMenu" class="hidden absolute right-0 mt-2 w-44 surface rounded-xl shadow-md py-1 z-40">
+          <a href="theme-library__theme-selection.html" class="block px-3 py-2 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/30">React（当前）</a>
+          <div class="px-3 py-2 text-sm opacity-40 cursor-not-allowed">Vue（即将开放）</div>
+          <div class="px-3 py-2 text-sm opacity-40 cursor-not-allowed">JavaScript（即将开放）</div>
+        </div>
+      </div>
+      <button id="darkToggle" class="h-9 w-9 rounded-lg border flex items-center justify-center" style="border-color:var(--color-border)" aria-label="切换亮暗主题">
+        <svg id="iconSun" viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+        <svg id="iconMoon" viewBox="0 0 24 24" class="h-4.5 w-4.5 hidden" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex flex-1 min-h-0">
+
+    <!-- 左侧站点目录 240px -->
+    <aside id="sidebar" class="w-60 shrink-0 surface border-r overflow-y-auto hidden md:block">
+      <nav class="py-4">
+        <div class="px-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">主题课程库</div>
+        <a href="theme-library__theme-selection.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">主题选择页</a>
+        <a href="theme-library__chapter-outline.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">章节大纲面板</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">学习工作台</div>
+        <a href="learning-workspace__workspace.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">学习工作台（核心页）</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">代码沙箱</div>
+        <a href="code-sandbox__sandbox-panel.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">沙箱主面板（桌面右栏）</a>
+        <a href="code-sandbox__sandbox-mobile-tab.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">移动端沙箱 Tab 视图</a>
+        <a href="code-sandbox__sandbox-error-state.html" class="nav-link active flex items-center gap-2 px-4 py-2 text-sm font-medium relative">
+          <span class="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r"></span>
+          沙箱异常态视图
+        </a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">学习进度</div>
+        <a href="learning-progress__progress-indicators.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">进度指示器（嵌入式规范）</a>
+        <a href="learning-progress__continue-learning.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">继续学习提示与入口</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">外观与主题</div>
+        <a href="appearance-theme__theme-switcher-panel.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">外观设置面板</a>
+        <a href="appearance-theme__responsive-showcase.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">响应式与移动端切换示例页</a>
+      </nav>
+    </aside>
+
+    <!-- 遮罩（移动端抽屉） -->
+    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
+
+    <!-- 主内容 -->
+    <main class="flex-1 min-w-0 overflow-y-auto">
+      <div class="p-4 md:p-6 max-w-[1400px] mx-auto">
+
+        <!-- 页头 -->
+        <div class="mb-5">
+          <div class="flex items-center gap-2 text-xs mb-2" style="color:var(--color-text-muted)">
+            <span>代码沙箱</span>
+            <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>沙箱异常态视图</span>
+          </div>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 class="text-xl font-semibold">沙箱异常态视图</h1>
+              <p class="text-sm mt-1 max-w-2xl" style="color:var(--color-text-muted)">
+                预览区内直接展示编译报错堆栈、依赖加载失败、网络异常等真实反馈——不吞错、不静默失败，也不跳转到独立错误页。
+              </p>
+            </div>
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg surface text-xs" style="color:var(--color-text-muted)">
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/></svg>
+              <span>本页为原型演示：用下方「模拟场景」切换三类异常反馈</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 场景切换 -->
+        <div class="surface rounded-xl p-3 mb-5 flex flex-wrap items-center gap-2">
+          <span class="text-xs font-medium shrink-0 mr-1" style="color:var(--color-text-muted)">模拟场景</span>
+          <div id="scenarioTabs" class="flex flex-wrap gap-2">
+            <button data-scenario="compile" class="scenario-btn h-9 px-3.5 rounded-lg text-sm font-medium border">编译报错堆栈</button>
+            <button data-scenario="dependency" class="scenario-btn h-9 px-3.5 rounded-lg text-sm font-medium border">依赖加载失败</button>
+            <button data-scenario="network" class="scenario-btn h-9 px-3.5 rounded-lg text-sm font-medium border">网络异常 / 离线</button>
+          </div>
+        </div>
+
+        <!-- 沙箱主体：编辑器 + 预览/错误 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+          <!-- 编辑区 -->
+          <div class="surface rounded-xl overflow-hidden flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between border-b px-1" style="border-color:var(--color-border)">
+              <div class="flex items-center">
+                <button class="file-tab px-4 py-2.5 text-xs font-medium border-b-2 border-primary-600 text-primary-600">App.jsx</button>
+                <button class="file-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent" style="color:var(--color-text-muted)">index.js</button>
+                <button class="file-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent" style="color:var(--color-text-muted)">styles.css</button>
+              </div>
+              <span class="pr-3 text-xs" style="color:var(--color-text-muted)">可编辑</span>
+            </div>
+            <div class="flex-1 code-editor p-4 overflow-auto">
+              <div id="editorArea" contenteditable="true" spellcheck="false" class="outline-none whitespace-pre" style="min-height:100%;">
+              </div>
+            </div>
+            <div class="border-t px-3 py-2 flex items-center justify-between text-xs" style="border-color:var(--color-border); color:var(--color-text-muted)">
+              <span>编辑区在错误态下仍可正常输入与修改</span>
+              <span id="editHint" class="text-accent-600 dark:text-accent-400 opacity-0 transition-opacity">已检测到修改，点击「Run」重新编译</span>
+            </div>
+          </div>
+
+          <!-- 预览 / 错误区 -->
+          <div class="surface rounded-xl overflow-hidden flex flex-col min-h-[420px]">
+            <div class="flex items-center justify-between border-b px-3 py-2" style="border-color:var(--color-border)">
+              <div class="flex items-center gap-2">
+                <span id="statusBadge" class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                  <svg viewBox="0 0 24 24" class="h-3 w-3" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+                  <span id="statusText">编译错误</span>
+                </span>
+                <span class="text-xs" style="color:var(--color-text-muted)">预览</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="resetBtn" class="h-8 px-3 rounded-lg border text-xs font-medium" style="border-color:var(--color-border)">重置代码</button>
+                <button id="runBtn" class="h-8 px-3.5 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-medium flex items-center gap-1.5">
+                  <svg id="runIcon" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span id="runLabel">Run</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-auto" id="previewArea">
+              <!-- 内容由 JS 按场景填充 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 状态字段观察面板 -->
+        <div class="surface rounded-xl p-4 mt-5">
+          <p class="text-xs font-medium mb-3 uppercase tracking-wide" style="color:var(--color-text-muted)">关键状态字段（原型标注，非实际接口）</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-lg border p-3" style="border-color:var(--color-border)">
+              <p class="text-xs mb-1" style="color:var(--color-text-muted)">hasError</p>
+              <p id="fieldHasError" class="font-mono text-sm font-medium text-rose-600 dark:text-rose-400">true</p>
+            </div>
+            <div class="rounded-lg border p-3 sm:col-span-1" style="border-color:var(--color-border)">
+              <p class="text-xs mb-1" style="color:var(--color-text-muted)">isRunning</p>
+              <p id="fieldIsRunning" class="font-mono text-sm font-medium">false</p>
+            </div>
+            <div class="rounded-lg border p-3 sm:col-span-3 md:col-span-1" style="border-color:var(--color-border)">
+              <p class="text-xs mb-1" style="color:var(--color-text-muted)">errorMessage</p>
+              <p id="fieldErrorMessage" class="font-mono text-xs leading-snug break-all">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-6"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // ---------- 主题（亮暗） ----------
+  const root = document.documentElement;
+  const darkToggle = document.getElementById('darkToggle');
+  const iconSun = document.getElementById('iconSun');
+  const iconMoon = document.getElementById('iconMoon');
+  function applyTheme(t) {
+    if (t === 'dark') { root.classList.add('dark'); root.setAttribute('data-theme', 'dark'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden'); }
+    else { root.classList.remove('dark'); root.setAttribute('data-theme', 'light'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden'); }
+    localStorage.setItem('ittp-theme', t);
+  }
+  const savedTheme = localStorage.getItem('ittp-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+  darkToggle.addEventListener('click', () => applyTheme(root.classList.contains('dark') ? 'light' : 'dark'));
+
+  // 主题下拉
+  const themeMenuBtn = document.getElementById('themeMenuBtn');
+  const themeMenu = document.getElementById('themeMenu');
+  themeMenuBtn.addEventListener('click', () => themeMenu.classList.toggle('hidden'));
+  document.addEventListener('click', (e) => { if (!themeMenuBtn.contains(e.target) && !themeMenu.contains(e.target)) themeMenu.classList.add('hidden'); });
+
+  // 移动端目录抽屉
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  function openSidebar() { sidebar.classList.remove('hidden'); sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64'); sidebarOverlay.classList.remove('hidden'); }
+  function closeSidebar() { sidebar.classList.add('hidden'); sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64'); sidebarOverlay.classList.add('hidden'); }
+  sidebarToggle.addEventListener('click', openSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+
+  // ---------- 场景数据 ----------
+  const scenarios = {
+    compile: {
+      label: '编译错误',
+      badgeClass: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400',
+      errorMessage: "SyntaxError: Unexpected token, expected \",\" (7:18) in /App.jsx",
+      code:
+`<span class="tok-kw">import</span> { useState } <span class="tok-kw">from</span> <span class="tok-str">'react'</span>
+
+<span class="tok-kw">export default function</span> <span class="tok-fn">Counter</span>() {
+  <span class="tok-com">// 缺少分号导致的解析失败，故意保留用于演示</span>
+  <span class="tok-kw">const</span> [count setCount] = useState(0)
+
+  <span class="tok-kw">return</span> (
+    <span class="tok-tag">&lt;button</span> <span class="tok-attr">onClick</span>={() =&gt; setCount(count + 1)}<span class="tok-tag">&gt;</span>
+      count is {count}
+    <span class="tok-tag">&lt;/button&gt;</span>
+  )
+}`,
+      preview: () => `
+        <div class="p-4 md:p-5">
+          <div class="err-stack rounded-lg p-4 border" style="border-color:#313244">
+            <div class="flex items-center gap-2 mb-3 text-rose-300">
+              <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="text-sm font-semibold">Failed to compile</span>
+            </div>
+            <p class="text-rose-300 mb-2">SyntaxError: Unexpected token, expected "," (7:18)</p>
+            <pre class="whitespace-pre-wrap leading-relaxed"><span class="opacity-60">  5 |   const Counter = () =&gt; {</span>
+<span class="opacity-60">  6 |     // 缺少分号导致的解析失败，故意保留用于演示</span>
+<span class="text-rose-200">&gt;  7 |     const [count setCount] = useState(0)</span>
+<span class="text-rose-400">                 ^</span>
+<span class="opacity-60">  8 |     return (</span>
+<span class="opacity-60">  9 |       &lt;button onClick={() =&gt; setCount(count + 1)}&gt;</span></pre>
+            <div class="mt-3 pt-3 border-t" style="border-color:#313244">
+              <p class="opacity-60 text-[11px] mb-1">at parseExpression (babel-parser/src/parser/expression.js:1234:16)</p>
+              <p class="opacity-60 text-[11px] mb-1">at parseArrayLike (babel-parser/src/parser/expression.js:2431:22)</p>
+              <p class="opacity-60 text-[11px]">at Module.eval (sandpack-bundler/runtime.js:88:9)</p>
+            </div>
+          </div>
+          <p class="text-xs mt-3" style="color:var(--color-text-muted)">该报错由 Sandpack 原生编译器输出，直接展示在预览区内，不做二次包装或跳转。</p>
+        </div>`
+    },
+    dependency: {
+      label: '依赖加载失败',
+      badgeClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+      errorMessage: "Could not resolve dependency: \"lodash-es@^9.0.0\" — package not found in registry",
+      code:
+`<span class="tok-kw">import</span> { debounce } <span class="tok-kw">from</span> <span class="tok-str">'lodash-es'</span>
+<span class="tok-kw">import</span> { useState } <span class="tok-kw">from</span> <span class="tok-str">'react'</span>
+
+<span class="tok-com">// package.json 中声明的版本在依赖源中不存在</span>
+<span class="tok-kw">export default function</span> <span class="tok-fn">Search</span>() {
+  <span class="tok-kw">const</span> [q, setQ] = useState(<span class="tok-str">''</span>)
+  <span class="tok-kw">const</span> onChange = debounce((v) =&gt; setQ(v), 300)
+  <span class="tok-kw">return</span> <span class="tok-tag">&lt;input</span> <span class="tok-attr">onChange</span>={e =&gt; onChange(e.target.value)} <span class="tok-tag">/&gt;</span>
+}`,
+      preview: () => `
+        <div class="p-4 md:p-5">
+          <div class="rounded-lg border p-4 bg-amber-50/60 dark:bg-amber-950/20" style="border-color:#f5c26b66">
+            <div class="flex items-start gap-3">
+              <div class="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">依赖加载失败</p>
+                <p class="text-xs mt-1 leading-relaxed" style="color:var(--color-text-muted)">
+                  无法解析依赖 <code class="font-mono px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">lodash-es@^9.0.0</code>，该版本在依赖源中不存在。
+                </p>
+                <div class="mt-3 err-stack rounded-lg p-3 border" style="border-color:#313244">
+                  <pre class="whitespace-pre-wrap leading-relaxed text-[11.5px]"><span class="text-rose-300">NotFoundError: Could not resolve dependency</span>
+<span class="opacity-60">  package: lodash-es</span>
+<span class="opacity-60">  requested: ^9.0.0</span>
+<span class="opacity-60">  registry: https://cdn.skypack.dev</span>
+<span class="opacity-60">  at DependencyResolver.resolve (sandpack-bundler/resolver.js:52:11)</span>
+<span class="opacity-60">  at Bundler.evaluate (sandpack-bundler/runtime.js:114:20)</span></pre>
+                </div>
+                <div class="flex items-center gap-2 mt-3">
+                  <button class="retry-btn h-8 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium">重新拉取依赖</button>
+                  <span class="text-xs" style="color:var(--color-text-muted)">或在编辑区修改 package.json 中的版本号</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`
+    },
+    network: {
+      label: '网络异常',
+      badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+      errorMessage: "NetworkError: 无法连接到 CDN（cdn.jsdelivr.net），请检查网络连接",
+      code:
+`<span class="tok-kw">import</span> { useEffect, useState } <span class="tok-kw">from</span> <span class="tok-str">'react'</span>
+
+<span class="tok-kw">export default function</span> <span class="tok-fn">Board</span>() {
+  <span class="tok-kw">const</span> [status, setStatus] = useState(<span class="tok-str">'connecting'</span>)
+
+  <span class="tok-com">// 沙箱运行时依赖外部 CDN 加载 bundler 资源</span>
+  useEffect(() =&gt; {
+    fetchBundlerRuntime().then(() =&gt; setStatus(<span class="tok-str">'ready'</span>))
+  }, [])
+
+  <span class="tok-kw">return</span> <span class="tok-tag">&lt;div&gt;</span>{status}<span class="tok-tag">&lt;/div&gt;</span>
+}`,
+      preview: () => `
+        <div class="p-4 md:p-5">
+          <div class="rounded-lg border p-6 flex flex-col items-center text-center" style="border-color:var(--color-border)">
+            <div class="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+              <svg viewBox="0 0 24 24" class="h-6 w-6 text-slate-500" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.58 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <p class="text-sm font-semibold">网络连接异常</p>
+            <p class="text-xs mt-1.5 max-w-sm leading-relaxed" style="color:var(--color-text-muted)">
+              无法连接到依赖资源 CDN（cdn.jsdelivr.net），沙箱运行时加载失败。请检查网络连接后重试。
+            </p>
+            <div class="mt-4 w-full max-w-sm err-stack rounded-lg p-3 text-left border" style="border-color:#313244">
+              <pre class="whitespace-pre-wrap leading-relaxed text-[11.5px]"><span class="text-rose-300">NetworkError: Failed to fetch</span>
+<span class="opacity-60">  url: https://cdn.jsdelivr.net/npm/sandpack-runtime</span>
+<span class="opacity-60">  at BundlerClient.load (sandpack-bundler/client.js:41:9)</span>
+<span class="opacity-60">  at Sandbox.mount (sandpack-bundler/runtime.js:20:5)</span></pre>
+            </div>
+            <div class="flex items-center gap-2 mt-4">
+              <span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800" style="color:var(--color-text-muted)">
+                <span class="h-1.5 w-1.5 rounded-full bg-slate-400 blink-dot"></span>
+                正在监测网络状态…
+              </span>
+              <button class="retry-btn h-8 px-3 rounded-lg border text-xs font-medium" style="border-color:var(--color-border)">重试连接</button>
+            </div>
+          </div>
+        </div>`
+    }
+  };
+
+  const scenarioOrder = ['compile', 'dependency', 'network'];
+  let currentScenario = 'compile';
+  let isRunning = false;
+
+  const scenarioTabs = document.getElementById('scenarioTabs');
+  const editorArea = document.getElementById('editorArea');
+  const previewArea = document.getElementById('previewArea');
+  const statusBadge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const runBtn = document.getElementById('runBtn');
+  const runIcon = document.getElementById('runIcon');
+  const runLabel = document.getElementById('runLabel');
+  const resetBtn = document.getElementById('resetBtn');
+  const editHint = document.getElementById('editHint');
+
+  const fieldHasError = document.getElementById('fieldHasError');
+  const fieldIsRunning = document.getElementById('fieldIsRunning');
+  const fieldErrorMessage = document.getElementById('fieldErrorMessage');
+
+  function styleScenarioButtons() {
+    scenarioTabs.querySelectorAll('.scenario-btn').forEach(btn => {
+      const active = btn.dataset.scenario === currentScenario;
+      btn.classList.toggle('bg-primary-600', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-primary-600', active);
+      btn.classList.toggle('bg-transparent', !active);
+      btn.style.borderColor = active ? '' : 'var(--color-border)';
+      if (!active) { btn.classList.add('hover:bg-slate-100'); }
+    });
+  }
+
+  function renderScenario(id) {
+    const s = scenarios[id];
+    editorArea.innerHTML = s.code;
+    previewArea.innerHTML = s.preview();
+    statusBadge.className = 'inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ' + s.badgeClass;
+    statusText.textContent = s.label;
+    fieldHasError.textContent = 'true';
+    fieldErrorMessage.textContent = s.errorMessage;
+    editHint.style.opacity = '0';
+    bindRetryButtons();
+  }
+
+  function bindRetryButtons() {
+    previewArea.querySelectorAll('.retry-btn').forEach(btn => {
+      btn.addEventListener('click', () => triggerRun());
+    });
+  }
+
+  function setRunningUI(on) {
+    isRunning = on;
+    fieldIsRunning.textContent = String(on);
+    runBtn.disabled = false; // Run 按钮在错误态下始终保持可点击，不禁用
+    if (on) {
+      runIcon.outerHTML = '<svg id="runIcon" viewBox="0 0 24 24" class="h-3.5 w-3.5 spin" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7" stroke-linecap="round"/></svg>';
+      runLabel.textContent = '运行中…';
+    } else {
+      document.getElementById('runIcon').outerHTML = '<svg id="runIcon" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+      runLabel.textContent = 'Run';
+    }
+  }
+
+  function triggerRun() {
+    if (isRunning) return;
+    setRunningUI(true);
+    setTimeout(() => {
+      setRunningUI(false);
+      // 未修复问题的代码重新编译后仍会复现同一异常，证明错误反馈不会被吞掉
+      renderScenario(currentScenario);
+    }, 900);
+  }
+
+  scenarioTabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scenario-btn');
+    if (!btn) return;
+    currentScenario = btn.dataset.scenario;
+    styleScenarioButtons();
+    renderScenario(currentScenario);
+  });
+
+  runBtn.addEventListener('click', triggerRun);
+
+  resetBtn.addEventListener('click', () => {
+    renderScenario(currentScenario);
+  });
+
+  editorArea.addEventListener('input', () => {
+    editHint.style.opacity = '1';
+  });
+
+  styleScenarioButtons();
+  renderScenario(currentScenario);
+</script>

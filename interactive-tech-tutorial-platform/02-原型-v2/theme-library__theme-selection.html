@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>主题选择页 · 互动式技术教程平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 顶部一级导航：功能模块 -->
+<header class="fixed top-0 left-0 right-0 z-40 h-14 surface border-b flex items-center px-4 md:px-6 gap-4">
+  <div class="flex items-center gap-2 shrink-0">
+    <div class="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center">
+      <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v4H4zM4 10h10v4H4zM4 16h16v4H4z" fill="currentColor"/></svg>
+    </div>
+    <span class="hidden sm:block text-sm font-semibold text-[var(--color-text)]">互动式技术教程平台</span>
+  </div>
+
+  <nav class="flex-1 overflow-x-auto">
+    <ul class="flex items-center gap-1 text-sm whitespace-nowrap">
+      <li>
+        <a href="theme-library__theme-selection.html" class="inline-flex items-center h-9 px-3 rounded-lg font-medium bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300" aria-current="page">主题课程库</a>
+      </li>
+      <li>
+        <a href="learning-workspace__workspace.html" class="inline-flex items-center h-9 px-3 rounded-lg font-medium text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">学习工作台</a>
+      </li>
+      <li>
+        <a href="code-sandbox__sandbox-panel.html" class="inline-flex items-center h-9 px-3 rounded-lg font-medium text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">代码沙箱</a>
+      </li>
+      <li>
+        <a href="learning-progress__progress-indicators.html" class="inline-flex items-center h-9 px-3 rounded-lg font-medium text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">学习进度</a>
+      </li>
+      <li>
+        <a href="appearance-theme__theme-switcher-panel.html" class="inline-flex items-center h-9 px-3 rounded-lg font-medium text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">外观与主题</a>
+      </li>
+    </ul>
+  </nav>
+
+  <button id="themeToggle" type="button" class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-slate-100 dark:hover:bg-white/5" aria-label="切换亮暗主题">
+    <svg id="iconSun" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg id="iconMoon" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg>
+  </button>
+</header>
+
+<!-- 左侧二级导航：主题课程库内页面 -->
+<aside class="fixed top-14 left-0 bottom-0 w-56 surface border-r hidden lg:flex flex-col py-4 px-3 gap-1 z-30">
+  <p class="px-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-1">主题课程库</p>
+  <a href="theme-library__theme-selection.html" class="relative flex items-center h-9 px-3 rounded-lg text-sm font-medium bg-primary-500/10 text-primary-700 dark:text-primary-300">
+    <span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-full bg-primary-500"></span>
+    主题选择页
+  </a>
+  <a href="theme-library__chapter-outline.html" class="flex items-center h-9 px-3 rounded-lg text-sm text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">章节大纲面板</a>
+</aside>
+
+<!-- 移动端二级导航：抽屉触发 -->
+<div class="lg:hidden fixed top-14 left-0 right-0 z-30 surface border-b px-4 py-2 flex items-center gap-2 overflow-x-auto text-sm">
+  <span class="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] shrink-0">主题课程库</span>
+  <a href="theme-library__theme-selection.html" class="shrink-0 px-3 h-8 inline-flex items-center rounded-lg bg-primary-500/10 text-primary-700 dark:text-primary-300 font-medium">主题选择页</a>
+  <a href="theme-library__chapter-outline.html" class="shrink-0 px-3 h-8 inline-flex items-center rounded-lg text-[var(--color-text-muted)] hover:bg-slate-100 dark:hover:bg-white/5">章节大纲面板</a>
+</div>
+
+<main class="pt-28 lg:pt-14 lg:pl-56 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+
+    <!-- 页头 -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-semibold text-[var(--color-text)]">选择一个主题开始学习</h1>
+      <p class="mt-2 text-sm text-[var(--color-text-muted)] max-w-2xl">左讲解 + 右可运行沙箱，内容与引擎分离——每张卡片对应一个独立的 TutorialPackage 配置，进度按主题各自记忆，互不影响。</p>
+    </div>
+
+    <!-- 汇总条 -->
+    <div id="summaryBar" class="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-[var(--color-text-muted)]"></div>
+
+    <!-- 加载骨架态 -->
+    <div id="skeletonGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+
+    <!-- 主题卡片网格 -->
+    <div id="cardGrid" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+
+  </div>
+</main>
+
+<!-- Toast 提示（维护中/筹备中点击反馈） -->
+<div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-2 transition-all duration-200">
+  <div class="surface shadow-md rounded-xl px-4 py-3 flex items-center gap-2 text-sm text-[var(--color-text)]">
+    <svg class="w-4 h-4 text-accent-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+    <span id="toastText">该主题暂不可进入</span>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------
+ * 主题偏好（appearance-theme 模块约定，key: theme-preference）
+ * --------------------------------------------------------- */
+(function initTheme() {
+  var stored = null;
+  try { stored = JSON.parse(localStorage.getItem('theme-preference') || 'null'); } catch (e) {}
+  var mode = stored && stored.mode ? stored.mode : 'system';
+  function resolve(mode) {
+    if (mode === 'dark') return 'dark';
+    if (mode === 'light') return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function apply(mode) {
+    var resolved = resolve(mode);
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.documentElement.classList.toggle('dark', resolved === 'dark');
+    document.getElementById('iconSun').classList.toggle('hidden', resolved !== 'dark');
+    document.getElementById('iconMoon').classList.toggle('hidden', resolved === 'dark');
+  }
+  apply(mode);
+  document.getElementById('themeToggle').addEventListener('click', function () {
+    var current = resolve(mode);
+    mode = current === 'dark' ? 'light' : 'dark';
+    apply(mode);
+    try {
+      localStorage.setItem('theme-preference', JSON.stringify({ mode: mode, updatedAt: new Date().toISOString() }));
+    } catch (e) {}
+  });
+})();
+
+/* ---------------------------------------------------------
+ * TutorialPackage 拟真数据（本模块只读消费，渲染逻辑不针对具体 id 写死分支）
+ * --------------------------------------------------------- */
+function makeSteps(chapterId, titles) {
+  return titles.map(function (title, i) {
+    return { id: chapterId + '-s' + (i + 1), title: title };
+  });
+}
+
+var packages = [
+  {
+    id: 'react',
+    meta: {
+      title: 'React',
+      description: '组件化 UI 开发与 Hooks 全解，从 JSX 渲染到路由与状态管理，62 篇实战笔记带你从零跑通完整应用。',
+      language: 'jsx'
+    },
+    status: 'active',
+    chapters: [
+      { id: 'react-c1', title: 'JSX 基础与渲染', steps: makeSteps('react-c1', ['什么是 JSX', '在 JSX 中嵌入表达式', '条件渲染', '列表渲染与 key']) },
+      { id: 'react-c2', title: '组件与 Props', steps: makeSteps('react-c2', ['函数组件与类组件', '组件的组合与拆分', 'Props 只读与单向数据流', 'children 与插槽式组合', 'PropTypes 与类型校验']) },
+      { id: 'react-c3', title: 'State 与事件处理', steps: makeSteps('react-c3', ['useState 入门', '事件绑定与合成事件', '受控组件与表单', '状态提升', '不可变更新模式']) },
+      { id: 'react-c4', title: 'Hooks 入门', steps: makeSteps('react-c4', ['useEffect 基础', '依赖数组与清理函数', 'useRef 与 DOM 引用', 'useMemo 性能优化', 'useCallback 与函数缓存', '自定义 Hook 入门', 'useContext 基础', 'Hooks 使用规则']) },
+      { id: 'react-c5', title: 'Hooks 进阶', steps: makeSteps('react-c5', ['useReducer 状态管理', 'useLayoutEffect 场景', 'useImperativeHandle', 'forwardRef 转发引用', 'useTransition 并发特性', 'useDeferredValue', 'useId 生成稳定 ID', 'useSyncExternalStore', '组合式自定义 Hook 实战']) },
+      { id: 'react-c6', title: 'Context 与状态管理', steps: makeSteps('react-c6', ['Context API 基础', '多层 Context 组合', 'useReducer + Context 模式', '何时引入 Redux / Zustand']) },
+      { id: 'react-c7', title: 'React Router', steps: makeSteps('react-c7', ['路由基础与 BrowserRouter', 'Route 与 Routes 配置', '嵌套路由', '动态路由参数', 'useParams 使用', 'useNavigate 编程式跳转', 'Link 与 NavLink', '404 与通配路由', '路由懒加载', '受保护路由与鉴权', 'useSearchParams 查询参数', '路由级数据加载 loader', '路由动作 action', '错误边界 errorElement', '布局路由 Layout Route', '索引路由 Index Route', '相对路径与绝对路径', '路由重定向', '多级面包屑导航', '路由过渡动画', '代码分割与路由', '路由测试基础', '服务端渲染下的路由', 'React Router 最佳实践']) },
+      { id: 'react-c8', title: '性能优化与测试', steps: makeSteps('react-c8', ['React.memo 与渲染优化', '使用 React DevTools 分析性能', '组件测试入门（Testing Library）']) }
+    ]
+  },
+  {
+    id: 'vue',
+    meta: {
+      title: 'Vue',
+      description: '对标官方互动教程的 Vue3 版本，覆盖模板语法、Composition API 与 Pinia 状态管理。',
+      language: 'vue'
+    },
+    status: 'active',
+    chapters: [
+      { id: 'vue-c1', title: '模板语法与响应式基础', steps: makeSteps('vue-c1', ['声明式渲染', '属性绑定 v-bind', '条件渲染 v-if', '列表渲染 v-for', '事件监听 v-on']) },
+      { id: 'vue-c2', title: '组件与 Props', steps: makeSteps('vue-c2', ['组件注册与使用', 'Props 声明与传递', '组件事件 emit', '插槽 slot 基础']) },
+      { id: 'vue-c3', title: '生命周期与 Computed', steps: makeSteps('vue-c3', ['生命周期钩子', '计算属性 computed', '侦听器 watch', '模板引用 ref']) },
+      { id: 'vue-c4', title: 'Composition API', steps: makeSteps('vue-c4', ['setup 函数', 'reactive 与 ref', '组合式函数复用逻辑', 'provide / inject', 'script setup 语法糖']) },
+      { id: 'vue-c5', title: '路由与状态管理', steps: makeSteps('vue-c5', ['Vue Router 基础', 'Pinia 状态管理入门']) }
+    ]
+  },
+  {
+    id: 'javascript',
+    meta: {
+      title: 'JavaScript',
+      description: '从变量与类型到异步编程、模块化工程实践的 JavaScript 基础与进阶内容。',
+      language: 'js'
+    },
+    status: 'maintenance',
+    chapters: [
+      { id: 'js-c1', title: '变量与类型', steps: makeSteps('js-c1', ['变量声明与作用域', '基本数据类型', '类型转换']) },
+      { id: 'js-c2', title: '函数与作用域', steps: makeSteps('js-c2', ['函数声明与表达式', '闭包', 'this 指向', '箭头函数']) },
+      { id: 'js-c3', title: '异步编程', steps: makeSteps('js-c3', ['回调与事件循环', 'Promise 基础', 'async/await', '并发控制', '错误处理模式']) },
+      { id: 'js-c4', title: '模块化与工程化', steps: makeSteps('js-c4', ['ES Module', '打包工具基础', '代码规范与 lint']) }
+    ]
+  },
+  {
+    id: 'algorithm',
+    meta: {
+      title: '算法与数据结构',
+      description: '面向前端工程师的算法与数据结构训练，内容正在筹备中。',
+      language: 'js'
+    },
+    status: 'draft',
+    chapters: []
+  }
+];
+
+/* 派生 totalSteps，禁止针对具体 id 写死分支 */
+packages.forEach(function (pkg) {
+  pkg.totalSteps = pkg.chapters.reduce(function (sum, ch) { return sum + ch.steps.length; }, 0);
+});
+
+/* ---------------------------------------------------------
+ * 学习进度（learning-progress 模块的 localStorage 契约，本模块只读）
+ * key: ittp:progress -> { [tutorialId]: { currentStepId, completedStepIds, lastVisitedAt } }
+ * 首次访问时为 React 主题植入一份演示进度，模拟"上次学到一半"
+ * --------------------------------------------------------- */
+var PROGRESS_KEY = 'ittp:progress';
+
+function readAllProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function writeAllProgress(all) {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  } catch (e) { /* localStorage 不可用时静默降级，见业务规则 3.5/4 */ }
+}
+
+(function seedDemoProgressIfEmpty() {
+  var all = readAllProgress();
+  if (Object.keys(all).length > 0) return;
+  // React：模拟已学到「Hooks 进阶」第 4 步（forwardRef 转发引用）
+  var completed = [];
+  ['react-c1', 'react-c2', 'react-c3', 'react-c4'].forEach(function (cid) {
+    var ch = packages.find(function (p) { return p.id === 'react'; }).chapters.find(function (c) { return c.id === cid; });
+    ch.steps.forEach(function (s) { completed.push(s.id); });
+  });
+  completed.push('react-c5-s1', 'react-c5-s2', 'react-c5-s3');
+  all.react = {
+    currentStepId: 'react-c5-s4',
+    completedStepIds: completed,
+    lastVisitedAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString()
+  };
+  writeAllProgress(all);
+})();
+
+function getProgress(tutorialId) {
+  var all = readAllProgress();
+  return all[tutorialId] || null;
+}
+
+/* ---------------------------------------------------------
+ * 渲染：卡片列表（完全由 packages 数组驱动，无 if/switch 按 id 分支）
+ * --------------------------------------------------------- */
+var STATUS_META = {
+  active: { label: '可学习', badge: 'bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300' },
+  maintenance: { label: '维护中', badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
+  draft: { label: '内容筹备中', badge: 'bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400' }
+};
+
+function firstStepId(pkg) {
+  var firstChapter = pkg.chapters.find(function (c) { return c.steps.length > 0; });
+  return firstChapter ? firstChapter.steps[0].id : null;
+}
+
+function renderSummary() {
+  var total = packages.length;
+  var activeCount = packages.filter(function (p) { return p.status === 'active'; }).length;
+  var totalStepsAll = packages.reduce(function (s, p) { return s + p.totalSteps; }, 0);
+  var completedAll = packages.reduce(function (s, p) {
+    var prog = getProgress(p.id);
+    return s + (prog ? prog.completedStepIds.length : 0);
+  }, 0);
+  document.getElementById('summaryBar').innerHTML =
+    '<span><strong class="text-[var(--color-text)] font-semibold">' + total + '</strong> 个主题</span>' +
+    '<span><strong class="text-[var(--color-text)] font-semibold">' + activeCount + '</strong> 个可学习</span>' +
+    '<span>累计已学 <strong class="text-[var(--color-text)] font-semibold">' + completedAll + '</strong> / ' + totalStepsAll + ' 步</span>';
+}
+
+function renderCard(pkg) {
+  var meta = STATUS_META[pkg.status];
+  var isActive = pkg.status === 'active';
+  var chaptersEmpty = pkg.chapters.length === 0;
+  var prog = isActive ? getProgress(pkg.id) : null;
+  var completedCount = prog ? prog.completedStepIds.length : 0;
+  var percent = pkg.totalSteps > 0 ? Math.floor((completedCount / pkg.totalSteps) * 100) : 0;
+  var isDone = pkg.totalSteps > 0 && completedCount >= pkg.totalSteps;
+
+  var ctaLabel = !isActive ? (chaptersEmpty ? '内容筹备中' : '维护中，暂不可用')
+    : isDone ? '重新学习'
+    : prog ? '继续学习'
+    : '开始学习';
+
+  var disabledCls = isActive ? '' : 'opacity-60';
+  var cardTag = isActive ? 'button' : 'button';
+
+  var progressBar = isActive ? (
+    '<div class="mt-4">' +
+      '<div class="flex items-center justify-between text-xs text-[var(--color-text-muted)] mb-1.5">' +
+        '<span>已完成 ' + completedCount + ' / ' + pkg.totalSteps + ' 步</span>' +
+        '<span class="font-medium ' + (isDone ? 'text-accent-600 dark:text-accent-400' : 'text-[var(--color-text)]') + '">' + percent + '%</span>' +
+      '</div>' +
+      '<div class="h-1.5 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">' +
+        '<div class="h-full rounded-full ' + (isDone ? 'bg-accent-500' : 'bg-primary-500') + '" style="width:' + percent + '%"></div>' +
+      '</div>' +
+    '</div>'
+  ) : (
+    '<div class="mt-4 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">' +
+      '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>' +
+      (chaptersEmpty ? '暂无章节内容' : '当前不可进入，敬请等待恢复') +
+    '</div>'
+  );
+
+  return (
+    '<' + cardTag + ' type="button" data-pkg="' + pkg.id + '" ' +
+    'class="pkg-card text-left group relative surface rounded-xl p-5 flex flex-col shadow-sm transition-shadow ' +
+    (isActive ? 'hover:shadow-md hover:border-primary-300 dark:hover:border-primary-500/40 cursor-pointer' : 'cursor-not-allowed ' + disabledCls) + '">' +
+      '<div class="flex items-start justify-between gap-3">' +
+        '<h3 class="text-base font-semibold text-[var(--color-text)]">' + pkg.meta.title + '</h3>' +
+        '<span class="shrink-0 inline-flex items-center h-6 px-2 rounded-lg text-xs font-medium ' + meta.badge + '">' + meta.label + '</span>' +
+      '</div>' +
+      '<p class="mt-2 text-sm text-[var(--color-text-muted)] leading-relaxed line-clamp-2">' + (pkg.meta.description || '暂无简介') + '</p>' +
+      '<div class="mt-4 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">' +
+        '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/></svg>' + pkg.chapters.length + ' 章节</span>' +
+        '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>' + pkg.totalSteps + ' 步骤</span>' +
+      '</div>' +
+      progressBar +
+      '<div class="mt-5 pt-4 border-t border-[var(--color-border)] flex items-center justify-between">' +
+        '<span class="text-xs text-[var(--color-text-muted)] font-mono">' + pkg.id + '</span>' +
+        '<span class="inline-flex items-center h-9 px-3.5 rounded-lg text-sm font-medium ' +
+          (isActive ? 'bg-primary-500 text-white group-hover:bg-primary-600' : 'bg-slate-200 text-slate-500 dark:bg-white/10 dark:text-slate-400') + '">' +
+          ctaLabel +
+          (isActive ? '<svg class="w-3.5 h-3.5 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>' : '') +
+        '</span>' +
+      '</div>' +
+    '</' + cardTag + '>'
+  );
+}
+
+function showToast(text) {
+  var toast = document.getElementById('toast');
+  document.getElementById('toastText').textContent = text;
+  toast.classList.remove('opacity-0', 'translate-y-2');
+  toast.classList.add('opacity-100', 'translate-y-0');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(function () {
+    toast.classList.add('opacity-0', 'translate-y-2');
+    toast.classList.remove('opacity-100', 'translate-y-0');
+  }, 2400);
+}
+
+function handleCardClick(pkg) {
+  if (pkg.status === 'maintenance') {
+    showToast('「' + pkg.meta.title + '」正在维护中，暂不可进入');
+    return;
+  }
+  if (pkg.status === 'draft' || pkg.chapters.length === 0) {
+    showToast('「' + pkg.meta.title + '」内容筹备中，敬请期待');
+    return;
+  }
+  var prog = getProgress(pkg.id);
+  var targetStep = (prog && prog.currentStepId) ? prog.currentStepId : firstStepId(pkg);
+  if (!targetStep) {
+    showToast('「' + pkg.meta.title + '」暂无可学习的步骤');
+    return;
+  }
+  window.location.href = 'learning-workspace__workspace.html?tutorial=' + encodeURIComponent(pkg.id) + '&step=' + encodeURIComponent(targetStep);
+}
+
+function renderSkeleton() {
+  var html = '';
+  for (var i = 0; i < 4; i++) {
+    html += '<div class="surface rounded-xl p-5 shadow-sm animate-pulse">' +
+      '<div class="h-4 w-24 bg-slate-200 dark:bg-white/10 rounded"></div>' +
+      '<div class="h-3 w-full bg-slate-100 dark:bg-white/5 rounded mt-3"></div>' +
+      '<div class="h-3 w-2/3 bg-slate-100 dark:bg-white/5 rounded mt-2"></div>' +
+      '<div class="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded mt-6"></div>' +
+      '<div class="h-9 w-full bg-slate-100 dark:bg-white/5 rounded-lg mt-5"></div>' +
+    '</div>';
+  }
+  document.getElementById('skeletonGrid').innerHTML = html;
+}
+
+function renderGrid() {
+  var grid = document.getElementById('cardGrid');
+  grid.innerHTML = packages.map(renderCard).join('');
+  grid.querySelectorAll('.pkg-card').forEach(function (el) {
+    var pkg = packages.find(function (p) { return p.id === el.getAttribute('data-pkg'); });
+    el.addEventListener('click', function () { handleCardClick(pkg); });
+  });
+}
+
+renderSummary();
+renderSkeleton();
+setTimeout(function () {
+  document.getElementById('skeletonGrid').classList.add('hidden');
+  document.getElementById('cardGrid').classList.remove('hidden');
+  renderGrid();
+}, 420);
+</script>
+</body>
+</html>

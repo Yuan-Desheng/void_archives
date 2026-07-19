@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习工作台 · 互动式技术教程平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+<style>
+  html, body { height: 100%; }
+  body { overflow: hidden; }
+  #appShell { height: 100vh; }
+
+  /* MDX 讲解区排版 */
+  .mdx h2 { font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 .75rem; color: var(--color-text); }
+  .mdx h2:first-child { margin-top: 0; }
+  .mdx p { font-size: .9375rem; line-height: 1.75; color: var(--color-text); margin: .75rem 0; }
+  .mdx ul { list-style: disc; padding-left: 1.25rem; margin: .75rem 0; font-size: .9375rem; line-height: 1.7; }
+  .mdx li { margin: .25rem 0; }
+  .mdx strong { font-weight: 600; }
+  .mdx code.inline { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 5px; font-family: 'JetBrains Mono', monospace; font-size: .85em; color: var(--color-accent); }
+  .mdx .tip { border: 1px solid var(--color-border); border-left: 3px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 7%, transparent); border-radius: var(--radius-lg); padding: .75rem 1rem; margin: 1rem 0; font-size: .875rem; line-height: 1.6; }
+  .mdx .tip b { color: var(--color-accent); }
+
+  /* 代码块（深色主题,与页面明暗解耦） */
+  .code-block { background: #1e1e2e; border-radius: var(--radius-xl); overflow-x: auto; margin: 1rem 0; }
+  .code-block-head { display:flex; align-items:center; justify-content:space-between; padding: .4rem .9rem; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .code-block-head span { font-size: .7rem; color:#8b90a8; font-family:'JetBrains Mono',monospace; letter-spacing:.02em; }
+  .code-block pre { margin:0; padding: .9rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: .8125rem; line-height: 1.7; color: #abb2bf; white-space: pre; }
+  .tok-kw { color: #c678dd; }
+  .tok-str { color: #98c379; }
+  .tok-com { color: #6b7280; font-style: italic; }
+  .tok-tag { color: #e06c75; }
+  .tok-num { color: #d19a66; }
+
+  /* 沙箱编辑器 */
+  .editor-textarea { background:#1e1e2e; color:#e2e2f0; font-family:'JetBrains Mono',monospace; font-size:.8125rem; line-height:1.7; resize:none; }
+  .editor-textarea:focus { outline: none; }
+
+  .drawer-open { transform: translateX(0) !important; }
+  .dot-current { background: var(--color-primary); }
+  .dot-done { border: 2px solid var(--color-primary); background: transparent; }
+  .dot-todo { border: 2px solid var(--color-border); background: transparent; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .8s linear infinite; }
+
+  @keyframes toastIn { from { opacity:0; transform: translateY(-8px);} to { opacity:1; transform:translateY(0);} }
+  .toast-in { animation: toastIn .18s ease-out; }
+</style>
+</head>
+<body class="text-[15px]">
+<div id="appShell" class="flex flex-col">
+
+  <!-- ============ 顶部站点导航 56px ============ -->
+  <header class="h-14 shrink-0 surface border-b flex items-center px-4 md:px-6 gap-3 relative z-50">
+    <div class="flex items-center gap-2 shrink-0">
+      <div class="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center text-white font-bold text-xs">IT</div>
+      <span class="font-semibold text-sm hidden sm:inline">互动式技术教程平台</span>
+    </div>
+
+    <nav class="flex items-center gap-1 ml-2 text-sm relative" id="siteNav">
+      <div class="nav-group relative">
+        <button data-menu="theme-library" class="nav-toggle px-2.5 py-1.5 rounded-lg hover:bg-slate-500/10 text-[13px] font-medium" style="color:var(--color-text-muted)">主题课程库</button>
+        <div data-menu-panel="theme-library" class="hidden absolute left-0 top-full mt-1 w-52 surface rounded-xl shadow-md border py-1 text-[13px]">
+          <a href="theme-library__theme-selection.html" class="block px-3 py-2 hover:bg-slate-500/10">主题选择页</a>
+          <a href="theme-library__chapter-outline.html" class="block px-3 py-2 hover:bg-slate-500/10">章节大纲面板</a>
+        </div>
+      </div>
+      <div class="nav-group relative">
+        <a href="learning-workspace__workspace.html" class="px-2.5 py-1.5 rounded-lg text-[13px] font-medium bg-primary-500/10 text-primary-600" style="color:var(--color-primary)">学习工作台</a>
+      </div>
+      <div class="nav-group relative">
+        <button data-menu="code-sandbox" class="nav-toggle px-2.5 py-1.5 rounded-lg hover:bg-slate-500/10 text-[13px] font-medium" style="color:var(--color-text-muted)">代码沙箱</button>
+        <div data-menu-panel="code-sandbox" class="hidden absolute left-0 top-full mt-1 w-56 surface rounded-xl shadow-md border py-1 text-[13px]">
+          <a href="code-sandbox__sandbox-panel.html" class="block px-3 py-2 hover:bg-slate-500/10">沙箱主面板（桌面右栏）</a>
+          <a href="code-sandbox__sandbox-mobile-tab.html" class="block px-3 py-2 hover:bg-slate-500/10">移动端沙箱 Tab 视图</a>
+          <a href="code-sandbox__sandbox-error-state.html" class="block px-3 py-2 hover:bg-slate-500/10">沙箱异常态视图</a>
+        </div>
+      </div>
+      <div class="nav-group relative">
+        <button data-menu="learning-progress" class="nav-toggle px-2.5 py-1.5 rounded-lg hover:bg-slate-500/10 text-[13px] font-medium" style="color:var(--color-text-muted)">学习进度</button>
+        <div data-menu-panel="learning-progress" class="hidden absolute left-0 top-full mt-1 w-52 surface rounded-xl shadow-md border py-1 text-[13px]">
+          <a href="learning-progress__progress-indicators.html" class="block px-3 py-2 hover:bg-slate-500/10">进度指示器规范</a>
+          <a href="learning-progress__continue-learning.html" class="block px-3 py-2 hover:bg-slate-500/10">继续学习提示与入口</a>
+        </div>
+      </div>
+      <div class="nav-group relative">
+        <button data-menu="appearance-theme" class="nav-toggle px-2.5 py-1.5 rounded-lg hover:bg-slate-500/10 text-[13px] font-medium" style="color:var(--color-text-muted)">外观与主题</button>
+        <div data-menu-panel="appearance-theme" class="hidden absolute left-0 top-full mt-1 w-56 surface rounded-xl shadow-md border py-1 text-[13px]">
+          <a href="appearance-theme__theme-switcher-panel.html" class="block px-3 py-2 hover:bg-slate-500/10">外观设置面板</a>
+          <a href="appearance-theme__responsive-showcase.html" class="block px-3 py-2 hover:bg-slate-500/10">响应式与移动端切换示例</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2">
+      <button id="themeToggleBtn" title="切换亮/暗主题" class="w-9 h-9 rounded-lg flex items-center justify-center border" style="border-color:var(--color-border)">
+        <svg id="iconSun" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg id="iconMoon" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ 页面信息条(F1) ============ -->
+  <div class="h-12 shrink-0 surface border-b flex items-center px-3 md:px-6 gap-3 text-sm">
+    <button id="drawerToggleBtn" class="xl:hidden w-8 h-8 rounded-lg flex items-center justify-center border shrink-0" style="border-color:var(--color-border)" title="打开章节目录">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <a href="theme-library__theme-selection.html" class="flex items-center gap-1.5 shrink-0 font-medium hover:text-primary-600" style="color:var(--color-text-muted)">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="hidden sm:inline">返回主题库</span>
+    </a>
+    <span class="shrink-0" style="color:var(--color-border)">/</span>
+    <span class="font-semibold truncate" id="infoBarTutorialTitle">React 入门教程</span>
+    <span class="shrink-0" style="color:var(--color-border)">/</span>
+    <span class="truncate" id="infoBarChapterTitle" style="color:var(--color-text-muted)">React 基础</span>
+    <span class="ml-auto shrink-0 text-xs px-2 py-1 rounded-lg font-medium" style="background:var(--color-primary);color:#fff" id="infoBarStepBadge">1 / 6</span>
+  </div>
+
+  <!-- ============ 移动端 讲解/代码 Tab (F9,375断点) ============ -->
+  <div class="md:hidden shrink-0 surface border-b flex px-3 py-2 gap-2">
+    <button data-pane="explain" class="mobile-tab-btn flex-1 h-9 rounded-lg text-sm font-medium border" data-active="true">讲解</button>
+    <button data-pane="sandbox" class="mobile-tab-btn flex-1 h-9 rounded-lg text-sm font-medium border" data-active="false">代码</button>
+  </div>
+
+  <!-- ============ 主内容区 ============ -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- 抽屉遮罩 -->
+    <div id="drawerBackdrop" class="hidden xl:hidden fixed inset-0 bg-black/30 z-30"></div>
+
+    <!-- 左侧章节/步骤目录(1440静态240px,768/375为抽屉) -->
+    <aside id="dirSidebar" class="fixed xl:static inset-y-0 left-0 z-40 w-72 xl:w-[240px] -translate-x-full xl:translate-x-0 transition-transform duration-200 surface border-r flex flex-col shrink-0 top-[104px] xl:top-0 bottom-0">
+      <div class="px-4 py-3 border-b flex items-center justify-between xl:hidden">
+        <span class="font-semibold text-sm">章节目录</span>
+        <button id="drawerCloseBtn" class="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-slate-500/10">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="dirTree" class="flex-1 overflow-y-auto py-3 px-2"></div>
+    </aside>
+
+    <!-- 左讲解区 + 右沙箱区 -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+      <!-- 左:MDX讲解区 -->
+      <section id="explainPane" class="w-full md:w-[45%] xl:w-auto xl:flex-[1.15] overflow-y-auto border-r" style="border-color:var(--color-border)">
+        <div class="max-w-2xl mx-auto px-5 md:px-8 py-6">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-lg bg-primary-500/10" style="color:var(--color-primary)" id="stepOrderBadge">步骤 1</span>
+          </div>
+          <h1 class="text-xl md:text-2xl font-bold mb-4" id="stepTitle">JSX 是什么</h1>
+          <div class="mdx" id="mdxContent"></div>
+        </div>
+      </section>
+
+      <!-- 右:代码沙箱容器(挂载 code-sandbox 面板) -->
+      <section id="sandboxPane" class="w-full md:w-[55%] xl:flex-1 xl:min-w-[480px] flex flex-col overflow-hidden" style="background:var(--color-bg)">
+        <div class="flex flex-col h-full p-3 md:p-4 gap-3 overflow-y-auto">
+
+          <!-- 沙箱工具条 -->
+          <div class="surface rounded-xl border overflow-hidden flex flex-col flex-1 min-h-[420px]">
+            <div class="flex items-center justify-between px-3 py-2 border-b" style="border-color:var(--color-border)">
+              <div class="flex items-center gap-1 overflow-x-auto" id="fileTabs"></div>
+              <div class="flex items-center gap-2 shrink-0 pl-2">
+                <button id="answerBtn" class="text-xs font-medium px-2 py-1 rounded-lg" style="color:var(--color-accent)">给我看答案</button>
+                <button id="runBtn" class="h-8 px-3 rounded-lg text-white text-xs font-medium flex items-center gap-1.5" style="background:var(--color-primary)">
+                  <svg id="runIcon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  <span id="runBtnText">运行</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 编辑器 -->
+            <div class="relative" style="height:38%; min-height:150px;">
+              <div id="answerBanner" class="hidden absolute top-0 left-0 right-0 z-10 px-3 py-1.5 text-xs font-medium flex items-center justify-between" style="background:var(--color-accent);color:#fff">
+                <span>正在查看参考答案</span>
+                <button id="revertBtn" class="underline">切回我的代码</button>
+              </div>
+              <textarea id="codeEditor" class="editor-textarea w-full h-full px-4 py-3" spellcheck="false"></textarea>
+            </div>
+
+            <!-- 预览 -->
+            <div class="flex-1 flex flex-col border-t" style="border-color:var(--color-border); min-height:160px;">
+              <div class="px-3 py-1.5 text-xs font-medium flex items-center gap-1.5" style="color:var(--color-text-muted); background:var(--color-bg)">
+                <span class="w-2 h-2 rounded-full" style="background:#ef4444"></span>
+                <span class="w-2 h-2 rounded-full" style="background:#eab308"></span>
+                <span class="w-2 h-2 rounded-full" style="background:#22c55e"></span>
+                <span class="ml-2">预览</span>
+              </div>
+              <div id="previewArea" class="flex-1 bg-white text-slate-800 flex items-center justify-center p-4 overflow-auto">
+                <p class="text-sm text-slate-400">点击「运行」查看效果</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ============ 底部步骤导航条(F4/F5, 64px) ============ -->
+  <footer class="h-16 shrink-0 surface border-t flex items-center px-4 md:px-6 gap-3 z-20">
+    <button id="prevBtn" class="h-9 px-4 rounded-lg text-sm font-medium border flex items-center gap-1.5 shrink-0" style="border-color:var(--color-border)">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <span class="hidden sm:inline">上一步</span>
+    </button>
+
+    <div class="flex-1 flex items-center justify-center gap-3 overflow-hidden">
+      <div id="stepDots" class="hidden sm:flex items-center gap-1.5"></div>
+      <span class="text-sm font-medium whitespace-nowrap" id="footerStepText">第 1 步 / 共 6 步</span>
+    </div>
+
+    <button id="nextBtn" class="h-9 px-4 rounded-lg text-sm font-medium text-white flex items-center gap-1.5 shrink-0" style="background:var(--color-primary)">
+      <span class="hidden sm:inline">下一步</span>
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </footer>
+
+  <!-- Toast -->
+  <div id="toastHost" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center"></div>
+
+</div>
+
+<script>
+/* =========================================================================
+   数据模型: TutorialPackage（拟真数据 —— React 主题 1-2 章）
+   ========================================================================= */
+function hl(raw) {
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const KW = ['import','from','export','default','const','let','var','function','return','if','else','for','while','new','class','extends','this','typeof','instanceof','of','in','true','false','null','undefined','async','await'];
+  const re = /\/\/[^\n]*|\/\*[\s\S]*?\*\/|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|<\/?[A-Za-z][\w.]*>?|\b[A-Za-z_$][\w$]*\b|\b\d+(?:\.\d+)?\b|[\s\S]/g;
+  const tokens = raw.match(re) || [];
+  let out = '';
+  for (const t of tokens) {
+    if (t.startsWith('//') || t.startsWith('/*')) out += `<span class="tok-com">${esc(t)}</span>`;
+    else if (t[0] === "'" || t[0] === '"') out += `<span class="tok-str">${esc(t)}</span>`;
+    else if (t[0] === '<') out += `<span class="tok-tag">${esc(t)}</span>`;
+    else if (KW.includes(t)) out += `<span class="tok-kw">${esc(t)}</span>`;
+    else if (/^\d/.test(t)) out += `<span class="tok-num">${esc(t)}</span>`;
+    else out += esc(t);
+  }
+  return out;
+}
+function codeBlock(code, filename) {
+  return `<div class="code-block"><div class="code-block-head"><span>${filename || 'JSX'}</span></div><pre><code>${hl(code)}</code></pre></div>`;
+}
+
+const tutorialPackage = {
+  id: 'react',
+  meta: {
+    title: 'React 入门教程',
+    description: '从 JSX 到 Hooks，跟着示例边读边写',
+    language: 'jsx',
+    defaultCode: {
+      'App.js': 'function App() {\n  return <h1>Hello, React!</h1>;\n}',
+      'styles.css': 'body { font-family: sans-serif; }'
+    }
+  },
+  chapters: [
+    {
+      id: 'ch1', title: 'React 基础',
+      steps: [
+        {
+          id: 's1-1', title: 'JSX 是什么',
+          description: () => `
+            <p>JSX 是 React 里描述界面结构的语法糖——长得像 HTML，但本质上是 <code class="inline">React.createElement(...)</code> 的语法糖，会被 Babel 编译成普通 JS 函数调用。</p>
+            <ul>
+              <li>可以在 <code class="inline">{}</code> 中嵌入任意 JS 表达式，比如变量、函数调用</li>
+              <li>JSX 元素必须有且只有一个根节点，多个并列节点要用 <code class="inline">&lt;&gt;...&lt;/&gt;</code>（Fragment）包裹</li>
+              <li>属性名用小驼峰，比如 <code class="inline">onClick</code>、<code class="inline">className</code></li>
+            </ul>
+            ${codeBlock(
+`function Greeting({ name }) {
+  return (
+    <div className="card">
+      <h1>你好，{name}</h1>
+      <p>这是你的第一个 JSX 元素。</p>
+    </div>
+  );
+}`, 'App.js')}
+            <div class="tip"><b>提示：</b>JSX 里的 <code class="inline">class</code> 要写成 <code class="inline">className</code>，因为 <code class="inline">class</code> 是 JS 的保留字。</div>
+          `,
+          files: {
+            'App.js': `function Greeting({ name }) {
+  return (
+    <div className="card">
+      <h1>你好，{name}</h1>
+      <p>这是你的第一个 JSX 元素。</p>
+    </div>
+  );
+}
+
+export default function App() {
+  return <Greeting name="学习者" />;
+}`,
+            'styles.css': `.card {
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: sans-serif;
+}`
+          },
+          solution: null,
+          preview: { title: '你好，学习者', body: '这是你的第一个 JSX 元素。' }
+        },
+        {
+          id: 's1-2', title: '组件与 Props',
+          description: () => `
+            <p>React 组件本质上就是一个返回 JSX 的函数。<b>Props</b> 是组件的输入参数，只读、不能在组件内部修改。</p>
+            <ul>
+              <li>推荐直接在函数参数上解构 props：<code class="inline">function Card({ name, role })</code></li>
+              <li>同一个组件可以传入不同 props 多次复用</li>
+              <li>Props 只能"从父到子"单向传递</li>
+            </ul>
+            ${codeBlock(
+`function UserCard({ name, role }) {
+  return (
+    <div className="user-card">
+      <strong>{name}</strong>
+      <span>{role}</span>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <UserCard name="演示用户" role="前端工程师" />
+      <UserCard name="李雷" role="产品经理" />
+    </>
+  );
+}`, 'App.js')}
+            <div class="tip"><b>提示：</b>尝试给 <code class="inline">UserCard</code> 再加一个 <code class="inline">avatar</code> props 试试。</div>
+          `,
+          files: {
+            'App.js': `function UserCard({ name, role }) {
+  return (
+    <div className="user-card">
+      <strong>{name}</strong>
+      <span>{role}</span>
+      {/* TODO: 再渲染一个 UserCard，尝试传入不同的 props */}
+    </div>
+  );
+}
+
+export default function App() {
+  return <UserCard name="演示用户" role="前端工程师" />;
+}`,
+            'styles.css': `.user-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}`
+          },
+          solution: {
+            'App.js': `function UserCard({ name, role }) {
+  return (
+    <div className="user-card">
+      <strong>{name}</strong>
+      <span>{role}</span>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <>
+      <UserCard name="演示用户" role="前端工程师" />
+      <UserCard name="李雷" role="产品经理" />
+    </>
+  );
+}`,
+            'styles.css': `.user-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}`
+          },
+          preview: { cards: [{ name: '演示用户', role: '前端工程师' }] },
+          previewSolution: { cards: [{ name: '演示用户', role: '前端工程师' }, { name: '李雷', role: '产品经理' }] }
+        },
+        {
+          id: 's1-3', title: '事件处理与合成事件',
+          description: () => `
+            <p>React 的事件命名采用小驼峰（<code class="inline">onClick</code> 而不是 <code class="inline">onclick</code>），传给事件属性的是<b>函数引用</b>而不是函数调用结果。</p>
+            <ul>
+              <li>React 会包装原生事件为 <b>SyntheticEvent</b>（合成事件），跨浏览器行为一致</li>
+              <li>需要传参时用箭头函数包一层：<code class="inline">onClick={() => fn(arg)}</code></li>
+              <li>结合 <code class="inline">useState</code> 就能让点击驱动界面变化</li>
+            </ul>
+            ${codeBlock(
+`function LikeButton() {
+  const [liked, setLiked] = React.useState(false);
+
+  function handleClick() {
+    setLiked(!liked);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      {liked ? '已点赞 ❤️' : '点赞'}
+    </button>
+  );
+}`, 'App.js')}
+          `,
+          files: {
+            'App.js': `function LikeButton() {
+  const [liked, setLiked] = React.useState(false);
+
+  function handleClick() {
+    setLiked(!liked);
+  }
+
+  return (
+    <button onClick={handleClick}>
+      {liked ? '已点赞 ❤️' : '点赞'}
+    </button>
+  );
+}
+
+export default function App() {
+  return <LikeButton />;
+}`,
+            'styles.css': `button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #3B5BDB;
+  background: #fff;
+  cursor: pointer;
+}`
+          },
+          solution: null,
+          preview: { likeButton: true }
+        }
+      ]
+    },
+    {
+      id: 'ch2', title: 'Hooks 入门',
+      steps: [
+        {
+          id: 's2-1', title: 'useState：让组件拥有状态',
+          description: () => `
+            <p><code class="inline">useState</code> 是最基础的 Hook，让函数组件拥有自己的"状态"。它返回一个数组：<code class="inline">[当前值, 更新函数]</code>。</p>
+            <ul>
+              <li>初始值只在组件首次渲染时生效</li>
+              <li>调用 <code class="inline">setCount</code> 会触发组件重新渲染，不能直接修改 <code class="inline">count</code> 变量本身</li>
+              <li>推荐使用函数式更新 <code class="inline">setCount(c =&gt; c + 1)</code> 避免闭包陷阱</li>
+            </ul>
+            ${codeBlock(
+`function Counter() {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div className="counter">
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <span>{count}</span>
+      <button onClick={() => setCount(count + 1)}>+</button>
+    </div>
+  );
+}`, 'App.js')}
+            <div class="tip"><b>动手试试：</b>右侧沙箱里的"-"按钮还没有接上递减逻辑，点击「给我看答案」看看完整实现，再切回自己动手补上。</div>
+          `,
+          files: {
+            'App.js': `function Counter() {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div className="counter">
+      {/* TODO: 补充递减逻辑 */}
+      <button onClick={() => {}}>-</button>
+      <span>{count}</span>
+      <button onClick={() => setCount(count + 1)}>+</button>
+    </div>
+  );
+}
+
+export default function App() {
+  return <Counter />;
+}`,
+            'styles.css': `.counter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 20px;
+}
+.counter button {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid #3B5BDB;
+  background: #fff;
+  cursor: pointer;
+}`
+          },
+          solution: {
+            'App.js': `function Counter() {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div className="counter">
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <span>{count}</span>
+      <button onClick={() => setCount(count + 1)}>+</button>
+    </div>
+  );
+}
+
+export default function App() {
+  return <Counter />;
+}`,
+            'styles.css': `.counter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 20px;
+}
+.counter button {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid #3B5BDB;
+  background: #fff;
+  cursor: pointer;
+}`
+          },
+          preview: { counter: 'broken' },
+          previewSolution: { counter: 'working' }
+        },
+        {
+          id: 's2-2', title: 'useEffect：处理副作用',
+          description: () => `
+            <p><code class="inline">useEffect</code> 让你在组件渲染之后执行"副作用"（网络请求、订阅、定时器、手动操作 DOM 等）。</p>
+            <ul>
+              <li>第二个参数是依赖数组：<code class="inline">[]</code> 表示只在挂载时执行一次</li>
+              <li>返回一个函数作为<b>清理函数</b>，会在组件卸载或下次执行前调用</li>
+              <li>忘记清理定时器/订阅是最常见的内存泄漏来源</li>
+            </ul>
+            ${codeBlock(
+`function Timer() {
+  const [seconds, setSeconds] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return <p>已经过去 {seconds} 秒</p>;
+}`, 'App.js')}
+          `,
+          files: {
+            'App.js': `function Timer() {
+  const [seconds, setSeconds] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    // TODO: 组件卸载时清理定时器，避免内存泄漏
+  }, []);
+
+  return <p>已经过去 {seconds} 秒</p>;
+}
+
+export default function App() {
+  return <Timer />;
+}`,
+            'styles.css': `p { font-size: 18px; font-family: sans-serif; }`
+          },
+          solution: {
+            'App.js': `function Timer() {
+  const [seconds, setSeconds] = React.useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return <p>已经过去 {seconds} 秒</p>;
+}
+
+export default function App() {
+  return <Timer />;
+}`,
+            'styles.css': `p { font-size: 18px; font-family: sans-serif; }`
+          },
+          preview: { timer: true },
+          previewSolution: { timer: true }
+        },
+        {
+          id: 's2-3', title: '自定义 Hook：抽取复用逻辑',
+          description: () => `
+            <p>当多个组件需要相同的状态逻辑时，可以把逻辑抽取成一个以 <code class="inline">use</code> 开头的普通函数——<b>自定义 Hook</b>。</p>
+            <ul>
+              <li>自定义 Hook 内部可以调用其他 Hook（<code class="inline">useState</code>/<code class="inline">useEffect</code> 等）</li>
+              <li>抽取逻辑不改变组件的渲染结果，只是让逻辑可以在多个组件间复用</li>
+              <li>本质仍是普通函数，只是约定俗成以 <code class="inline">use</code> 开头</li>
+            </ul>
+            ${codeBlock(
+`function useCounter(initialValue = 0) {
+  const [count, setCount] = React.useState(initialValue);
+  const increment = () => setCount(c => c + 1);
+  const decrement = () => setCount(c => c - 1);
+  return { count, increment, decrement };
+}
+
+function Counter() {
+  const { count, increment, decrement } = useCounter(10);
+  return (
+    <div>
+      <button onClick={decrement}>-</button>
+      <span>{count}</span>
+      <button onClick={increment}>+</button>
+    </div>
+  );
+}`, 'App.js')}
+          `,
+          files: {
+            'App.js': `function useCounter(initialValue = 0) {
+  const [count, setCount] = React.useState(initialValue);
+  const increment = () => setCount(c => c + 1);
+  const decrement = () => setCount(c => c - 1);
+  return { count, increment, decrement };
+}
+
+function Counter() {
+  const { count, increment, decrement } = useCounter(10);
+  return (
+    <div className="counter">
+      <button onClick={decrement}>-</button>
+      <span>{count}</span>
+      <button onClick={increment}>+</button>
+    </div>
+  );
+}
+
+export default function App() {
+  return <Counter />;
+}`,
+            'styles.css': `.counter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 20px;
+}
+.counter button {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid #3B5BDB;
+  background: #fff;
+  cursor: pointer;
+}`
+          },
+          solution: null,
+          preview: { counter: 'working', initial: 10 }
+        }
+      ]
+    }
+  ]
+};
+
+/* =========================================================================
+   运行时状态与工具
+   ========================================================================= */
+const flatSteps = [];
+tutorialPackage.chapters.forEach(ch => ch.steps.forEach(st => flatSteps.push({ chapterId: ch.id, chapterTitle: ch.title, step: st })));
+const totalStepCount = flatSteps.length;
+
+const state = {
+  currentChapterId: null,
+  currentStepId: null,
+  globalStepIndex: 0,
+  activeMobilePane: 'explain',
+  sandboxByStep: {},   // stepId -> { activeFile, files, isShowingAnswer, ownSnapshot }
+};
+
+function findFlatIndexByIds(chapterId, stepId) {
+  return flatSteps.findIndex(f => f.chapterId === chapterId && f.step.id === stepId);
+}
+
+function getSandboxState(stepId) {
+  const flat = flatSteps[state.globalStepIndex];
+  if (!state.sandboxByStep[stepId]) {
+    const files = flat.step.files || tutorialPackage.meta.defaultCode;
+    state.sandboxByStep[stepId] = {
+      activeFile: Object.keys(files)[0],
+      files: JSON.parse(JSON.stringify(files)),
+      isShowingAnswer: false,
+      ownSnapshot: null
+    };
+  }
+  return state.sandboxByStep[stepId];
+}
+
+/* ---------- localStorage 模拟 learning-progress ---------- */
+const LS_KEY = 'ittp:progress';
+function readProgress() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    return raw[tutorialPackage.id] || null;
+  } catch (e) { return null; }
+}
+function writeProgress(chapterId, stepId) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    const prev = raw[tutorialPackage.id] || { completedStepIds: [] };
+    raw[tutorialPackage.id] = {
+      currentStepId: stepId,
+      currentChapterId: chapterId,
+      completedStepIds: prev.completedStepIds || [],
+      lastVisitedAt: Date.now()
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(raw));
+  } catch (e) { /* localStorage 不可用时静默降级为会话内记忆 */ }
+}
+function markCompleted(stepId) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    const prev = raw[tutorialPackage.id] || { completedStepIds: [] };
+    if (!prev.completedStepIds.includes(stepId)) prev.completedStepIds.push(stepId);
+    raw[tutorialPackage.id] = prev;
+    localStorage.setItem(LS_KEY, JSON.stringify(raw));
+  } catch (e) {}
+}
+function getCompletedSet() {
+  const p = readProgress();
+  return new Set(p && p.completedStepIds ? p.completedStepIds : []);
+}
+
+/* ---------- Toast ---------- */
+function showToast(msg) {
+  const host = document.getElementById('toastHost');
+  const el = document.createElement('div');
+  el.className = 'toast-in surface rounded-lg shadow-md border px-4 py-2 text-sm font-medium';
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 2600);
+}
+
+/* ---------- URL 深链 ---------- */
+function readUrlLocation() {
+  const p = new URLSearchParams(location.search);
+  const chapterId = p.get('chapter');
+  const stepId = p.get('step');
+  if (chapterId && stepId) {
+    const idx = findFlatIndexByIds(chapterId, stepId);
+    if (idx >= 0) return idx;
+    return -1; // 无效深链
+  }
+  return null; // 无深链
+}
+function writeUrlLocation(chapterId, stepId, replace) {
+  const p = new URLSearchParams(location.search);
+  p.set('chapter', chapterId);
+  p.set('step', stepId);
+  const url = location.pathname + '?' + p.toString();
+  if (replace) history.replaceState({ chapterId, stepId }, '', url);
+  else history.pushState({ chapterId, stepId }, '', url);
+}
+
+/* =========================================================================
+   渲染
+   ========================================================================= */
+function renderSidebar() {
+  const tree = document.getElementById('dirTree');
+  tree.innerHTML = '';
+  const completed = getCompletedSet();
+  tutorialPackage.chapters.forEach(ch => {
+    const head = document.createElement('div');
+    head.className = 'px-2 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide';
+    head.style.color = 'var(--color-text-muted)';
+    head.textContent = ch.title;
+    tree.appendChild(head);
+    ch.steps.forEach(st => {
+      const isCurrent = ch.id === state.currentChapterId && st.id === state.currentStepId;
+      const isDone = completed.has(st.id);
+      const row = document.createElement('button');
+      row.className = 'w-full text-left px-2.5 py-2 rounded-lg text-sm flex items-center gap-2 mb-0.5 border-l-[3px]';
+      row.style.borderLeftColor = isCurrent ? 'var(--color-primary)' : 'transparent';
+      if (isCurrent) { row.style.background = 'color-mix(in srgb, var(--color-primary) 10%, transparent)'; row.style.color = 'var(--color-primary)'; row.style.fontWeight = '500'; }
+      row.onmouseenter = () => { if (!isCurrent) row.style.background = 'color-mix(in srgb, var(--color-text-muted) 12%, transparent)'; };
+      row.onmouseleave = () => { if (!isCurrent) row.style.background = 'transparent'; };
+      row.innerHTML = `
+        <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style="${isDone ? 'background:var(--color-primary)' : 'border:1.5px solid var(--color-border)'}">
+          ${isDone ? '<svg class="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>' : ''}
+        </span>
+        <span class="truncate">${st.title}</span>
+      `;
+      row.addEventListener('click', () => {
+        goToStep(ch.id, st.id, true);
+        closeDrawer();
+      });
+      tree.appendChild(row);
+    });
+  });
+}
+
+function renderStepDots() {
+  const host = document.getElementById('stepDots');
+  host.innerHTML = '';
+  const completed = getCompletedSet();
+  flatSteps.forEach((f, i) => {
+    const dot = document.createElement('span');
+    const isCurrent = i === state.globalStepIndex;
+    const isDone = completed.has(f.step.id) && !isCurrent;
+    dot.className = 'w-2 h-2 rounded-full ' + (isCurrent ? 'dot-current' : isDone ? 'dot-done' : 'dot-todo');
+    host.appendChild(dot);
+  });
+}
+
+function renderFileTabs(stepId) {
+  const sbx = getSandboxState(stepId);
+  const host = document.getElementById('fileTabs');
+  host.innerHTML = '';
+  Object.keys(sbx.files).forEach(fname => {
+    const btn = document.createElement('button');
+    const active = fname === sbx.activeFile;
+    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-mono whitespace-nowrap shrink-0';
+    btn.style.background = active ? 'var(--color-primary)' : 'transparent';
+    btn.style.color = active ? '#fff' : 'var(--color-text-muted)';
+    btn.textContent = fname;
+    btn.addEventListener('click', () => {
+      sbx.activeFile = fname;
+      renderFileTabs(stepId);
+      renderEditor(stepId);
+    });
+    host.appendChild(btn);
+  });
+}
+
+function renderEditor(stepId) {
+  const sbx = getSandboxState(stepId);
+  const ta = document.getElementById('codeEditor');
+  ta.value = sbx.files[sbx.activeFile] || '';
+  ta.oninput = () => { sbx.files[sbx.activeFile] = ta.value; };
+  document.getElementById('answerBanner').classList.toggle('hidden', !sbx.isShowingAnswer);
+
+  const flat = flatSteps[state.globalStepIndex];
+  const hasSolution = !!flat.step.solution;
+  const answerBtn = document.getElementById('answerBtn');
+  if (sbx.isShowingAnswer) {
+    answerBtn.textContent = '切回我的代码';
+    answerBtn.disabled = false;
+    answerBtn.style.opacity = '1';
+    answerBtn.style.cursor = 'pointer';
+  } else if (!hasSolution) {
+    answerBtn.textContent = '给我看答案';
+    answerBtn.disabled = true;
+    answerBtn.style.opacity = '.45';
+    answerBtn.style.cursor = 'not-allowed';
+  } else {
+    answerBtn.textContent = '给我看答案';
+    answerBtn.disabled = false;
+    answerBtn.style.opacity = '1';
+    answerBtn.style.cursor = 'pointer';
+  }
+
+  document.getElementById('previewArea').innerHTML = '<p class="text-sm text-slate-400">点击「运行」查看效果</p>';
+}
+
+function renderPreview(stepId) {
+  const flat = flatSteps[state.globalStepIndex];
+  const sbx = getSandboxState(stepId);
+  const previewData = sbx.isShowingAnswer ? (flat.step.previewSolution || flat.step.preview) : flat.step.preview;
+  const area = document.getElementById('previewArea');
+  area.innerHTML = '';
+
+  if (previewData.likeButton) {
+    const btn = document.createElement('button');
+    let liked = false;
+    btn.className = 'px-4 py-2 rounded-lg border text-sm';
+    btn.style.borderColor = 'var(--color-primary)';
+    btn.textContent = '点赞';
+    btn.onclick = () => { liked = !liked; btn.textContent = liked ? '已点赞 ❤️' : '点赞'; };
+    area.appendChild(btn);
+  } else if (previewData.cards) {
+    const wrap = document.createElement('div');
+    wrap.className = 'w-full space-y-2';
+    previewData.cards.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center gap-3 border rounded-xl px-3 py-2 text-sm';
+      row.style.borderColor = '#e2e8f0';
+      row.innerHTML = `<strong>${c.name}</strong><span class="text-slate-500">${c.role}</span>`;
+      wrap.appendChild(row);
+    });
+    area.appendChild(wrap);
+  } else if (previewData.counter) {
+    const wrap = document.createElement('div');
+    wrap.className = 'flex flex-col items-center gap-2';
+    let count = previewData.initial || 0;
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-4 text-xl';
+    const dec = document.createElement('button');
+    dec.textContent = '-';
+    dec.className = 'w-8 h-8 rounded-lg border text-base';
+    dec.style.borderColor = 'var(--color-primary)';
+    const span = document.createElement('span');
+    span.textContent = count;
+    const inc = document.createElement('button');
+    inc.textContent = '+';
+    inc.className = 'w-8 h-8 rounded-lg border text-base';
+    inc.style.borderColor = 'var(--color-primary)';
+    inc.onclick = () => { count++; span.textContent = count; };
+    if (previewData.counter === 'working') {
+      dec.onclick = () => { count--; span.textContent = count; };
+    } else {
+      dec.onclick = () => showToast('这个按钮的逻辑还没实现，试试「给我看答案」');
+    }
+    row.appendChild(dec); row.appendChild(span); row.appendChild(inc);
+    wrap.appendChild(row);
+    if (previewData.counter === 'broken') {
+      const hint = document.createElement('p');
+      hint.className = 'text-xs text-slate-400 mt-1';
+      hint.textContent = '(－ 按钮逻辑待补全)';
+      wrap.appendChild(hint);
+    }
+    area.appendChild(wrap);
+  } else if (previewData.timer) {
+    const p = document.createElement('p');
+    p.className = 'text-sm';
+    let s = 0;
+    p.textContent = '已经过去 ' + s + ' 秒';
+    area.appendChild(p);
+    const timerId = setInterval(() => { s++; p.textContent = '已经过去 ' + s + ' 秒'; }, 1000);
+    area.dataset.timerId = timerId;
+  } else {
+    const card = document.createElement('div');
+    card.className = 'border rounded-xl px-4 py-3 text-sm w-full max-w-xs';
+    card.style.borderColor = '#e2e8f0';
+    card.innerHTML = `<h1 class="font-bold text-base mb-1">${previewData.title || ''}</h1><p class="text-slate-500">${previewData.body || ''}</p>`;
+    area.appendChild(card);
+  }
+}
+
+function clearPreviewTimer() {
+  const area = document.getElementById('previewArea');
+  if (area.dataset.timerId) { clearInterval(Number(area.dataset.timerId)); delete area.dataset.timerId; }
+}
+
+function renderStep() {
+  const flat = flatSteps[state.globalStepIndex];
+  state.currentChapterId = flat.chapterId;
+  state.currentStepId = flat.step.id;
+
+  document.getElementById('infoBarTutorialTitle').textContent = tutorialPackage.meta.title;
+  document.getElementById('infoBarChapterTitle').textContent = flat.chapterTitle;
+  document.getElementById('infoBarStepBadge').textContent = (state.globalStepIndex + 1) + ' / ' + totalStepCount;
+  document.getElementById('stepOrderBadge').textContent = '步骤 ' + (state.globalStepIndex + 1);
+  document.getElementById('stepTitle').textContent = flat.step.title;
+  document.getElementById('mdxContent').innerHTML = flat.step.description();
+  document.getElementById('footerStepText').textContent = '第 ' + (state.globalStepIndex + 1) + ' 步 / 共 ' + totalStepCount + ' 步';
+
+  document.getElementById('prevBtn').disabled = state.globalStepIndex === 0;
+  document.getElementById('prevBtn').style.opacity = state.globalStepIndex === 0 ? '.5' : '1';
+  document.getElementById('prevBtn').style.cursor = state.globalStepIndex === 0 ? 'not-allowed' : 'pointer';
+
+  const isLast = state.globalStepIndex === totalStepCount - 1;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = isLast;
+  nextBtn.style.opacity = isLast ? '.5' : '1';
+  nextBtn.style.cursor = isLast ? 'not-allowed' : 'pointer';
+  nextBtn.querySelector('span').textContent = isLast ? '已经是最后一步' : '下一步';
+
+  clearPreviewTimer();
+  renderFileTabs(flat.step.id);
+  renderEditor(flat.step.id);
+  renderSidebar();
+  renderStepDots();
+  document.getElementById('explainPane').scrollTop = 0;
+
+  // stepEnteredEvent -> learning-progress
+  writeProgress(flat.chapterId, flat.step.id);
+}
+
+function goToStep(chapterId, stepId, isJump) {
+  const idx = findFlatIndexByIds(chapterId, stepId);
+  if (idx < 0) return;
+  state.globalStepIndex = idx;
+  renderStep();
+  writeUrlLocation(chapterId, stepId, false);
+}
+
+/* =========================================================================
+   交互绑定
+   ========================================================================= */
+let navLock = false;
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (navLock || state.globalStepIndex === 0) return;
+  navLock = true;
+  state.globalStepIndex--;
+  renderStep();
+  const flat = flatSteps[state.globalStepIndex];
+  writeUrlLocation(flat.chapterId, flat.step.id, false);
+  setTimeout(() => navLock = false, 250);
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (navLock) return;
+  if (state.globalStepIndex >= totalStepCount - 1) {
+    showToast('已经是整个教程包的最后一步啦');
+    return;
+  }
+  navLock = true;
+  markCompleted(flatSteps[state.globalStepIndex].step.id);
+  state.globalStepIndex++;
+  renderStep();
+  const flat = flatSteps[state.globalStepIndex];
+  writeUrlLocation(flat.chapterId, flat.step.id, false);
+  setTimeout(() => navLock = false, 250);
+});
+
+document.getElementById('runBtn').addEventListener('click', () => {
+  const btn = document.getElementById('runBtn');
+  const icon = document.getElementById('runIcon');
+  const text = document.getElementById('runBtnText');
+  btn.disabled = true;
+  icon.classList.add('spin');
+  text.textContent = '运行中';
+  document.getElementById('previewArea').innerHTML = '<p class="text-sm text-slate-400">编译打包中…</p>';
+  clearPreviewTimer();
+  setTimeout(() => {
+    icon.classList.remove('spin');
+    text.textContent = '运行';
+    btn.disabled = false;
+    renderPreview(state.currentStepId);
+  }, 500);
+});
+
+document.getElementById('answerBtn').addEventListener('click', () => {
+  const stepId = state.currentStepId;
+  const flat = flatSteps[state.globalStepIndex];
+  const sbx = getSandboxState(stepId);
+  if (sbx.isShowingAnswer) {
+    sbx.files = sbx.ownSnapshot;
+    sbx.ownSnapshot = null;
+    sbx.isShowingAnswer = false;
+  } else {
+    if (!flat.step.solution) return;
+    sbx.ownSnapshot = JSON.parse(JSON.stringify(sbx.files));
+    sbx.files = JSON.parse(JSON.stringify(flat.step.solution));
+    sbx.isShowingAnswer = true;
+  }
+  renderFileTabs(stepId);
+  renderEditor(stepId);
+  document.getElementById('runBtn').click();
+});
+
+document.getElementById('revertBtn').addEventListener('click', () => {
+  document.getElementById('answerBtn').click();
+});
+
+/* 移动端 讲解/代码 Tab 切换 (F9) */
+document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.activeMobilePane = btn.dataset.pane;
+    document.querySelectorAll('.mobile-tab-btn').forEach(b => {
+      const active = b === btn;
+      b.dataset.active = active ? 'true' : 'false';
+      b.style.background = active ? 'var(--color-primary)' : 'transparent';
+      b.style.color = active ? '#fff' : 'var(--color-text)';
+      b.style.borderColor = active ? 'var(--color-primary)' : 'var(--color-border)';
+    });
+    document.getElementById('explainPane').classList.toggle('hidden', state.activeMobilePane !== 'explain');
+    document.getElementById('sandboxPane').classList.toggle('hidden', state.activeMobilePane !== 'sandbox');
+  });
+});
+document.querySelector('.mobile-tab-btn[data-pane="explain"]').click();
+
+/* xl 断点以上恢复双栏显示（移除 mobile hidden 影响） */
+function syncPaneVisibilityForBreakpoint() {
+  if (window.innerWidth >= 768) {
+    document.getElementById('explainPane').classList.remove('hidden');
+    document.getElementById('sandboxPane').classList.remove('hidden');
+  } else {
+    document.getElementById('explainPane').classList.toggle('hidden', state.activeMobilePane !== 'explain');
+    document.getElementById('sandboxPane').classList.toggle('hidden', state.activeMobilePane !== 'sandbox');
+  }
+}
+window.addEventListener('resize', syncPaneVisibilityForBreakpoint);
+
+/* 抽屉目录 */
+function openDrawer() {
+  document.getElementById('dirSidebar').classList.add('drawer-open');
+  document.getElementById('drawerBackdrop').classList.remove('hidden');
+}
+function closeDrawer() {
+  document.getElementById('dirSidebar').classList.remove('drawer-open');
+  document.getElementById('drawerBackdrop').classList.add('hidden');
+}
+document.getElementById('drawerToggleBtn').addEventListener('click', openDrawer);
+document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
+document.getElementById('drawerBackdrop').addEventListener('click', closeDrawer);
+
+/* 顶部站点导航下拉 */
+document.querySelectorAll('.nav-toggle').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const key = btn.dataset.menu;
+    document.querySelectorAll('[data-menu-panel]').forEach(p => {
+      p.classList.toggle('hidden', p.dataset.menuPanel !== key || !p.classList.contains('hidden') === false ? p.dataset.menuPanel !== key : false);
+    });
+    const panel = document.querySelector(`[data-menu-panel="${key}"]`);
+    const wasHidden = panel.classList.contains('hidden');
+    document.querySelectorAll('[data-menu-panel]').forEach(p => p.classList.add('hidden'));
+    if (wasHidden) panel.classList.remove('hidden');
+  });
+});
+document.addEventListener('click', () => document.querySelectorAll('[data-menu-panel]').forEach(p => p.classList.add('hidden')));
+
+/* 亮暗主题切换 */
+function applyThemeIcon() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (!document.documentElement.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('iconSun').classList.toggle('hidden', isDark);
+  document.getElementById('iconMoon').classList.toggle('hidden', !isDark);
+}
+document.getElementById('themeToggleBtn').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('ittp:theme', next);
+  applyThemeIcon();
+});
+(function initTheme() {
+  const saved = localStorage.getItem('ittp:theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  applyThemeIcon();
+})();
+
+/* 浏览器前进/后退 */
+window.addEventListener('popstate', () => {
+  const idx = readUrlLocation();
+  if (idx !== null && idx >= 0) {
+    state.globalStepIndex = idx;
+    renderStep();
+  }
+});
+
+/* =========================================================================
+   初始定位：URL 深链 > 历史进度 > 第一步
+   ========================================================================= */
+(function init() {
+  const urlIdx = readUrlLocation();
+  if (urlIdx !== null) {
+    if (urlIdx >= 0) {
+      state.globalStepIndex = urlIdx;
+    } else {
+      state.globalStepIndex = 0;
+      showToast('该步骤不存在，已为您定位到第一步');
+    }
+  } else {
+    const progress = readProgress();
+    if (progress && progress.currentChapterId && progress.currentStepId) {
+      const idx = findFlatIndexByIds(progress.currentChapterId, progress.currentStepId);
+      if (idx > 0) {
+        state.globalStepIndex = idx;
+        const flat = flatSteps[idx];
+        showToast('已为您定位到上次学习位置：' + flat.chapterTitle + ' · ' + flat.step.title);
+      } else {
+        state.globalStepIndex = 0;
+      }
+    } else {
+      state.globalStepIndex = 0;
+    }
+  }
+  const flat = flatSteps[state.globalStepIndex];
+  writeUrlLocation(flat.chapterId, flat.step.id, true);
+  renderStep();
+  syncPaneVisibilityForBreakpoint();
+})();
+</script>
+</body>
+</html>

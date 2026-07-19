@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>章节大纲面板 · 主题课程库 · ITTP</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+
+<style>
+  /* 页面专属样式（不改动共享 head 配置） */
+  mark.hl {
+    background: color-mix(in srgb, var(--color-accent) 28%, transparent);
+    color: var(--color-text);
+    border-radius: 3px;
+    padding: 0 1px;
+  }
+  .step-row[data-state="current"] {
+    background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+    border-left: 3px solid var(--color-primary);
+  }
+  .step-row[data-state="current"] .step-title { color: var(--color-primary); font-weight: 600; }
+  .step-row[data-state="done"] .step-icon { color: var(--color-primary); }
+  .step-row[data-state="idle"] .step-icon { color: var(--color-text-muted); opacity: .55; }
+  .step-row:hover { background: color-mix(in srgb, var(--color-text-muted) 8%, transparent); }
+  .step-row[data-state="current"]:hover { background: color-mix(in srgb, var(--color-primary) 14%, transparent); }
+  .chapter-body { overflow: hidden; max-height: 0; transition: max-height .25s ease; }
+  .chapter-card[data-expanded="true"] .chapter-body { max-height: 3000px; }
+  .chapter-card[data-expanded="true"] .chevron { transform: rotate(90deg); }
+  .chevron { transition: transform .2s ease; }
+  @keyframes pulseRing {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 45%, transparent); }
+    70% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent); }
+  }
+  .pulse-once { animation: pulseRing 1.4s ease-out 1; border-radius: 8px; }
+  .chapter-card[hidden-by-filter="true"] { display: none; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- 顶部一级导航：模块 -->
+<header class="sticky top-0 z-40 h-14 surface border-b flex items-center px-4 md:px-6 gap-4">
+  <a href="theme-library__theme-selection.html" class="flex items-center gap-2 shrink-0">
+    <span class="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center font-mono text-xs font-bold">{ }</span>
+    <span class="font-semibold text-sm hidden sm:inline">ITTP 互动教程引擎</span>
+  </a>
+
+  <nav class="flex-1 min-w-0 overflow-x-auto">
+    <ul class="flex items-center gap-1 text-sm">
+      <li>
+        <a href="theme-library__theme-selection.html" class="px-3 py-1.5 rounded-lg font-medium bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300 whitespace-nowrap">主题课程库</a>
+      </li>
+      <li>
+        <a href="learning-workspace__workspace.html" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">学习工作台</a>
+      </li>
+      <li>
+        <a href="code-sandbox__sandbox-panel.html" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">代码沙箱</a>
+      </li>
+      <li>
+        <a href="learning-progress__progress-indicators.html" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">学习进度</a>
+      </li>
+      <li>
+        <a href="appearance-theme__theme-switcher-panel.html" class="px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap">外观与主题</a>
+      </li>
+    </ul>
+  </nav>
+
+  <button id="theme-toggle" type="button" title="切换亮暗主题" class="shrink-0 w-9 h-9 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+    <svg id="icon-sun" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg id="icon-moon" class="w-4 h-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+  </button>
+</header>
+
+<!-- 二级导航：模块内页面 -->
+<div class="h-10 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 flex items-center px-4 md:px-6">
+  <nav class="flex items-center gap-1 text-xs">
+    <a href="theme-library__theme-selection.html" class="px-2.5 py-1 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200">主题选择页</a>
+    <span class="text-slate-300 dark:text-slate-600">/</span>
+    <a href="theme-library__chapter-outline.html" class="px-2.5 py-1 rounded-lg font-medium bg-white dark:bg-slate-800 text-primary-700 dark:text-primary-300 border border-slate-200 dark:border-slate-700">章节大纲面板</a>
+  </nav>
+</div>
+
+<!-- 主内容 -->
+<main class="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8 pb-16">
+
+  <!-- 返回入口 + 面包屑 -->
+  <button id="btn-back" type="button" class="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 group">
+    <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    返回主题库
+  </button>
+
+  <!-- 教程包头部信息 -->
+  <div class="surface rounded-xl p-5 md:p-6 mb-5">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center shrink-0">
+            <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="2"/><path d="M12 1a11 11 0 0 1 0 22M12 1a11 11 0 0 0 0 22M1 12h22"/></svg>
+          </span>
+          <h1 id="pkg-title" class="text-lg md:text-xl font-semibold truncate">React 全部技术栈</h1>
+        </div>
+        <p id="pkg-desc" class="text-sm text-slate-500 dark:text-slate-400">从 JSX 与组件基础到 Hooks 进阶、路由与状态管理，覆盖 React 现代开发的核心知识点</p>
+      </div>
+      <div class="shrink-0 text-right">
+        <div id="pkg-percent" class="text-2xl font-semibold text-primary-600 dark:text-primary-400">24%</div>
+        <div id="pkg-count" class="text-xs text-slate-500 dark:text-slate-400">已完成 15 / 62 步</div>
+      </div>
+    </div>
+    <div class="mt-3 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+      <div id="pkg-bar" class="h-full rounded-full bg-primary-500" style="width:24%"></div>
+    </div>
+  </div>
+
+  <!-- 关键字过滤 -->
+  <div class="mb-3">
+    <div class="relative">
+      <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input
+        id="filter-input"
+        type="text"
+        placeholder="搜索步骤关键字，如 useEffect、路由、useState…"
+        class="w-full h-10 pl-9 pr-9 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+      >
+      <button id="filter-clear" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 flex items-center justify-center text-xs hover:bg-slate-300 dark:hover:bg-slate-500">
+        ✕
+      </button>
+    </div>
+    <p id="filter-caption" class="mt-1.5 text-xs text-slate-400 dark:text-slate-500">共 62 个步骤 · 8 个章节</p>
+  </div>
+
+  <!-- 章节树 -->
+  <div id="chapter-list" class="space-y-3"></div>
+
+  <!-- 无匹配空态 -->
+  <div id="empty-state" class="hidden surface rounded-xl p-10 text-center">
+    <svg class="w-10 h-10 mx-auto mb-3 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8 8l6 6M14 8l-6 6"/></svg>
+    <p class="text-sm text-slate-500 dark:text-slate-400">未找到匹配「<span id="empty-kw" class="font-medium text-slate-700 dark:text-slate-200"></span>」的步骤，换个关键字试试</p>
+  </div>
+
+</main>
+
+<!-- 跳转提示 toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 surface shadow-md rounded-lg px-4 py-2.5 text-sm flex items-center gap-2">
+  <svg class="w-4 h-4 text-primary-600 dark:text-primary-400 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+  <span id="toast-text">正在跳转到学习工作台…</span>
+</div>
+
+<script>
+(function() {
+  // ---------- 主题切换（亮/暗） ----------
+  var root = document.documentElement;
+  var sunIcon = document.getElementById('icon-sun');
+  var moonIcon = document.getElementById('icon-moon');
+  function applyTheme(mode) {
+    if (mode === 'dark') {
+      root.classList.add('dark'); root.setAttribute('data-theme', 'dark');
+      sunIcon.classList.remove('hidden'); moonIcon.classList.add('hidden');
+    } else {
+      root.classList.remove('dark'); root.setAttribute('data-theme', 'light');
+      sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden');
+    }
+  }
+  var saved = localStorage.getItem('ittp-theme');
+  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved || (prefersDark ? 'dark' : 'light'));
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    var next = root.classList.contains('dark') ? 'light' : 'dark';
+    applyTheme(next);
+    localStorage.setItem('ittp-theme', next);
+  });
+
+  // ---------- 数据：TutorialPackage（React 主题，仅供本页渲染消费） ----------
+  // 大纲渲染逻辑完全由下方配置数组驱动，不含任何针对具体主题 id 的分支（R8 架构约束）
+  var pkg = {
+    id: 'react',
+    meta: {
+      title: 'React 全部技术栈',
+      description: '从 JSX 与组件基础到 Hooks 进阶、路由与状态管理，覆盖 React 现代开发的核心知识点'
+    },
+    status: 'active',
+    chapters: [
+      { id: 'ch1', title: '快速上手', steps: [
+        { id: 'react-ch1-s1', title: '认识 React：从一个例子说起' },
+        { id: 'react-ch1-s2', title: '环境搭建与创建第一个组件' },
+        { id: 'react-ch1-s3', title: 'JSX 语法速览' },
+        { id: 'react-ch1-s4', title: '组件的 return 与渲染时机' },
+        { id: 'react-ch1-s5', title: '章节小结与自测' }
+      ]},
+      { id: 'ch2', title: 'JSX 与组件基础', steps: [
+        { id: 'react-ch2-s1', title: 'JSX 表达式与插值' },
+        { id: 'react-ch2-s2', title: '条件渲染的三种写法' },
+        { id: 'react-ch2-s3', title: '列表渲染与 key 的作用' },
+        { id: 'react-ch2-s4', title: 'Props 的传递与只读性' },
+        { id: 'react-ch2-s5', title: 'children 与组合模式' },
+        { id: 'react-ch2-s6', title: '组件拆分的粒度原则' },
+        { id: 'react-ch2-s7', title: '章节小结与自测' }
+      ]},
+      { id: 'ch3', title: 'State、事件与副作用', steps: [
+        { id: 'react-ch3-s1', title: 'useState 入门' },
+        { id: 'react-ch3-s2', title: '事件处理与合成事件' },
+        { id: 'react-ch3-s3', title: '表单受控组件' },
+        { id: 'react-ch3-s4', title: 'useEffect 与副作用清理' },
+        { id: 'react-ch3-s5', title: '依赖数组的常见坑' },
+        { id: 'react-ch3-s6', title: 'useRef 与 DOM 访问' },
+        { id: 'react-ch3-s7', title: '数据获取的基本模式' },
+        { id: 'react-ch3-s8', title: '章节小结与自测' }
+      ]},
+      { id: 'ch4', title: 'Hooks 基础', steps: [
+        { id: 'react-ch4-s1', title: '为什么需要自定义 Hook' },
+        { id: 'react-ch4-s2', title: 'useMemo 与 useCallback' },
+        { id: 'react-ch4-s3', title: 'useContext 跨层传值' },
+        { id: 'react-ch4-s4', title: 'useReducer 管理复杂状态' },
+        { id: 'react-ch4-s5', title: 'Hooks 使用规则（只在顶层调用）' },
+        { id: 'react-ch4-s6', title: '自定义 Hook：封装 useToggle' },
+        { id: 'react-ch4-s7', title: '自定义 Hook：封装 useFetch' },
+        { id: 'react-ch4-s8', title: 'Hooks 与类组件生命周期对照' },
+        { id: 'react-ch4-s9', title: '章节小结与自测' }
+      ]},
+      { id: 'ch5', title: 'Hooks 进阶与自定义 Hook', steps: [
+        { id: 'react-ch5-s1', title: 'useLayoutEffect 与时机差异' },
+        { id: 'react-ch5-s2', title: 'useImperativeHandle 与 ref 转发' },
+        { id: 'react-ch5-s3', title: 'useTransition 与并发特性' },
+        { id: 'react-ch5-s4', title: 'useDeferredValue 优化输入体验' },
+        { id: 'react-ch5-s5', title: 'useId 与服务端渲染一致性' },
+        { id: 'react-ch5-s6', title: 'useSyncExternalStore 简介' },
+        { id: 'react-ch5-s7', title: '自定义 Hook：useLocalStorage' },
+        { id: 'react-ch5-s8', title: '自定义 Hook：useDebounce' },
+        { id: 'react-ch5-s9', title: 'Hooks 组合的最佳实践' },
+        { id: 'react-ch5-s10', title: '章节小结与自测' }
+      ]},
+      { id: 'ch6', title: 'React Router 路由', steps: [
+        { id: 'react-ch6-s1', title: '路由基础：Route 与 Routes' },
+        { id: 'react-ch6-s2', title: '嵌套路由与 Outlet' },
+        { id: 'react-ch6-s3', title: '动态路由参数' },
+        { id: 'react-ch6-s4', title: '编程式导航' },
+        { id: 'react-ch6-s5', title: '路由守卫与权限控制' },
+        { id: 'react-ch6-s6', title: '懒加载与代码分割' },
+        { id: 'react-ch6-s7', title: '查询参数与状态同步' },
+        { id: 'react-ch6-s8', title: '章节小结与自测' }
+      ]},
+      { id: 'ch7', title: '状态管理与 Context', steps: [
+        { id: 'react-ch7-s1', title: 'Context 的适用场景' },
+        { id: 'react-ch7-s2', title: 'Context 性能陷阱' },
+        { id: 'react-ch7-s3', title: '引入外部状态库的时机' },
+        { id: 'react-ch7-s4', title: '状态提升与下放' },
+        { id: 'react-ch7-s5', title: '表单状态管理方案对比' },
+        { id: 'react-ch7-s6', title: '异步状态与加载态建模' },
+        { id: 'react-ch7-s7', title: '全局状态与本地状态的边界' },
+        { id: 'react-ch7-s8', title: '章节小结与自测' }
+      ]},
+      { id: 'ch8', title: '性能优化与生态工具', steps: [
+        { id: 'react-ch8-s1', title: 'React.memo 与重渲染分析' },
+        { id: 'react-ch8-s2', title: '渲染性能剖析工具' },
+        { id: 'react-ch8-s3', title: '代码分割与懒加载组件' },
+        { id: 'react-ch8-s4', title: '常见性能反模式' },
+        { id: 'react-ch8-s5', title: '测试基础：React Testing Library' },
+        { id: 'react-ch8-s6', title: '构建与部署要点' },
+        { id: 'react-ch8-s7', title: '章节小结与课程回顾' }
+      ]},
+      { id: 'ch9', title: '扩展专题（内容筹备中）', steps: [] }
+    ]
+  };
+
+  // ---------- 进度（来自 learning-progress 模块，本页只读） ----------
+  var progress = {
+    packageId: 'react',
+    currentStepId: 'react-ch3-s4',
+    completedStepIds: [
+      'react-ch1-s1','react-ch1-s2','react-ch1-s3','react-ch1-s4','react-ch1-s5',
+      'react-ch2-s1','react-ch2-s2','react-ch2-s3','react-ch2-s4','react-ch2-s5','react-ch2-s6','react-ch2-s7',
+      'react-ch3-s1','react-ch3-s2','react-ch3-s3'
+    ]
+  };
+  var completedSet = new Set(progress.completedStepIds);
+
+  function stepState(stepId) {
+    if (stepId === progress.currentStepId) return 'current';
+    if (completedSet.has(stepId)) return 'done';
+    return 'idle';
+  }
+
+  // ---------- 派生统计 ----------
+  var totalSteps = 0, totalDone = 0;
+  var currentChapterId = null;
+  pkg.chapters.forEach(function(ch) {
+    var chDone = 0;
+    ch.steps.forEach(function(s) {
+      totalSteps++;
+      var st = stepState(s.id);
+      if (st === 'done') { chDone++; totalDone++; }
+      if (st === 'current') currentChapterId = ch.id;
+    });
+    ch._doneCount = chDone;
+    ch._total = ch.steps.length;
+  });
+  var pkgPercent = totalSteps ? Math.round((totalDone / totalSteps) * 100) : 0;
+
+  document.getElementById('pkg-title').textContent = pkg.meta.title;
+  document.getElementById('pkg-desc').textContent = pkg.meta.description;
+  document.getElementById('pkg-percent').textContent = pkgPercent + '%';
+  document.getElementById('pkg-count').textContent = '已完成 ' + totalDone + ' / ' + totalSteps + ' 步';
+  document.getElementById('pkg-bar').style.width = pkgPercent + '%';
+  document.getElementById('filter-caption').textContent = '共 ' + totalSteps + ' 个步骤 · ' + pkg.chapters.length + ' 个章节';
+
+  // ---------- 图标 ----------
+  var ICON = {
+    done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"/></svg>',
+    current: '<svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><circle cx="12" cy="12" r="5"/></svg>',
+    idle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><circle cx="12" cy="12" r="7"/></svg>',
+    chevron: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 chevron"><path d="M9 6l6 6-6 6"/></svg>'
+  };
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, function(c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function highlight(title, kw) {
+    if (!kw) return escapeHtml(title);
+    var idx = title.toLowerCase().indexOf(kw.toLowerCase());
+    if (idx === -1) return escapeHtml(title);
+    return escapeHtml(title.slice(0, idx))
+      + '<mark class="hl">' + escapeHtml(title.slice(idx, idx + kw.length)) + '</mark>'
+      + escapeHtml(title.slice(idx + kw.length));
+  }
+
+  // ---------- 渲染 ----------
+  var listEl = document.getElementById('chapter-list');
+  var expanded = new Set(currentChapterId ? [currentChapterId] : []);
+
+  function render(keyword) {
+    var kw = (keyword || '').trim();
+    listEl.innerHTML = '';
+    var totalMatches = 0;
+
+    pkg.chapters.forEach(function(ch, chIdx) {
+      var stepMatches = ch.steps.filter(function(s) {
+        return !kw || s.title.toLowerCase().indexOf(kw.toLowerCase()) !== -1;
+      });
+      var chHasMatch = !kw || stepMatches.length > 0;
+      if (kw) totalMatches += stepMatches.length;
+      if (kw && !chHasMatch) return; // 过滤时无命中章节整体收窄隐藏
+
+      var isExpanded = kw ? true : expanded.has(ch.id);
+      var chPercent = ch._total ? Math.round((ch._doneCount / ch._total) * 100) : 0;
+
+      var card = document.createElement('div');
+      card.className = 'surface rounded-xl overflow-hidden chapter-card';
+      card.dataset.chapterId = ch.id;
+      card.setAttribute('data-expanded', isExpanded ? 'true' : 'false');
+
+      var statBadge = ch._total
+        ? '<span class="text-xs px-2 py-0.5 rounded-lg ' + (chPercent === 100 ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-300') + '">已完成 ' + ch._doneCount + '/' + ch._total + '</span>'
+        : '<span class="text-xs px-2 py-0.5 rounded-lg bg-slate-100 text-slate-400 dark:bg-slate-700/60 dark:text-slate-500">暂无内容</span>';
+
+      var header = document.createElement('button');
+      header.type = 'button';
+      header.className = 'w-full flex items-center gap-3 px-4 md:px-5 py-3.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60';
+      header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+      header.innerHTML =
+        '<span class="text-slate-400">' + ICON.chevron + '</span>' +
+        '<span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center shrink-0">' + (chIdx + 1) + '</span>' +
+        '<span class="flex-1 min-w-0 text-sm font-medium truncate">' + highlight(ch.title, kw) + '</span>' +
+        statBadge;
+      header.addEventListener('click', function() {
+        var nowExpanded = card.getAttribute('data-expanded') === 'true';
+        card.setAttribute('data-expanded', nowExpanded ? 'false' : 'true');
+        header.setAttribute('aria-expanded', nowExpanded ? 'false' : 'true');
+        if (!kw) {
+          if (nowExpanded) expanded.delete(ch.id); else expanded.add(ch.id);
+        }
+      });
+
+      var body = document.createElement('div');
+      body.className = 'chapter-body border-t border-slate-100 dark:border-slate-700/60';
+
+      if (ch.steps.length === 0) {
+        body.innerHTML = '<p class="px-5 py-4 text-sm text-slate-400 dark:text-slate-500">暂无内容，敬请期待</p>';
+      } else {
+        var stepsWrap = document.createElement('div');
+        stepsWrap.className = 'divide-y divide-slate-100 dark:divide-slate-700/60';
+        (kw ? stepMatches : ch.steps).forEach(function(s) {
+          var state = stepState(s.id);
+          var row = document.createElement('a');
+          row.href = 'learning-workspace__workspace.html?package=' + pkg.id + '&step=' + encodeURIComponent(s.id);
+          row.className = 'step-row flex items-center gap-3 px-5 py-2.5 text-sm cursor-pointer';
+          row.dataset.state = state;
+          row.dataset.stepId = s.id;
+          row.innerHTML =
+            '<span class="step-icon shrink-0">' + ICON[state] + '</span>' +
+            '<span class="step-title flex-1 min-w-0 truncate">' + highlight(s.title, kw) + '</span>' +
+            (state === 'current' ? '<span class="text-xs px-2 py-0.5 rounded-lg bg-primary-600 text-white shrink-0">当前</span>' : '');
+          row.addEventListener('click', function(e) {
+            e.preventDefault();
+            goToStep(s.id, s.title, row.href);
+          });
+          stepsWrap.appendChild(row);
+        });
+        body.appendChild(stepsWrap);
+      }
+
+      card.appendChild(header);
+      card.appendChild(body);
+      listEl.appendChild(card);
+    });
+
+    var emptyState = document.getElementById('empty-state');
+    if (kw && totalMatches === 0) {
+      emptyState.classList.remove('hidden');
+      document.getElementById('empty-kw').textContent = kw;
+      listEl.classList.add('hidden');
+    } else {
+      emptyState.classList.add('hidden');
+      listEl.classList.remove('hidden');
+    }
+
+    var caption = kw
+      ? '共 ' + totalSteps + ' 个步骤 · 命中 ' + totalMatches + ' 个'
+      : '共 ' + totalSteps + ' 个步骤 · ' + pkg.chapters.length + ' 个章节';
+    document.getElementById('filter-caption').textContent = caption;
+  }
+
+  // ---------- 跳转（F8：任意步骤直接跳转，无解锁判断） ----------
+  var toast = document.getElementById('toast');
+  var toastText = document.getElementById('toast-text');
+  function goToStep(stepId, title, href) {
+    toastText.textContent = '正在跳转到学习工作台 · ' + title;
+    toast.classList.remove('hidden');
+    setTimeout(function() { window.location.href = href; }, 320);
+  }
+
+  // ---------- 返回主题库 ----------
+  document.getElementById('btn-back').addEventListener('click', function() {
+    window.location.href = 'theme-library__theme-selection.html';
+  });
+
+  // ---------- 关键字过滤输入 ----------
+  var filterInput = document.getElementById('filter-input');
+  var filterClear = document.getElementById('filter-clear');
+  filterInput.addEventListener('input', function() {
+    var v = filterInput.value;
+    filterClear.classList.toggle('hidden', v.length === 0);
+    render(v);
+  });
+  filterClear.addEventListener('click', function() {
+    filterInput.value = '';
+    filterClear.classList.add('hidden');
+    filterInput.focus();
+    render('');
+  });
+
+  // ---------- 初次渲染 + 打开面板自动展开当前章节并滚动定位（F10） ----------
+  render('');
+  requestAnimationFrame(function() {
+    var currentRow = listEl.querySelector('.step-row[data-state="current"]');
+    if (currentRow) {
+      currentRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      currentRow.classList.add('pulse-once');
+      setTimeout(function() { currentRow.classList.remove('pulse-once'); }, 1500);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

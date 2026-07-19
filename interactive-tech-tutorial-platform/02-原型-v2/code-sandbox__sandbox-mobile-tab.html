@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>移动端沙箱 Tab 视图 · 代码沙箱 · 互动式技术教程平台</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+
+<!-- ===== 页面补充样式(不改动上方共享片段核心配置) ===== -->
+<style>
+  .font-mono-ui { font-family: 'JetBrains Mono', Menlo, monospace; }
+
+  /* 顶层模块导航下划线 */
+  .module-tab { position: relative; padding-bottom: 4px; }
+  .module-tab.active { color: var(--color-primary); font-weight: 600; }
+  .module-tab.active::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -13px; height: 2px;
+    background: var(--color-primary); border-radius: 2px;
+  }
+
+  /* 二级子导航(代码沙箱模块内 3 个页面) */
+  .subnav-pill { border-radius: 8px; }
+  .subnav-pill.active { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 500; }
+  .subnav-pill:not(.active) { color: var(--color-text-muted); }
+  .subnav-pill:not(.active):hover { background: color-mix(in srgb, var(--color-text-muted) 8%, transparent); }
+
+  /* 站点地图下拉 */
+  .site-dropdown { transform-origin: top right; }
+
+  /* 手机外壳 */
+  .phone-shell {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 28px;
+    box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.18);
+    overflow: hidden;
+  }
+  .phone-notch { width: 84px; height: 18px; background: var(--color-bg); border-radius: 0 0 12px 12px; }
+
+  /* 设备宽度模拟器芯片 */
+  .device-chip[data-active="true"] {
+    background: var(--color-primary); color: #fff; border-color: transparent;
+  }
+
+  /* 顶层 讲解/代码 Tab 切换条(手机内) */
+  .toptab-bar { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 3px; }
+  .toptab-btn { border-radius: 8px; color: var(--color-text-muted); }
+  .toptab-btn.active { background: var(--color-surface); color: var(--color-text); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.06); font-weight: 600; }
+
+  /* 步骤指示器(横向点) */
+  .step-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border); flex-shrink: 0; }
+  .step-dot.done { background: var(--color-accent); border-color: transparent; }
+  .step-dot.current { width: 9px; height: 9px; background: var(--color-primary); border-color: transparent; }
+  .step-line { height: 1px; flex: 1 1 auto; background: var(--color-border); min-width: 8px; }
+  .step-line.done { background: var(--color-accent); }
+
+  /* ---------- IDE 沙箱面板(独立深色,不随平台主题切换,呼应 One Dark 约定) ---------- */
+  .ide-panel { background: #1E1E2E; border: 1px solid #33334A; border-radius: 12px; overflow: hidden; }
+  .file-tab-bar { scrollbar-width: none; }
+  .file-tab-bar::-webkit-scrollbar { display: none; }
+  .file-tab {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; white-space: nowrap;
+    color: #8B90A8; border-bottom: 2px solid transparent; flex-shrink: 0;
+  }
+  .file-tab.active { color: #ECEDF5; border-bottom-color: var(--color-accent); background: rgba(255,255,255,.04); }
+  .file-tab .dot-modified { width: 5px; height: 5px; border-radius: 999px; background: #F0A63B; }
+
+  .code-editor-wrap { position: relative; background: #1E1E2E; }
+  .code-editor-wrap pre, .code-editor-wrap textarea {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7;
+    padding: 12px; white-space: pre; tab-size: 2;
+  }
+  #codeHighlight { color: #C8CBE0; pointer-events: none; margin: 0; overflow: auto; }
+  #codeEditor {
+    color: transparent; caret-color: #fff; background: transparent; resize: none;
+    outline: none; border: none; overflow: auto;
+  }
+  #codeEditor[readonly] { cursor: default; }
+  .tok-comment { color: #6B7089; font-style: italic; }
+  .tok-string { color: #5DD8E0; }
+  .tok-number { color: #F0A63B; }
+  .tok-keyword { color: #8FA3F0; font-weight: 600; }
+  .tok-tag { color: #6478E8; }
+
+  .live-dot { width: 6px; height: 6px; border-radius: 999px; }
+  .live-dot.idle { background: #565B72; }
+  .live-dot.running { background: #F0A63B; animation: pulseDot 1s ease-in-out infinite; }
+  .live-dot.live { background: #34D399; box-shadow: 0 0 6px 1px rgba(52,211,153,.6); }
+  @keyframes pulseDot { 0%,100% { opacity: 1;} 50% { opacity: .35;} }
+
+  .preview-frame { background: #171725; border-top: 1px solid #33334A; }
+  .preview-counter h1 { font-size: 12.5px; font-weight: 700; color: #ECEDF5; margin-bottom: 8px; }
+  .preview-counter p { font-size: 11.5px; color: #B7BAD1; margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+  .preview-counter button {
+    font-size: 11.5px; padding: 4px 11px; border-radius: 8px; border: none;
+    background: var(--color-accent); color: #06222A; font-weight: 600; cursor: pointer;
+  }
+  .preview-counter button:hover { filter: brightness(1.08); }
+  .preview-counter button:active { transform: scale(.95); }
+
+  /* WaitFor 提示条 */
+  .waitfor-bar { border-radius: 10px; border: 1px solid; padding: 10px 12px; font-size: 12px; display: flex; align-items: flex-start; gap: 8px; }
+  .waitfor-bar.pending { background: color-mix(in srgb, #F0A63B 10%, transparent); border-color: color-mix(in srgb, #F0A63B 40%, transparent); color: #B5720C; }
+  :root[data-theme="dark"] .waitfor-bar.pending, html.dark .waitfor-bar.pending { color: #F0B85E; }
+  .waitfor-bar.success { background: color-mix(in srgb, var(--color-accent) 10%, transparent); border-color: color-mix(in srgb, var(--color-accent) 40%, transparent); color: var(--color-accent); }
+
+  /* 答案态横幅 */
+  .answer-banner { background: color-mix(in srgb, var(--color-primary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent); color: var(--color-primary); }
+
+  .toast { position: absolute; left: 50%; transform: translate(-50%, 8px); bottom: 8px; opacity: 0; pointer-events: none; transition: all 260ms cubic-bezier(.4,0,.2,1); z-index: 30; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== 顶部导航(56px) ===================== -->
+<header class="sticky top-0 z-40 h-14 surface border-b" style="border-bottom:1px solid var(--color-border);">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-7 min-w-0">
+      <a href="theme-library__theme-selection.html" class="flex items-center gap-2 shrink-0">
+        <span class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--color-primary);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 12L10 18L20 6" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="font-semibold text-[14px] tracking-tight hidden sm:inline">互动式技术教程平台</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-[13px]" style="color:var(--color-text-muted);">
+        <a href="theme-library__theme-selection.html" class="module-tab hover:opacity-80">主题课程库</a>
+        <a href="learning-workspace__workspace.html" class="module-tab hover:opacity-80">学习工作台</a>
+        <a href="code-sandbox__sandbox-panel.html" class="module-tab active">代码沙箱</a>
+        <a href="learning-progress__progress-indicators.html" class="module-tab hover:opacity-80">学习进度</a>
+        <a href="appearance-theme__theme-switcher-panel.html" class="module-tab hover:opacity-80">外观与主题</a>
+      </nav>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        <button id="siteMapBtn" class="h-9 px-3 rounded-lg border text-xs flex items-center gap-1.5" style="border-color:var(--color-border); color:var(--color-text-muted);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+          <span class="hidden sm:inline">全部页面</span>
+        </button>
+        <div id="siteMapMenu" class="site-dropdown hidden absolute right-0 mt-2 w-[540px] max-w-[calc(100vw-2rem)] surface rounded-xl p-4 shadow-md z-50 text-sm">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--color-text-muted);">主题课程库</p>
+              <a href="theme-library__theme-selection.html" class="block py-1.5 hover:opacity-80">主题选择页</a>
+              <a href="theme-library__chapter-outline.html" class="block py-1.5 hover:opacity-80">章节大纲面板</a>
+              <p class="text-xs uppercase tracking-wide mt-3 mb-2" style="color:var(--color-text-muted);">学习工作台</p>
+              <a href="learning-workspace__workspace.html" class="block py-1.5 hover:opacity-80">学习工作台（核心页）</a>
+              <p class="text-xs uppercase tracking-wide mt-3 mb-2" style="color:var(--color-text-muted);">学习进度</p>
+              <a href="learning-progress__progress-indicators.html" class="block py-1.5 hover:opacity-80">进度指示器（嵌入式规范）</a>
+              <a href="learning-progress__continue-learning.html" class="block py-1.5 hover:opacity-80">继续学习提示与入口</a>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-wide mb-2" style="color:var(--color-text-muted);">代码沙箱</p>
+              <a href="code-sandbox__sandbox-panel.html" class="block py-1.5 hover:opacity-80">沙箱主面板（桌面右栏）</a>
+              <a href="code-sandbox__sandbox-mobile-tab.html" class="block py-1.5 font-medium" style="color:var(--color-primary);">移动端沙箱 Tab 视图（当前）</a>
+              <a href="code-sandbox__sandbox-error-state.html" class="block py-1.5 hover:opacity-80">沙箱异常态视图</a>
+              <p class="text-xs uppercase tracking-wide mt-3 mb-2" style="color:var(--color-text-muted);">外观与主题</p>
+              <a href="appearance-theme__theme-switcher-panel.html" class="block py-1.5 hover:opacity-80">外观设置面板</a>
+              <a href="appearance-theme__responsive-showcase.html" class="block py-1.5 hover:opacity-80">响应式与移动端切换示例页</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="themeToggle" aria-label="切换明暗模式" class="h-9 w-9 rounded-lg border flex items-center justify-center" style="border-color:var(--color-border);">
+        <svg id="iconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <svg id="iconSun" class="hidden" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== 二级子导航(代码沙箱模块内 3 个页面) ===================== -->
+<div class="border-b" style="border-color:var(--color-border); background:var(--color-bg);">
+  <div class="max-w-[1280px] mx-auto px-4 md:px-6 py-2.5 flex items-center gap-1 overflow-x-auto">
+    <a href="code-sandbox__sandbox-panel.html" class="subnav-pill h-8 px-3 flex items-center text-[13px] whitespace-nowrap">沙箱主面板</a>
+    <a href="code-sandbox__sandbox-mobile-tab.html" class="subnav-pill active h-8 px-3 flex items-center text-[13px] whitespace-nowrap">移动端沙箱 Tab 视图</a>
+    <a href="code-sandbox__sandbox-error-state.html" class="subnav-pill h-8 px-3 flex items-center text-[13px] whitespace-nowrap">沙箱异常态视图</a>
+  </div>
+</div>
+
+<!-- ===================== 主体内容 ===================== -->
+<main class="max-w-[1280px] mx-auto px-4 md:px-6 py-8">
+
+  <section class="mb-6">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <p class="text-xs uppercase tracking-wide mb-1.5" style="color:var(--color-text-muted);">代码沙箱 · 移动端布局降级</p>
+        <h1 class="text-2xl font-bold tracking-tight">移动端沙箱 Tab 视图</h1>
+        <p class="mt-2 text-sm max-w-xl leading-relaxed" style="color:var(--color-text-muted);">≤768px 屏幕下，「讲解」与「代码」是同一学习页的两个顶层 Tab，避免左右并排把编辑区挤到不可读。沙箱内文件 Tab 栏单独横向滚动（overflow-x: auto），不引发整页横向滚动。</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs" style="color:var(--color-text-muted);">
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:var(--color-accent);"></span>与桌面端沙箱行为一致</div>
+        <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:var(--color-primary);"></span>两层独立 Tab，不嵌套</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 items-start">
+
+    <!-- ============ 左：手机外壳演示区 ============ -->
+    <section>
+      <!-- 设备宽度模拟器 -->
+      <div class="surface rounded-xl p-3.5 mb-5 flex flex-wrap items-center gap-2.5 shadow-sm">
+        <span class="text-xs flex items-center gap-1.5 mr-1" style="color:var(--color-text-muted);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M11 19h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          模拟设备宽度
+        </span>
+        <button data-width="375" data-active="true" class="device-chip h-8 px-3 rounded-lg border text-xs font-medium" style="border-color:var(--color-border); color:var(--color-text-muted);">375px</button>
+        <button data-width="414" data-active="false" class="device-chip h-8 px-3 rounded-lg border text-xs font-medium" style="border-color:var(--color-border); color:var(--color-text-muted);">414px</button>
+        <button data-width="768" data-active="false" class="device-chip h-8 px-3 rounded-lg border text-xs font-medium" style="border-color:var(--color-border); color:var(--color-text-muted);">768px</button>
+        <span id="deviceLabel" class="ml-auto text-[11px] font-mono-ui" style="color:var(--color-text-muted);">375px 宽 · 断点 ≤768px 生效</span>
+      </div>
+
+      <!-- 手机外壳 -->
+      <div class="flex justify-center">
+        <div id="phoneFrame" class="phone-shell w-full" style="max-width:375px;">
+          <div class="flex justify-center pt-2 pb-1">
+            <div class="phone-notch"></div>
+          </div>
+
+          <!-- 面包屑 -->
+          <div class="px-4 pt-1 pb-2 flex items-center gap-1.5 text-[11px] font-mono-ui overflow-hidden whitespace-nowrap" style="color:var(--color-text-muted);">
+            <span>React 核心概念与 Hooks</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="shrink-0"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>第 2 章 · State 与生命周期</span>
+          </div>
+
+          <!-- 顶层 讲解/代码 Tab 切换条 -->
+          <div class="px-4 pb-3">
+            <div class="toptab-bar flex items-center gap-1">
+              <button id="tabExplainBtn" class="toptab-btn active flex-1 h-9 text-sm flex items-center justify-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                讲解
+              </button>
+              <button id="tabCodeBtn" class="toptab-btn flex-1 h-9 text-sm flex items-center justify-center gap-1.5 relative">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M8 6L2 12l6 6M16 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                代码
+                <span id="codeTabBadge" class="w-1.5 h-1.5 rounded-full" style="background:#F0A63B;"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ============ 讲解 Tab 内容 ============ -->
+          <div id="explanationPane" class="px-4 pb-4">
+            <div class="flex items-center gap-1 mb-4" id="stepDots"></div>
+
+            <h2 class="text-[15px] font-semibold mb-2">用 useState 让组件拥有“记忆”</h2>
+            <div class="text-[13px] leading-relaxed space-y-2.5" style="color:var(--color-text-muted);">
+              <p>普通 JS 变量在函数组件重新渲染时会被“重置”，<code class="font-mono-ui text-[12px] px-1 py-0.5 rounded" style="color:var(--color-accent); background:var(--color-bg);">useState</code> 让 React 帮你在多次渲染之间“记住”这个值。</p>
+              <p>它返回一个数组：<code class="font-mono-ui text-[12px] px-1 py-0.5 rounded" style="color:var(--color-accent); background:var(--color-bg);">[值, 更新函数]</code>，调用更新函数会触发组件重新渲染。</p>
+            </div>
+
+            <div class="mt-3.5 rounded-lg p-3 overflow-x-auto" style="background:#1E1E2E;">
+              <pre class="text-[12px] leading-relaxed font-mono-ui"><code><span class="tok-keyword">const</span> [count, setCount] = <span class="tok-keyword">useState</span>(<span class="tok-number">0</span>);</code></pre>
+            </div>
+
+            <div class="mt-4 rounded-lg p-3 flex items-start gap-2.5" style="border:1px solid color-mix(in srgb, var(--color-primary) 25%, transparent); background:color-mix(in srgb, var(--color-primary) 6%, transparent);">
+              <svg width="15" height="15" class="mt-0.5 shrink-0" style="color:var(--color-primary);" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="currentColor"/></svg>
+              <p class="text-[12px] leading-relaxed" style="color:var(--color-primary);">切到「代码」Tab，把 <code class="font-mono-ui px-1 py-0.5 rounded" style="background:color-mix(in srgb, var(--color-primary) 12%, transparent);">Counter.js</code> 里 <code class="font-mono-ui px-1 py-0.5 rounded" style="background:color-mix(in srgb, var(--color-primary) 12%, transparent);">useState(0)</code> 的初始值改成 <code class="font-mono-ui px-1 py-0.5 rounded" style="background:color-mix(in srgb, var(--color-primary) 12%, transparent);">10</code>，验证你理解了它的作用。若卡住了，也可以点击「给我看答案」。</p>
+            </div>
+
+            <div class="mt-5 flex items-center gap-2.5">
+              <button id="prevStepBtn" class="h-10 px-4 rounded-lg border text-sm font-medium flex items-center gap-1.5" style="border-color:var(--color-border); color:var(--color-text-muted);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                上一步
+              </button>
+              <button id="nextStepBtn" disabled class="flex-1 h-10 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed border" style="border-color:var(--color-border); color:var(--color-text-muted);">
+                下一步
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+
+            <div id="waitForBar" class="waitfor-bar pending mt-4">
+              <svg width="15" height="15" class="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span id="waitForText">等待你在「代码」Tab 里把 <b class="font-mono-ui">count</b> 初始值改成 <b class="font-mono-ui">10</b>…</span>
+            </div>
+          </div>
+
+          <!-- ============ 代码 Tab 内容(沙箱精简版) ============ -->
+          <div id="sandboxPane" class="hidden px-3 pb-3">
+            <div class="ide-panel">
+              <!-- 状态条 -->
+              <div class="h-9 px-3 flex items-center justify-between border-b" style="border-color:#33334A;">
+                <div class="flex items-center gap-1.5 text-[11px] font-mono-ui" style="color:#8B90A8;">
+                  <span id="liveDot" class="live-dot idle"></span>
+                  <span id="liveText">未运行</span>
+                </div>
+                <button id="resetBtn" title="重置为本步骤默认代码" class="w-7 h-7 rounded-md flex items-center justify-center" style="color:#8B90A8;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6M5 15a8 8 0 0013.9 3.5M19 9A8 8 0 005.1 5.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+
+              <!-- 文件 Tab 栏(横向滚动) -->
+              <div id="fileTabBar" class="file-tab-bar flex items-stretch overflow-x-auto border-b" style="border-color:#33334A;"></div>
+
+              <!-- 答案态提示条 -->
+              <div id="answerBanner" class="hidden mx-3 mt-2 rounded-lg px-2.5 py-2 text-[11px] flex items-center gap-1.5" style="background:rgba(100,120,232,.14); color:#B9C7F7;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                正在查看参考答案（只读），点击「切回我的代码」恢复你的编辑
+              </div>
+
+              <!-- 编辑区 -->
+              <div class="code-editor-wrap" style="height:180px;">
+                <pre id="codeHighlight" class="absolute inset-0"><code></code></pre>
+                <textarea id="codeEditor" class="absolute inset-0 w-full h-full" spellcheck="false"></textarea>
+              </div>
+
+              <!-- 预览区 -->
+              <div>
+                <div class="px-3 py-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-mono-ui border-b" style="color:#8B90A8; border-color:#33334A;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/></svg>
+                  实时预览
+                </div>
+                <div id="previewRoot" class="preview-frame flex items-center justify-center text-center px-4" style="height:120px;">
+                  <p class="text-[11px]" style="color:#6B7089;">点击下方「运行」查看渲染结果</p>
+                </div>
+              </div>
+
+              <!-- 操作条 -->
+              <div class="flex items-center gap-2 p-3 border-t" style="border-color:#33334A;">
+                <button id="answerBtn" class="h-11 px-3.5 rounded-lg text-xs font-medium flex items-center gap-1.5" style="border:1px solid #33334A; color:#B9C7F7;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9.09 9a3 3 0 015.83 1c0 2-3 2-3 4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span id="answerBtnLabel">给我看答案</span>
+                </button>
+                <button id="runBtn" class="flex-1 h-11 rounded-lg text-white text-sm font-semibold flex items-center justify-center gap-2" style="background:var(--color-primary);">
+                  <svg id="runIcon" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 4l14 8-14 8V4z" fill="white"/></svg>
+                  <svg id="runSpinner" class="hidden animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="2.4" stroke-opacity=".25"/><path d="M21 12a9 9 0 00-9-9" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg>
+                  <span id="runLabel">运行 Run</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="relative">
+              <div id="toast" class="toast surface rounded-xl px-3 py-2 text-[11px] flex items-center gap-1.5 shadow-md" style="color:var(--color-accent);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="toastText">已满足条件，300ms 后自动推进下一步（原型演示）</span>
+              </div>
+            </div>
+          </div>
+          <div class="h-3"></div>
+        </div>
+      </div>
+      <p class="text-center text-[11px] mt-3" style="color:var(--color-text-muted);">真实机型下该布局会占满整个屏幕宽度；此处用手机外壳模拟以便在桌面浏览器走查</p>
+    </section>
+
+    <!-- ============ 右：说明 + 运行时状态 ============ -->
+    <aside class="space-y-5">
+      <div class="surface rounded-xl p-5 shadow-sm">
+        <h3 class="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="color:var(--color-primary);"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.7"/></svg>
+          运行时状态字段
+        </h3>
+        <dl class="space-y-2.5 text-[12px] font-mono-ui">
+          <div class="flex items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--color-border);">
+            <dt style="color:var(--color-text-muted);">currentFiles</dt>
+            <dd id="statusFiles" class="text-right truncate max-w-[170px]" style="color:var(--color-accent);"></dd>
+          </div>
+          <div class="flex items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--color-border);">
+            <dt style="color:var(--color-text-muted);">activeFile</dt>
+            <dd id="statusActive" style="color:var(--color-primary);"></dd>
+          </div>
+          <div class="flex items-center justify-between gap-2 pb-2 border-b" style="border-color:var(--color-border);">
+            <dt style="color:var(--color-text-muted);">isShowingAnswer</dt>
+            <dd id="statusAnswer" style="color:#B5720C;"></dd>
+          </div>
+          <div class="flex items-center justify-between gap-2">
+            <dt style="color:var(--color-text-muted);">theme</dt>
+            <dd id="statusTheme" style="color:var(--color-text);"></dd>
+          </div>
+        </dl>
+        <p class="mt-3 text-[11px] leading-relaxed" style="color:var(--color-text-muted);">IDE 面板固定深色，不随平台明暗模式改变；theme 字段仍随平台主题切换实时上报，供未来版本联动使用。</p>
+      </div>
+
+      <div class="surface rounded-xl p-5 shadow-sm">
+        <h3 class="text-sm font-semibold mb-3 flex items-center gap-1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="color:var(--color-accent);"><path d="M9 11l3 3L22 4M2 12l6.3 7L14 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          行为一致性说明
+        </h3>
+        <ul class="space-y-2.5 text-[12px] leading-relaxed" style="color:var(--color-text-muted);">
+          <li class="flex items-start gap-2"><span class="w-1 h-1 rounded-full mt-1.5 shrink-0" style="background:var(--color-primary);"></span>Run / 重置 / 看答案逻辑与桌面 <code class="font-mono-ui text-[11px]">sandbox-panel</code> 完全复用，只是容器宽度自适应为全宽。</li>
+          <li class="flex items-start gap-2"><span class="w-1 h-1 rounded-full mt-1.5 shrink-0" style="background:var(--color-primary);"></span>文件 Tab 栏单独 <code class="font-mono-ui text-[11px]">overflow-x: auto</code>，多文件时横向滑动查看，不引发整页横向滚动。</li>
+          <li class="flex items-start gap-2"><span class="w-1 h-1 rounded-full mt-1.5 shrink-0" style="background:var(--color-primary);"></span>顶层 Tab（讲解/代码）与沙箱内文件 Tab 是两层独立结构，不做嵌套折叠。</li>
+          <li class="flex items-start gap-2"><span class="w-1 h-1 rounded-full mt-1.5 shrink-0" style="background:var(--color-primary);"></span>点击「给我看答案」只读展示 solution；点击「切回我的代码」精确恢复你之前的编辑，不丢内容。</li>
+        </ul>
+      </div>
+
+      <div class="surface rounded-xl p-5 shadow-sm">
+        <h3 class="text-sm font-semibold mb-3">试试看</h3>
+        <ol class="space-y-2 text-[12px] leading-relaxed list-decimal list-inside" style="color:var(--color-text-muted);">
+          <li>点击「代码」Tab，进入 <span class="font-mono-ui" style="color:var(--color-primary);">Counter.js</span></li>
+          <li>把 <span class="font-mono-ui" style="color:var(--color-accent);">useState(0)</span> 改成 <span class="font-mono-ui" style="color:var(--color-accent);">useState(10)</span>，或直接点「给我看答案」</li>
+          <li>点击「运行」查看预览区实时渲染</li>
+          <li>切回「讲解」Tab，观察底部提示条变绿</li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="max-w-[1280px] mx-auto px-4 md:px-6 pb-10 pt-4">
+  <p class="text-xs text-center" style="color:var(--color-text-muted);">互动式技术教程平台 · 内容与引擎分离，新增一个 JSON 即可跑通新主题</p>
+</footer>
+
+<script>
+  // ---------- 主题切换 ----------
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const iconMoon = document.getElementById('iconMoon');
+  const iconSun = document.getElementById('iconSun');
+  function applyTheme(t) {
+    root.setAttribute('data-theme', t);
+    if (t === 'light') { root.classList.remove('dark'); iconMoon.classList.add('hidden'); iconSun.classList.remove('hidden'); }
+    else { root.classList.add('dark'); iconMoon.classList.remove('hidden'); iconSun.classList.add('hidden'); }
+    updateStatusPanel();
+  }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark ? 'dark' : 'light');
+  themeToggle.addEventListener('click', () => {
+    applyTheme(root.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+  });
+
+  // ---------- 站点地图下拉 ----------
+  const siteMapBtn = document.getElementById('siteMapBtn');
+  const siteMapMenu = document.getElementById('siteMapMenu');
+  siteMapBtn.addEventListener('click', (e) => { e.stopPropagation(); siteMapMenu.classList.toggle('hidden'); });
+  document.addEventListener('click', () => { siteMapMenu.classList.add('hidden'); });
+
+  // ---------- 设备宽度模拟器 ----------
+  const phoneFrame = document.getElementById('phoneFrame');
+  const deviceLabel = document.getElementById('deviceLabel');
+  document.querySelectorAll('.device-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const w = chip.dataset.width;
+      phoneFrame.style.maxWidth = w + 'px';
+      deviceLabel.textContent = w + 'px 宽 · 断点 ≤768px 生效';
+      document.querySelectorAll('.device-chip').forEach(c => { c.dataset.active = (c === chip) ? 'true' : 'false'; });
+    });
+  });
+
+  // ================= 数据: currentFiles / activeFile / isShowingAnswer / theme =================
+  const myFiles = {
+    'App.js':
+`import { useState } from 'react';
+import Counter from './Counter';
+import './styles.css';
+
+export default function App() {
+  return (
+    <div className="app">
+      <h1>useState 计数器</h1>
+      <Counter />
+    </div>
+  );
+}`,
+    'Counter.js':
+`import { useState } from 'react';
+
+export default function Counter() {
+  // 试着把 0 改成 10，看看讲解区的提示条会怎样变化
+  const [count, setCount] = useState(0);
+
+  return (
+    <div className="counter">
+      <p>当前值：{count}</p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+      <button onClick={() => setCount(count - 1)}>-1</button>
+    </div>
+  );
+}`,
+    'styles.css':
+`.app {
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  padding: 24px;
+}
+
+.counter button {
+  margin: 0 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #3B5BDB;
+  color: #fff;
+}`,
+    'index.js':
+`import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+
+createRoot(document.getElementById('root')).render(<App />);`,
+    'utils.js':
+`// 本步骤未使用，仅用于演示文件 Tab 横向滚动
+export function clamp(n, min, max) {
+  return Math.min(Math.max(n, min), max);
+}`
+  };
+
+  const solutionFiles = JSON.parse(JSON.stringify(myFiles));
+  solutionFiles['Counter.js'] = myFiles['Counter.js'].replace('useState(0)', 'useState(10)');
+
+  let currentFiles = JSON.parse(JSON.stringify(myFiles));
+  let savedMyFiles = null; // 展示答案前暂存学习者代码
+  const state = { activeFile: 'Counter.js', isRunning: false, isShowingAnswer: false, waitForDone: false };
+
+  // ---------- 语法高亮(轻量,原型级) ----------
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function highlight(code) {
+    let html = escapeHtml(code);
+    html = html.replace(/(\/\/[^\n]*)/g, '<span class="tok-comment">$1</span>');
+    html = html.replace(/('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g, '<span class="tok-string">$1</span>');
+    html = html.replace(/\b(-?\d+\.?\d*)\b/g, '<span class="tok-number">$1</span>');
+    const kw = ['import','from','export','default','function','return','const','let','var','if','else','new','class','extends','useState','useEffect','useCallback','useMemo'];
+    html = html.replace(new RegExp('\\b(' + kw.join('|') + ')\\b', 'g'), '<span class="tok-keyword">$1</span>');
+    html = html.replace(/(&lt;\/?)([A-Za-z][\w.]*)/g, '$1<span class="tok-tag">$2</span>');
+    return html;
+  }
+
+  // ---------- 文件 Tab 栏渲染 ----------
+  const fileTabBar = document.getElementById('fileTabBar');
+  const codeEditor = document.getElementById('codeEditor');
+  const codeHighlightCode = document.querySelector('#codeHighlight code');
+  const codeHighlight = document.getElementById('codeHighlight');
+
+  const fileDotColor = {
+    'App.js': '#8FA3F0', 'Counter.js': '#8FA3F0', 'index.js': '#8FA3F0',
+    'styles.css': '#5DD8E0', 'utils.js': '#F0A63B'
+  };
+
+  function renderFileTabs() {
+    fileTabBar.innerHTML = Object.keys(currentFiles).map(name => `
+      <button data-file="${name}" class="file-tab h-9 px-3.5 flex items-center gap-1.5 ${name === state.activeFile ? 'active' : ''}">
+        <span class="w-1.5 h-1.5 rounded-sm" style="background:${fileDotColor[name] || '#6B7089'}"></span>
+        ${name}
+      </button>
+    `).join('');
+    fileTabBar.querySelectorAll('.file-tab').forEach(btn => {
+      btn.addEventListener('click', () => setActiveFile(btn.dataset.file));
+    });
+  }
+
+  function loadEditor() {
+    codeEditor.value = currentFiles[state.activeFile];
+    codeHighlightCode.innerHTML = highlight(currentFiles[state.activeFile]);
+    codeEditor.readOnly = state.isShowingAnswer;
+  }
+
+  function setActiveFile(name) {
+    state.activeFile = name;
+    renderFileTabs();
+    loadEditor();
+    updateStatusPanel();
+  }
+
+  codeEditor.addEventListener('input', () => {
+    if (state.isShowingAnswer) return;
+    currentFiles[state.activeFile] = codeEditor.value;
+    codeHighlightCode.innerHTML = highlight(codeEditor.value);
+    checkWaitFor();
+    updateStatusPanel();
+  });
+  codeEditor.addEventListener('scroll', () => {
+    codeHighlight.scrollTop = codeEditor.scrollTop;
+    codeHighlight.scrollLeft = codeEditor.scrollLeft;
+  });
+
+  // ---------- Run ----------
+  const runBtn = document.getElementById('runBtn');
+  const runIcon = document.getElementById('runIcon');
+  const runSpinner = document.getElementById('runSpinner');
+  const runLabel = document.getElementById('runLabel');
+  const liveDot = document.getElementById('liveDot');
+  const liveText = document.getElementById('liveText');
+  const previewRoot = document.getElementById('previewRoot');
+
+  function renderRunUI() {
+    if (state.isRunning) {
+      runBtn.disabled = true;
+      runBtn.classList.add('opacity-70', 'cursor-not-allowed');
+      runIcon.classList.add('hidden');
+      runSpinner.classList.remove('hidden');
+      runLabel.textContent = '编译中…';
+      liveDot.className = 'live-dot running';
+      liveText.textContent = '打包运行中';
+    } else {
+      runBtn.disabled = false;
+      runBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      runIcon.classList.remove('hidden');
+      runSpinner.classList.add('hidden');
+      runLabel.textContent = '运行 Run';
+    }
+  }
+
+  function renderPreviewPlaceholder() {
+    previewRoot.innerHTML = '<p class="text-[11px]" style="color:#6B7089;">点击下方「运行」查看渲染结果</p>';
+    liveDot.className = 'live-dot idle';
+    liveText.textContent = '未运行';
+  }
+
+  function renderPreview() {
+    const m = currentFiles['Counter.js'].match(/useState\(\s*(-?\d+)\s*\)/);
+    let count = m ? parseInt(m[1], 10) : 0;
+    previewRoot.innerHTML = `
+      <div class="preview-counter">
+        <h1>useState 计数器</h1>
+        <p>当前值：<span id="previewCount">${count}</span></p>
+        <div class="flex gap-2 justify-center">
+          <button id="pvMinus">-1</button>
+          <button id="pvPlus">+1</button>
+        </div>
+      </div>`;
+    const countEl = document.getElementById('previewCount');
+    document.getElementById('pvPlus').addEventListener('click', () => { count++; countEl.textContent = count; });
+    document.getElementById('pvMinus').addEventListener('click', () => { count--; countEl.textContent = count; });
+    liveDot.className = 'live-dot live';
+    liveText.textContent = '● Live Preview';
+  }
+
+  let runTimer = null;
+  function runCode() {
+    if (state.isRunning) return;
+    state.isRunning = true;
+    renderRunUI();
+    updateStatusPanel();
+    runTimer = setTimeout(() => {
+      state.isRunning = false;
+      renderRunUI();
+      renderPreview();
+      updateStatusPanel();
+    }, 900);
+  }
+  runBtn.addEventListener('click', runCode);
+
+  function resetFiles() {
+    clearTimeout(runTimer);
+    state.isRunning = false;
+    state.isShowingAnswer = false;
+    savedMyFiles = null;
+    currentFiles = JSON.parse(JSON.stringify(myFiles));
+    answerBanner.classList.add('hidden');
+    answerBtnLabel.textContent = '给我看答案';
+    renderFileTabs();
+    loadEditor();
+    renderRunUI();
+    renderPreviewPlaceholder();
+    state.waitForDone = false;
+    renderWaitForBar();
+    renderCodeTabBadge();
+    updateStatusPanel();
+  }
+  document.getElementById('resetBtn').addEventListener('click', resetFiles);
+
+  // ---------- 给我看答案 / 切回我的代码 ----------
+  const answerBtn = document.getElementById('answerBtn');
+  const answerBtnLabel = document.getElementById('answerBtnLabel');
+  const answerBanner = document.getElementById('answerBanner');
+
+  answerBtn.addEventListener('click', () => {
+    if (!state.isShowingAnswer) {
+      savedMyFiles = JSON.parse(JSON.stringify(currentFiles));
+      currentFiles = JSON.parse(JSON.stringify(solutionFiles));
+      state.isShowingAnswer = true;
+      answerBanner.classList.remove('hidden');
+      answerBtnLabel.textContent = '切回我的代码';
+    } else {
+      currentFiles = savedMyFiles ? JSON.parse(JSON.stringify(savedMyFiles)) : JSON.parse(JSON.stringify(myFiles));
+      state.isShowingAnswer = false;
+      answerBanner.classList.add('hidden');
+      answerBtnLabel.textContent = '给我看答案';
+    }
+    loadEditor();
+    checkWaitFor();
+    updateStatusPanel();
+    showToast(state.isShowingAnswer ? '已填入参考答案（只读），可直接点「运行」查看效果' : '已恢复你自己的代码');
+  });
+
+  // ---------- WaitFor 联动 ----------
+  const waitForBar = document.getElementById('waitForBar');
+  const nextStepBtn = document.getElementById('nextStepBtn');
+  const codeTabBadge = document.getElementById('codeTabBadge');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+
+  function renderWaitForBar() {
+    if (state.waitForDone) {
+      waitForBar.classList.remove('pending');
+      waitForBar.classList.add('success');
+      waitForBar.innerHTML = `
+        <svg width="15" height="15" class="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>已完成：count 初始值已改为 10，可以进入下一步了</span>`;
+      nextStepBtn.disabled = false;
+      nextStepBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+      nextStepBtn.style.background = 'var(--color-primary)';
+      nextStepBtn.style.color = '#fff';
+      nextStepBtn.style.borderColor = 'transparent';
+    } else {
+      waitForBar.classList.add('pending');
+      waitForBar.classList.remove('success');
+      waitForBar.innerHTML = `
+        <svg width="15" height="15" class="mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v6l4 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>等待你在「代码」Tab 里把 <b class="font-mono-ui">count</b> 初始值改成 <b class="font-mono-ui">10</b>…</span>`;
+      nextStepBtn.disabled = true;
+      nextStepBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      nextStepBtn.style.background = 'transparent';
+      nextStepBtn.style.color = 'var(--color-text-muted)';
+      nextStepBtn.style.borderColor = 'var(--color-border)';
+    }
+  }
+
+  function renderCodeTabBadge() {
+    codeTabBadge.classList.toggle('hidden', state.waitForDone);
+  }
+
+  function showToast(msg) {
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  function checkWaitFor() {
+    const matched = /useState\(\s*10\s*\)/.test(currentFiles['Counter.js']);
+    if (matched && !state.waitForDone) {
+      state.waitForDone = true;
+      renderWaitForBar();
+      renderCodeTabBadge();
+      setTimeout(() => showToast('已满足条件，300ms 后自动推进下一步（原型演示）'), 300);
+    } else if (!matched && state.waitForDone) {
+      state.waitForDone = false;
+      renderWaitForBar();
+      renderCodeTabBadge();
+    }
+  }
+
+  nextStepBtn.addEventListener('click', () => {
+    if (nextStepBtn.disabled) return;
+    showToast('步骤导航由「学习工作台」模块驱动，此处仅演示解锁态');
+  });
+
+  // ---------- 顶层 讲解/代码 Tab 切换 ----------
+  const tabExplainBtn = document.getElementById('tabExplainBtn');
+  const tabCodeBtn = document.getElementById('tabCodeBtn');
+  const explanationPane = document.getElementById('explanationPane');
+  const sandboxPane = document.getElementById('sandboxPane');
+
+  function setTopTab(tab) {
+    const explain = tab === 'explain';
+    explanationPane.classList.toggle('hidden', !explain);
+    sandboxPane.classList.toggle('hidden', explain);
+    tabExplainBtn.classList.toggle('active', explain);
+    tabCodeBtn.classList.toggle('active', !explain);
+  }
+  tabExplainBtn.addEventListener('click', () => setTopTab('explain'));
+  tabCodeBtn.addEventListener('click', () => setTopTab('code'));
+
+  // ---------- 步骤指示器(横向点) ----------
+  const stepDots = document.getElementById('stepDots');
+  function renderStepDots() {
+    const total = 9, current = 3;
+    let html = '';
+    for (let i = 1; i <= total; i++) {
+      const cls = i < current ? 'done' : (i === current ? 'current' : '');
+      html += `<span class="step-dot ${cls}"></span>`;
+      if (i < total) html += `<span class="step-line ${i < current ? 'done' : ''}"></span>`;
+    }
+    stepDots.innerHTML = html + `<span class="ml-2 text-[10px] font-mono-ui shrink-0" style="color:var(--color-text-muted);">${current}/${total}</span>`;
+  }
+
+  // ---------- 运行时状态调试面板 ----------
+  function updateStatusPanel() {
+    document.getElementById('statusFiles').textContent = Object.keys(currentFiles).join(', ');
+    document.getElementById('statusFiles').title = Object.keys(currentFiles).join(', ');
+    document.getElementById('statusActive').textContent = state.activeFile;
+    document.getElementById('statusAnswer').textContent = state.isShowingAnswer ? 'true' : 'false';
+    document.getElementById('statusTheme').textContent = root.getAttribute('data-theme') || 'light';
+  }
+
+  // ---------- 初始化 ----------
+  renderFileTabs();
+  loadEditor();
+  renderPreviewPlaceholder();
+  renderRunUI();
+  renderWaitForBar();
+  renderCodeTabBadge();
+  renderStepDots();
+  updateStatusPanel();
+</script>
+</body>
+</html>

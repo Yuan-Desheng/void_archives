@@ -1,0 +1,590 @@
+<title>响应式与移动端切换示例页 · 外观与主题 · 互动式技术教程平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          primary: {
+            50: '#EEF1FD', 100: '#DCE3FB', 200: '#B9C7F7', 300: '#8FA3F0',
+            400: '#6478E8', 500: '#3B5BDB', 600: '#2F49B0',
+            700: '#263A8C', 800: '#1D2C69', 900: '#151F4A'
+          },
+          accent: {
+            50: '#E6FAFB', 100: '#CCF4F6', 200: '#99E9EE', 300: '#5DD8E0',
+            400: '#2EC2CC', 500: '#0EA5B7', 600: '#0B8494', 700: '#096B78',
+            800: '#075259', 900: '#053C41'
+          }
+        },
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+          mono: ['JetBrains Mono', 'Menlo', 'monospace']
+        },
+        borderRadius: { lg: '8px', xl: '12px' },
+        boxShadow: {
+          sm: '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+          md: '0 4px 12px -2px rgb(0 0 0 / 0.08)'
+        }
+      }
+    }
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-bg: #F5F7FA;
+    --color-surface: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #1E293B;
+    --color-text-muted: #64748B;
+    --color-primary: #3B5BDB;
+    --color-accent: #0EA5B7;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+  }
+  :root[data-theme="dark"], html.dark {
+    --color-bg: #0F172A;
+    --color-surface: #1A2333;
+    --color-border: #2A3548;
+    --color-text: #E2E8F0;
+    --color-text-muted: #94A3B8;
+    --color-primary: #6478E8;
+    --color-accent: #2EC2CC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-bg: #0F172A;
+      --color-surface: #1A2333;
+      --color-border: #2A3548;
+      --color-text: #E2E8F0;
+      --color-text-muted: #94A3B8;
+      --color-primary: #6478E8;
+      --color-accent: #2EC2CC;
+    }
+  }
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  * { transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+  .surface { background: var(--color-surface); border: 1px solid var(--color-border); }
+</style>
+
+<style>
+  .bp-btn { border: 1px solid var(--color-border); }
+  .bp-btn.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .device-frame-wrap { overflow-x: auto; }
+  .device-frame { border: 10px solid #334155; border-radius: 20px; box-shadow: 0 4px 12px -2px rgb(0 0 0 / .08); background: #334155; flex-shrink: 0; }
+  .device-frame iframe { display: block; background: #fff; border-radius: 6px; }
+  input[type="range"] { -webkit-appearance: none; height: 4px; border-radius: 4px; background: var(--color-border); }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--color-primary); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .3); }
+  .drawer-illust { position: relative; height: 132px; border-radius: 10px; overflow: hidden; background: #F8FAFC; border: 1px solid var(--color-border); }
+</style>
+
+<div class="min-h-screen flex flex-col">
+
+  <!-- 顶部导航条 56px -->
+  <header class="h-14 shrink-0 surface border-b flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="h-8 w-8 rounded-lg bg-primary-600 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 24 24" class="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4l-6 8 6 8M16 4l6 8-6 8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold leading-tight truncate">互动式技术教程平台</p>
+        <p class="text-xs leading-tight truncate" style="color:var(--color-text-muted)">主题：React · 响应式与移动端切换示例页</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="sidebarToggle" class="md:hidden h-9 w-9 rounded-lg border flex items-center justify-center" style="border-color:var(--color-border)" aria-label="展开目录">
+        <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+      </button>
+      <div class="relative hidden sm:block">
+        <button id="themeMenuBtn" class="h-9 pl-3 pr-2 rounded-lg border text-sm flex items-center gap-1.5" style="border-color:var(--color-border)">
+          <span>React 主题</span>
+          <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div id="themeMenu" class="hidden absolute right-0 mt-2 w-44 surface rounded-xl shadow-md py-1 z-40">
+          <a href="theme-library__theme-selection.html" class="block px-3 py-2 text-sm hover:bg-primary-50 dark:hover:bg-primary-900/30">React（当前）</a>
+          <div class="px-3 py-2 text-sm opacity-40 cursor-not-allowed">Vue（即将开放）</div>
+          <div class="px-3 py-2 text-sm opacity-40 cursor-not-allowed">JavaScript（即将开放）</div>
+        </div>
+      </div>
+      <button id="darkToggle" class="h-9 w-9 rounded-lg border flex items-center justify-center" style="border-color:var(--color-border)" aria-label="切换亮暗主题">
+        <svg id="iconSun" viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke-linecap="round"/></svg>
+        <svg id="iconMoon" viewBox="0 0 24 24" class="h-4.5 w-4.5 hidden" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex flex-1 min-h-0">
+
+    <!-- 左侧站点目录 240px -->
+    <aside id="sidebar" class="w-60 shrink-0 surface border-r overflow-y-auto hidden md:block">
+      <nav class="py-4">
+        <div class="px-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">主题课程库</div>
+        <a href="theme-library__theme-selection.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">主题选择页</a>
+        <a href="theme-library__chapter-outline.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">章节大纲面板</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">学习工作台</div>
+        <a href="learning-workspace__workspace.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">学习工作台（核心页）</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">代码沙箱</div>
+        <a href="code-sandbox__sandbox-panel.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">沙箱主面板（桌面右栏）</a>
+        <a href="code-sandbox__sandbox-mobile-tab.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">移动端沙箱 Tab 视图</a>
+        <a href="code-sandbox__sandbox-error-state.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">沙箱异常态视图</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">学习进度</div>
+        <a href="learning-progress__progress-indicators.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">进度指示器（嵌入式规范）</a>
+        <a href="learning-progress__continue-learning.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">继续学习提示与入口</a>
+
+        <div class="px-4 mt-4 mb-1 text-xs uppercase tracking-wide" style="color:var(--color-text-muted)">外观与主题</div>
+        <a href="appearance-theme__theme-switcher-panel.html" class="nav-link flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">外观设置面板</a>
+        <a href="appearance-theme__responsive-showcase.html" class="nav-link active flex items-center gap-2 px-4 py-2 text-sm font-medium relative">
+          <span class="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-600 rounded-r"></span>
+          响应式与移动端切换示例页
+        </a>
+      </nav>
+    </aside>
+
+    <!-- 遮罩（移动端抽屉） -->
+    <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/40 z-40 md:hidden"></div>
+
+    <!-- 主内容 -->
+    <main class="flex-1 min-w-0 overflow-y-auto">
+      <div class="p-4 md:p-6 max-w-[1400px] mx-auto">
+
+        <!-- 页头 -->
+        <div class="mb-5">
+          <div class="flex items-center gap-2 text-xs mb-2" style="color:var(--color-text-muted)">
+            <span>外观与主题</span>
+            <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>响应式与移动端切换示例页</span>
+          </div>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 class="text-xl font-semibold">响应式与移动端切换示例页</h1>
+              <p class="text-sm mt-1 max-w-2xl" style="color:var(--color-text-muted)">
+                以学习工作台的真实内容做样例，在下方设备框中用<b>真实视口宽度</b>（而非视觉模拟）渲染 375 / 768 / 1440 三档断点，验证 R7 响应式布局重排规则与移动端讲解/沙箱 Tab 切换。
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="chip inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">R7 响应式</span>
+              <span class="chip inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-50 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300">375 / 768 / 1440</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 断点规则说明表 -->
+        <div class="surface rounded-xl overflow-hidden mb-5">
+          <div class="px-4 pt-4 pb-2">
+            <p class="text-xs font-medium uppercase tracking-wide" style="color:var(--color-text-muted)">断点定义与布局规则</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs uppercase" style="color:var(--color-text-muted); background:var(--color-bg)">
+                  <th class="text-left px-4 py-2 font-medium">断点</th>
+                  <th class="text-left px-4 py-2 font-medium">宽度范围</th>
+                  <th class="text-left px-4 py-2 font-medium">目录（章节导航）</th>
+                  <th class="text-left px-4 py-2 font-medium">讲解 / 沙箱</th>
+                  <th class="text-left px-4 py-2 font-medium">Tab 切换</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" style="border-color:var(--color-border)">
+                <tr>
+                  <td class="px-4 py-2.5 font-medium">Mobile</td>
+                  <td class="px-4 py-2.5 font-mono text-xs" style="color:var(--color-text-muted)">&lt; 768px</td>
+                  <td class="px-4 py-2.5">覆盖式抽屉（汉堡菜单触发）</td>
+                  <td class="px-4 py-2.5">单栏纵向堆叠，二者互斥显示</td>
+                  <td class="px-4 py-2.5"><span class="text-primary-600 dark:text-primary-400 font-medium">顶部 Tab 显示</span></td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2.5 font-medium">Tablet</td>
+                  <td class="px-4 py-2.5 font-mono text-xs" style="color:var(--color-text-muted)">768px – 1023px</td>
+                  <td class="px-4 py-2.5">覆盖式抽屉（汉堡菜单触发）</td>
+                  <td class="px-4 py-2.5">左右并排，占比 45 / 55</td>
+                  <td class="px-4 py-2.5" style="color:var(--color-text-muted)">不显示（双栏同显）</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-2.5 font-medium">Desktop</td>
+                  <td class="px-4 py-2.5 font-mono text-xs" style="color:var(--color-text-muted)">&ge; 1024px</td>
+                  <td class="px-4 py-2.5">常驻固定 240px 列</td>
+                  <td class="px-4 py-2.5">三栏：目录 240px + 讲解 auto + 沙箱 min 480px</td>
+                  <td class="px-4 py-2.5" style="color:var(--color-text-muted)">不显示（三栏同显）</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 断点控制区 -->
+        <div class="surface rounded-xl p-4 mb-5">
+          <div class="flex flex-wrap items-center gap-3 mb-3">
+            <span class="text-xs font-medium shrink-0" style="color:var(--color-text-muted)">预览宽度</span>
+            <div class="flex gap-2">
+              <button data-preset="375" class="bp-btn h-9 px-3.5 rounded-lg text-sm font-medium">375 · Mobile</button>
+              <button data-preset="768" class="bp-btn h-9 px-3.5 rounded-lg text-sm font-medium">768 · Tablet</button>
+              <button data-preset="1440" class="bp-btn h-9 px-3.5 rounded-lg text-sm font-medium">1440 · Desktop</button>
+            </div>
+            <div class="flex items-center gap-2 ml-auto">
+              <span id="widthLabel" class="text-sm font-mono font-medium px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">1440px · Desktop</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs shrink-0" style="color:var(--color-text-muted)">320</span>
+            <input id="widthSlider" type="range" min="320" max="1440" value="1440" class="flex-1">
+            <span class="text-xs shrink-0" style="color:var(--color-text-muted)">1440</span>
+          </div>
+          <p id="legendText" class="text-xs mt-3 pt-3 border-t" style="color:var(--color-text-muted); border-color:var(--color-border)">
+            当前为桌面三栏布局：目录 240px 固定 + 讲解区自适应宽度 + 沙箱区 min 480px，均常驻显示，无需 Tab 切换。
+          </p>
+        </div>
+
+        <!-- 设备预览框（真实 iframe 视口，而非视觉缩放模拟） -->
+        <div class="surface rounded-xl p-4 mb-5">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-medium uppercase tracking-wide" style="color:var(--color-text-muted)">实时预览（学习工作台样例内容）</p>
+            <span id="scrollCheckBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+              <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4 10-10" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              检测中…
+            </span>
+          </div>
+          <div class="device-frame-wrap pb-2">
+            <div id="deviceFrame" class="device-frame mx-auto" style="width:1460px">
+              <iframe id="previewFrame" style="width:1440px;height:700px;border:0"></iframe>
+            </div>
+          </div>
+          <p class="text-xs mt-2" style="color:var(--color-text-muted)">
+            提示：预览框内部使用真实 CSS 媒体查询响应 iframe 自身像素宽度——拖动上方滑块或点击预设按钮，即可看到布局按 &lt;768 / 768–1023 / &ge;1024 三档真实重排，而非等比缩放截图。移动端可点击预览内左上角汉堡按钮展开/收起目录抽屉；375px 下点击顶部「讲解 / 沙箱」Tab 切换面板，内容与操作状态不会重置。
+          </p>
+        </div>
+
+        <!-- 无横向滚动校验 -->
+        <div class="surface rounded-xl p-4 mb-5">
+          <p class="text-xs font-medium uppercase tracking-wide mb-3" style="color:var(--color-text-muted)">无横向滚动校验（长代码行 / 宽表格局部滚动示例）</p>
+          <div class="overflow-x-auto rounded-lg" style="border:1px solid var(--color-border)">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-xs uppercase" style="color:var(--color-text-muted); background:var(--color-bg)">
+                  <th class="text-left px-4 py-2 font-medium">断点</th>
+                  <th class="text-left px-4 py-2 font-medium">页面本体（导航/正文）</th>
+                  <th class="text-left px-4 py-2 font-medium">预览框内 documentElement.scrollWidth</th>
+                  <th class="text-left px-4 py-2 font-medium">结论</th>
+                </tr>
+              </thead>
+              <tbody id="checkTableBody" class="divide-y" style="border-color:var(--color-border)">
+                <tr><td colspan="4" class="px-4 py-3 text-xs" style="color:var(--color-text-muted)">点击上方 375 / 768 / 1440 预设按钮后，此处会记录一次真实测量结果……</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs mt-2" style="color:var(--color-text-muted)">
+            规则：仅代码块（<code class="font-mono">overflow-x-auto</code> 的 <code class="font-mono">&lt;pre&gt;</code>）与宽表格容器允许局部横向滚动；页面主体与预览框本身在三档断点下均不得出现横向滚动条。
+          </p>
+        </div>
+
+        <!-- 侧边栏抽屉 vs 常驻 对比 -->
+        <div class="surface rounded-xl p-4 mb-5">
+          <p class="text-xs font-medium uppercase tracking-wide mb-3" style="color:var(--color-text-muted)">侧边栏「抽屉」与「常驻」状态对比</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div class="drawer-illust">
+                <div class="absolute inset-0" style="background:rgba(15,23,42,.35)"></div>
+                <div class="absolute left-0 top-0 bottom-0 w-[58%] surface border-r flex flex-col gap-1.5 p-2.5 shadow-md">
+                  <div class="h-2 w-10 rounded bg-primary-200"></div>
+                  <div class="h-2 w-16 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-2 w-14 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-2 w-16 rounded" style="background:var(--color-border)"></div>
+                </div>
+                <div class="absolute right-2 top-2 h-6 w-6 rounded-lg surface flex items-center justify-center border" style="border-color:var(--color-border)">
+                  <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+                </div>
+              </div>
+              <p class="text-sm font-medium mt-2">抽屉模式 · &lt; 1024px（Mobile / Tablet）</p>
+              <p class="text-xs mt-0.5" style="color:var(--color-text-muted)">默认收起、宽度 0，正文占满可视区；汉堡按钮触发滑入，遮罩层覆盖正文并可点击关闭，不挤压布局。</p>
+            </div>
+            <div>
+              <div class="drawer-illust flex">
+                <div class="w-[32%] h-full surface border-r flex flex-col gap-1.5 p-2.5">
+                  <div class="h-2 w-8 rounded bg-primary-200"></div>
+                  <div class="h-2 w-12 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-2 w-10 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-2 w-12 rounded" style="background:var(--color-border)"></div>
+                </div>
+                <div class="flex-1 p-2.5 flex flex-col gap-1.5">
+                  <div class="h-2 w-2/3 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-2 w-1/2 rounded" style="background:var(--color-border)"></div>
+                  <div class="h-10 rounded mt-1 bg-primary-50 dark:bg-primary-900/20"></div>
+                </div>
+              </div>
+              <p class="text-sm font-medium mt-2">常驻模式 · &ge; 1024px（Desktop）</p>
+              <p class="text-xs mt-0.5" style="color:var(--color-text-muted)">固定 240px 列，始终占据布局空间，无汉堡按钮、无遮罩；正文随目录宽度让出空间形成三栏。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-6"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // ---------- 主题（亮暗） ----------
+  const root = document.documentElement;
+  const darkToggle = document.getElementById('darkToggle');
+  const iconSun = document.getElementById('iconSun');
+  const iconMoon = document.getElementById('iconMoon');
+  function applyTheme(t) {
+    if (t === 'dark') { root.classList.add('dark'); root.setAttribute('data-theme', 'dark'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden'); }
+    else { root.classList.remove('dark'); root.setAttribute('data-theme', 'light'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden'); }
+    localStorage.setItem('ittp-theme', t);
+  }
+  const savedTheme = localStorage.getItem('ittp-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+  darkToggle.addEventListener('click', () => applyTheme(root.classList.contains('dark') ? 'light' : 'dark'));
+
+  // 主题下拉
+  const themeMenuBtn = document.getElementById('themeMenuBtn');
+  const themeMenu = document.getElementById('themeMenu');
+  themeMenuBtn.addEventListener('click', () => themeMenu.classList.toggle('hidden'));
+  document.addEventListener('click', (e) => { if (!themeMenuBtn.contains(e.target) && !themeMenu.contains(e.target)) themeMenu.classList.add('hidden'); });
+
+  // 移动端目录抽屉（站点导航自身的抽屉，与预览框内部抽屉是两回事）
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  function openSidebar() { sidebar.classList.remove('hidden'); sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64'); sidebarOverlay.classList.remove('hidden'); }
+  function closeSidebar() { sidebar.classList.add('hidden'); sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50', 'w-64'); sidebarOverlay.classList.add('hidden'); }
+  sidebarToggle.addEventListener('click', openSidebar);
+  sidebarOverlay.addEventListener('click', closeSidebar);
+
+  // ---------- 预览框内文档：一个自带真实媒体查询的迷你「学习工作台」样例 ----------
+  const iframeDoc = [
+    '<!doctype html><html><head><meta charset="utf-8">',
+    '<style>',
+    '*{box-sizing:border-box}',
+    'body{margin:0;font-family:Inter,\'Noto Sans SC\',sans-serif;background:#F5F7FA;color:#1E293B;font-size:13px;overflow-x:hidden}',
+    '.topbar{height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#fff;border-bottom:1px solid #E2E8F0;position:sticky;top:0;z-index:50}',
+    '.hamburger{display:none;width:28px;height:28px;align-items:center;justify-content:center;border-radius:8px;border:1px solid #E2E8F0;background:#fff;cursor:pointer;flex-shrink:0}',
+    '.tabbar{display:none;gap:6px;padding:6px 10px;background:#fff;border-bottom:1px solid #E2E8F0;position:sticky;top:44px;z-index:40}',
+    '.tabbtn{flex:1;padding:7px 0;border-radius:8px;font-size:12px;font-weight:500;text-align:center;border:1px solid #E2E8F0;background:#F8FAFC;color:#64748B;cursor:pointer}',
+    '.tabbtn.active{background:#3B5BDB;color:#fff;border-color:#3B5BDB}',
+    '.shell{display:flex;min-height:552px;position:relative}',
+    '.sidebar{background:#fff;border-right:1px solid #E2E8F0;width:240px;flex-shrink:0;overflow-y:auto;padding:12px}',
+    '.scrim{display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:30}',
+    '.grp{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#94A3B8;margin:10px 0 4px;padding:0 6px}',
+    '.item{display:block;padding:6px 8px;border-radius:8px;color:#334155;text-decoration:none;font-size:12.5px;margin-bottom:1px}',
+    '.item.cur{background:rgba(59,91,219,.1);color:#3B5BDB;font-weight:600;position:relative}',
+    '.item.cur::before{content:"";position:absolute;left:-6px;top:2px;bottom:2px;width:3px;background:#3B5BDB;border-radius:0 3px 3px 0}',
+    '.layout-main{flex:1;display:flex;min-width:0}',
+    '.panel{min-width:0;overflow-y:auto}',
+    '.panel-explain{padding:16px;background:#fff}',
+    '.panel-sandbox{padding:12px;background:#F8FAFC;border-left:1px solid #E2E8F0}',
+    'h2.ttl{font-size:15px;margin:0 0 8px;color:#0F172A}',
+    'p.body-p{line-height:1.7;color:#334155;margin:0 0 10px}',
+    'pre.codeline{overflow-x:auto;white-space:pre;background:#1e1e2e;color:#e2e8f0;padding:10px 12px;border-radius:8px;font-family:\'JetBrains Mono\',Menlo,monospace;font-size:11.5px;margin:0 0 12px}',
+    '.tok-kw{color:#cba6f7}.tok-str{color:#a6e3a1}.tok-fn{color:#89b4fa}.tok-com{color:#6c7086}.tok-tag{color:#f38ba8}.tok-attr{color:#fab387}',
+    '.tablewrap{overflow-x:auto;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:12px}',
+    'table{border-collapse:collapse;width:max-content;min-width:100%;font-size:11px}',
+    'th,td{padding:7px 12px;border-bottom:1px solid #E2E8F0;white-space:nowrap;text-align:left}',
+    'th{background:#F8FAFC;text-transform:uppercase;font-size:9.5px;color:#64748B;letter-spacing:.03em}',
+    '.filebar{display:flex;border-bottom:1px solid #E2E8F0;margin-bottom:0;background:#fff;border-radius:10px 10px 0 0;overflow:hidden}',
+    '.filetab{padding:8px 12px;font-size:11px;font-weight:500;color:#64748B;border-bottom:2px solid transparent;cursor:pointer}',
+    '.filetab.cur{color:#3B5BDB;border-color:#3B5BDB}',
+    '.editor{background:#1e1e2e;color:#cdd6f4;font-family:\'JetBrains Mono\',Menlo,monospace;font-size:11px;padding:12px;line-height:1.7;border-radius:0 0 0 0;overflow-x:auto;white-space:pre}',
+    '.sandbox-card{background:#fff;border:1px solid #E2E8F0;border-radius:0 0 10px 10px}',
+    '.runbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid #E2E8F0;background:#fff;border-radius:0 0 10px 10px}',
+    '.btn-primary{background:#3B5BDB;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:500;cursor:pointer}',
+    '.btn-accent{color:#0B8494;background:transparent;border:none;font-size:11.5px;font-weight:500;cursor:pointer}',
+    '.preview-box{padding:14px;border:1px solid #E2E8F0;border-top:none;background:#fff;border-radius:0 0 10px 10px}',
+    '.hello-card{border:1px solid #E2E8F0;border-radius:10px;padding:14px;background:#F8FAFC}',
+    '.bottomnav{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#fff;border-top:1px solid #E2E8F0;position:sticky;bottom:0}',
+    '.navbtn{border:1px solid #E2E8F0;background:#fff;border-radius:8px;padding:6px 12px;font-size:11.5px;font-weight:500;color:#334155;cursor:pointer}',
+    '.navbtn.primary{background:#3B5BDB;border-color:#3B5BDB;color:#fff}',
+    '.dot{width:7px;height:7px;border-radius:50%;background:#CBD5E1;display:inline-block;margin:0 2px}',
+    '.dot.done{background:#B9C7F7}',
+    '.dot.now{background:#3B5BDB;width:9px;height:9px}',
+    '@media (max-width:767px){',
+    '  .tabbar{display:flex}',
+    '  .hamburger{display:flex}',
+    '  .layout-main{flex-direction:column}',
+    '  .panel[data-active="false"]{display:none}',
+    '  .sidebar{position:fixed;top:78px;left:-260px;bottom:0;height:calc(100% - 78px);z-index:40;transition:left .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.12);width:230px}',
+    '  .sidebar.open{left:0}',
+    '  .sidebar.open + .scrim{display:block}',
+    '}',
+    '@media (min-width:768px) and (max-width:1023px){',
+    '  .hamburger{display:flex}',
+    '  .layout-main{flex-direction:row}',
+    '  .panel-explain{flex:0 0 45%}',
+    '  .panel-sandbox{flex:0 0 55%}',
+    '  .sidebar{position:fixed;top:44px;left:-260px;bottom:0;height:calc(100% - 44px);z-index:40;transition:left .25s ease;box-shadow:4px 0 16px rgba(0,0,0,.12)}',
+    '  .sidebar.open{left:0}',
+    '  .sidebar.open + .scrim{display:block}',
+    '}',
+    '@media (min-width:1024px){',
+    '  .layout-main{flex-direction:row}',
+    '  .panel-explain{flex:1 1 auto}',
+    '  .panel-sandbox{flex:0 0 480px;min-width:480px}',
+    '  .sidebar{position:relative;left:0;height:auto;box-shadow:none}',
+    '}',
+    '</style></head><body>',
+    '<div class="topbar">',
+    '  <div class="hamburger" onclick="toggleDrawer()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#334155" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg></div>',
+    '  <span style="font-weight:600;font-size:13px">React 学习工作台</span>',
+    '  <span style="margin-left:auto;font-size:11px;background:#EEF1FD;color:#3B5BDB;padding:2px 8px;border-radius:8px">第 3 步 / 共 8 步</span>',
+    '</div>',
+    '<div class="tabbar">',
+    '  <div class="tabbtn active" id="tab-explain" onclick="setPanel(\'explain\')">讲解</div>',
+    '  <div class="tabbtn" id="tab-sandbox" onclick="setPanel(\'sandbox\')">沙箱</div>',
+    '</div>',
+    '<div class="shell">',
+    '  <div class="sidebar" id="sidebar">',
+    '    <div class="grp">第 1 章 · 快速上手</div>',
+    '    <a class="item" href="javascript:void(0)">1.1 JSX 基础语法</a>',
+    '    <a class="item" href="javascript:void(0)">1.2 事件处理入门</a>',
+    '    <div class="grp">第 2 章 · 组件与 Props</div>',
+    '    <a class="item" href="javascript:void(0)">2.1 组件的定义方式</a>',
+    '    <a class="item" href="javascript:void(0)">2.2 组件组合与嵌套</a>',
+    '    <a class="item cur" href="javascript:void(0)">2.3 使用 Props 向组件传参</a>',
+    '    <div class="grp">第 3 章 · State 与生命周期</div>',
+    '    <a class="item" href="javascript:void(0)">3.1 useState 基础</a>',
+    '    <a class="item" href="javascript:void(0)">3.2 useEffect 入门</a>',
+    '  </div>',
+    '  <div class="scrim" onclick="toggleDrawer()"></div>',
+    '  <div class="layout-main">',
+    '    <div class="panel panel-explain" data-active="true" id="panel-explain">',
+    '      <h2 class="ttl">2.3 使用 Props 向组件传参</h2>',
+    '      <p class="body-p">Props 是组件对外暴露的只读输入参数，父组件通过属性语法向子组件传值；子组件内部不应直接修改收到的 Props，而应把它当作单向数据流的入口。</p>',
+    '      <pre class="codeline"><span class="tok-kw">function</span> <span class="tok-fn">Greeting</span>({ name, role, unreadCount, theme, locale, onDismiss }) { <span class="tok-com">// 一行接收 6 个 Props，演示超宽单行的局部横向滚动效果</span> }</pre>',
+    '      <p class="body-p">下表列出该组件全部 Props 的类型约束，列数较多，仅在此表格容器内局部横向滚动：</p>',
+    '      <div class="tablewrap"><table><thead><tr><th>属性名</th><th>类型</th><th>是否必填</th><th>默认值</th><th>说明</th><th>示例值</th><th>引入版本</th></tr></thead>',
+    '      <tbody>',
+    '      <tr><td>name</td><td>string</td><td>是</td><td>-</td><td>展示的用户姓名</td><td>"Sarah"</td><td>v1.0</td></tr>',
+    '      <tr><td>role</td><td>string</td><td>否</td><td>"guest"</td><td>角色标签文案</td><td>"member"</td><td>v1.0</td></tr>',
+    '      <tr><td>unreadCount</td><td>number</td><td>否</td><td>0</td><td>未读消息数徽标</td><td>3</td><td>v1.2</td></tr>',
+    '      <tr><td>theme</td><td>"light" | "dark"</td><td>否</td><td>"light"</td><td>卡片主题</td><td>"dark"</td><td>v1.3</td></tr>',
+    '      <tr><td>onDismiss</td><td>() =&gt; void</td><td>否</td><td>-</td><td>关闭回调</td><td>fn</td><td>v1.4</td></tr>',
+    '      </tbody></table></div>',
+    '    </div>',
+    '    <div class="panel panel-sandbox" data-active="false" id="panel-sandbox">',
+    '      <div class="filebar">',
+    '        <div class="filetab cur">Greeting.jsx</div><div class="filetab">App.jsx</div><div class="filetab">styles.css</div>',
+    '      </div>',
+    '      <div class="editor">',
+    '<span class="tok-kw">export default function</span> <span class="tok-fn">Greeting</span>({ name, unreadCount }) {\n  <span class="tok-kw">return</span> (\n    <span class="tok-tag">&lt;div</span> <span class="tok-attr">className</span>=<span class="tok-str">"card"</span><span class="tok-tag">&gt;</span>\n      <span class="tok-tag">&lt;p&gt;</span>Hello, {name} 👋<span class="tok-tag">&lt;/p&gt;</span>\n      <span class="tok-tag">&lt;button</span> <span class="tok-attr">onClick</span>={() =&gt; setCount(c =&gt; c + 1)}<span class="tok-tag">&gt;</span>运行沙箱<span class="tok-tag">&lt;/button&gt;</span>\n    <span class="tok-tag">&lt;/div&gt;</span>\n  )\n}',
+    '      </div>',
+    '      <div class="runbar">',
+    '        <button class="btn-primary" onclick="runSandbox()">▶ Run</button>',
+    '        <button class="btn-accent">查看答案</button>',
+    '      </div>',
+    '      <div class="preview-box">',
+    '        <div class="hello-card">',
+    '          <p style="margin:0 0 6px;font-weight:600">Hello, Sarah 👋</p>',
+    '          <p style="margin:0;font-size:11px;color:#64748B">运行次数：<span id="runCountLabel">0</span>（切换 Tab 后此计数不会重置，用于验证移动端面板状态保留）</p>',
+    '        </div>',
+    '      </div>',
+    '    </div>',
+    '  </div>',
+    '</div>',
+    '<div class="bottomnav">',
+    '  <button class="navbtn">上一步</button>',
+    '  <div><span class="dot done"></span><span class="dot done"></span><span class="dot now"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>',
+    '  <button class="navbtn primary">下一步</button>',
+    '</div>',
+    '<script>',
+    'function setPanel(p){',
+    '  document.getElementById("panel-explain").dataset.active = (p==="explain");',
+    '  document.getElementById("panel-sandbox").dataset.active = (p==="sandbox");',
+    '  document.getElementById("tab-explain").classList.toggle("active", p==="explain");',
+    '  document.getElementById("tab-sandbox").classList.toggle("active", p==="sandbox");',
+    '}',
+    'function toggleDrawer(){ document.getElementById("sidebar").classList.toggle("open"); }',
+    'let runCount = 0;',
+    'function runSandbox(){ runCount++; document.getElementById("runCountLabel").textContent = runCount; }',
+    '<\/script>',
+    '</body></html>'
+  ].join('\n');
+
+  // ---------- 断点控制逻辑 ----------
+  const deviceFrame = document.getElementById('deviceFrame');
+  const previewFrame = document.getElementById('previewFrame');
+  const widthSlider = document.getElementById('widthSlider');
+  const widthLabel = document.getElementById('widthLabel');
+  const legendText = document.getElementById('legendText');
+  const scrollCheckBadge = document.getElementById('scrollCheckBadge');
+  const checkTableBody = document.getElementById('checkTableBody');
+  const presetBtns = document.querySelectorAll('.bp-btn');
+
+  previewFrame.srcdoc = iframeDoc;
+
+  function classify(px) {
+    if (px < 768) return { name: 'Mobile', legend: '当前为移动端单栏布局：内容纵向堆叠，讲解/沙箱通过顶部 Tab 互斥显示（点击 Tab 可切换，切回后运行次数计数不重置）；目录为覆盖式抽屉，点击左上角汉堡按钮展开/收起。' };
+    if (px < 1024) return { name: 'Tablet', legend: '当前为平板双栏布局：讲解:沙箱 = 45:55 左右并排显示，不再需要 Tab 切换；目录仍收起为覆盖式抽屉，点击汉堡按钮展开。' };
+    return { name: 'Desktop', legend: '当前为桌面三栏布局：目录 240px 固定 + 讲解区自适应宽度 + 沙箱区 min 480px，均常驻显示，无需 Tab 切换。' };
+  }
+
+  function setWidth(px) {
+    px = Math.max(320, Math.min(1440, Math.round(px)));
+    deviceFrame.style.width = (px + 20) + 'px';
+    previewFrame.style.width = px + 'px';
+    widthSlider.value = px;
+    const info = classify(px);
+    widthLabel.textContent = px + 'px · ' + info.name;
+    legendText.textContent = info.legend;
+    presetBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.preset) === px));
+    scheduleScrollCheck(px);
+  }
+
+  let checkTimer = null;
+  function scheduleScrollCheck(px) {
+    scrollCheckBadge.textContent = '检测中…';
+    clearTimeout(checkTimer);
+    checkTimer = setTimeout(() => runScrollCheck(px, presetBtns.length && Array.from(presetBtns).some(b => Number(b.dataset.preset) === px)), 260);
+  }
+
+  function runScrollCheck(px, recordRow) {
+    let doc;
+    try { doc = previewFrame.contentDocument; } catch (e) { return; }
+    if (!doc || !doc.documentElement) return;
+    const sw = doc.documentElement.scrollWidth;
+    const overflow = sw > px + 2;
+    scrollCheckBadge.innerHTML = overflow
+      ? '<svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01" stroke-linecap="round"/></svg> 检测到横向溢出 ' + (sw - px) + 'px'
+      : '<svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l4 4 10-10" stroke-linecap="round" stroke-linejoin="round"/></svg> 无横向滚动';
+    scrollCheckBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ' +
+      (overflow ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300');
+
+    if (recordRow) {
+      const info = classify(px);
+      const rowId = 'check-row-' + px;
+      let row = document.getElementById(rowId);
+      if (!row) {
+        row = document.createElement('tr');
+        row.id = rowId;
+        if (checkTableBody.children.length === 1 && checkTableBody.children[0].children.length === 1) checkTableBody.innerHTML = '';
+        checkTableBody.appendChild(row);
+      }
+      row.innerHTML =
+        '<td class="px-4 py-2.5 font-medium">' + px + 'px · ' + info.name + '</td>' +
+        '<td class="px-4 py-2.5">' + (document.documentElement.scrollWidth > document.documentElement.clientWidth + 2 ? '⚠️ 存在横向滚动' : '✅ 无横向滚动') + '</td>' +
+        '<td class="px-4 py-2.5 font-mono text-xs">' + sw + 'px（容器宽度 ' + px + 'px）</td>' +
+        '<td class="px-4 py-2.5">' + (overflow ? '<span class="text-rose-600 dark:text-rose-400 font-medium">⚠️ 需修复</span>' : '<span class="text-primary-600 dark:text-primary-400 font-medium">✅ 通过</span>') + '</td>';
+    }
+  }
+
+  presetBtns.forEach(btn => btn.addEventListener('click', () => setWidth(Number(btn.dataset.preset))));
+  widthSlider.addEventListener('input', () => setWidth(Number(widthSlider.value)));
+  previewFrame.addEventListener('load', () => scheduleScrollCheck(Number(widthSlider.value)));
+
+  setWidth(1440);
+</script>
