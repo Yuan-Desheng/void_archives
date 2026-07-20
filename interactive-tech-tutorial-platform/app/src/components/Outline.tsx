@@ -69,6 +69,7 @@ export function Outline({
           <div key={ch.id} className="mb-2">
             <button
               onClick={() => !searching && toggle(ch.id)}
+              title={ch.title}
               className="w-full flex items-center gap-1.5 mb-1 text-muted-foreground hover:text-foreground transition"
             >
               <span className="inline-block w-3 text-center text-xs">{open ? '▾' : '▸'}</span>
@@ -84,6 +85,7 @@ export function Outline({
                     <li key={s.id}>
                       <button
                         onClick={() => onJump(s.id)}
+                        title={s.title}
                         className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center gap-2 transition ${
                           st === 'current'
                             ? 'bg-primary text-primary-foreground'

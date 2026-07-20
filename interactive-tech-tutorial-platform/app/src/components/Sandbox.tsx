@@ -82,9 +82,16 @@ export function Sandbox({ language, files, solution, defaultCode, dependencies }
         <span className="text-xs text-muted-foreground font-mono">沙箱</span>
         <AnswerControl solution={solution} />
       </div>
-      <SandpackLayout>
-        <SandpackCodeEditor showRunButton showLineNumbers style={{ height: 360 }} />
-        <SandpackPreview showOpenInCodeSandbox={false} style={{ height: 360 }} />
+      <SandpackLayout style={{ flexDirection: 'column' }}>
+        <SandpackCodeEditor
+          showRunButton
+          showLineNumbers
+          style={{ height: 320, flex: 'none', width: '100%' }}
+        />
+        <SandpackPreview
+          showOpenInCodeSandbox={false}
+          style={{ height: 300, flex: 'none', width: '100%' }}
+        />
       </SandpackLayout>
     </SandpackProvider>
   )

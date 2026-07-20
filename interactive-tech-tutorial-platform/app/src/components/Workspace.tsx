@@ -17,6 +17,7 @@ import { Sandbox } from './Sandbox'
 import { Outline } from './Outline'
 import { StepNav } from './StepNav'
 import { ThemeToggle } from './ThemeToggle'
+import { PanelLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 function TabButton({
@@ -50,6 +51,7 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
   const [ready, setReady] = useState(false)
   const [showResume, setShowResume] = useState(false)
   const [tab, setTab] = useState<'lesson' | 'sandbox'>('lesson') // 移动端讲解/代码 Tab（R7，默认讲解）
+  const [navOpen, setNavOpen] = useState(true) // 左侧大纲导航展开/收起
 
   // 初始化：读 localStorage 进度，定位到断点（F7 续学：非第一步则提示）
   useEffect(() => {
@@ -96,7 +98,16 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
   return (
     <div className="h-screen flex flex-col">
       <header className="flex items-center justify-between px-4 md:px-6 h-14 border-b bg-card shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label="展开或收起导航"
+            className="shrink-0"
+          >
+            <PanelLeft />
+          </Button>
           <Button asChild variant="ghost" size="sm" className="shrink-0 text-muted-foreground">
             <Link href="/">← 主题库</Link>
           </Button>
@@ -124,8 +135,10 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-[220px_1fr] min-h-0">
-        <aside className="border-b md:border-b-0 md:border-r bg-card p-4 overflow-y-auto">
+      <div className={`flex-1 grid grid-cols-1 min-h-0 ${navOpen ? 'md:grid-cols-[220px_1fr]' : ''}`}>
+        <aside
+          className={`border-b md:border-b-0 md:border-r bg-card p-4 overflow-y-auto ${navOpen ? '' : 'hidden'}`}
+        >
           <Outline pkg={pkg} currentStepId={cur.step.id} progress={progress} onJump={jumpToStepId} />
         </aside>
 
