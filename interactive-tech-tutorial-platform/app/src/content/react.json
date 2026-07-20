@@ -18,7 +18,7 @@
           "id": "st-first-component",
           "title": "基本介绍：你的第一个组件",
           "order": 1,
-          "description": "React 是用来构建界面的库，核心思想是**声明式**：你描述界面「长什么样」，React 负责把它渲染出来、并在数据变化时自动更新。\n\n最小的单位是**组件**——一个**返回 JSX 的函数**。JSX 看起来像 HTML，但它是 JavaScript。\n\n右侧编辑器里把 `Hello React` 改成你的名字，点 **Run** 看预览变化。",
+          "description": "React 是用来构建用户界面的库。它的核心是**声明式**：你只描述界面「长什么样」，React 负责渲染、并在数据变化时自动更新——你几乎不用手动操作 DOM。\n\n## 组件 = 返回 JSX 的函数\n界面的最小单位是**组件**。一个组件就是一个**返回 JSX 的 JavaScript 函数**，而且函数名**必须大写开头**——React 靠首字母大小写来区分「你的组件」和「普通 HTML 标签」。\n\n## JSX 是什么\nJSX 看起来像 HTML，但它其实是 JavaScript 的语法扩展，最终会被编译成普通的函数调用。所以它遵循 JS 的规则，比如属性要写 `className` 而不是 `class`，每个标签都必须闭合。\n\n## ⚠️ 常见错误\n- 组件名小写（`function app()`）→ 被当成 HTML 标签，渲染不出来\n- 忘了 `export default` → 别的文件 import 不到它\n\n## 练习\n在右侧编辑器里把 `Hello React` 改成你的名字，点 **Run**（或等它自动刷新）看预览实时变化。",
           "files": {
             "/App.js": "export default function App() {\n  return <h1>Hello React</h1>\n}"
           }
@@ -27,7 +27,7 @@
           "id": "st-project-structure",
           "title": "开发环境与项目结构",
           "order": 2,
-          "description": "真实的 React 项目由一个**入口**把根组件挂到页面上，再由许多**组件文件**组合而成。右侧的沙箱就是你的即时开发环境，改完即时生效，无需本地装任何东西。\n\n组件可以拆到**单独的文件**里，用 `export` 导出、`import` 引入，从而复用。下面 `Greeting` 已经拆到 `Greeting.js`，试着在 `App` 里用 `<Greeting />` 把它渲染出来。",
+          "description": "一个 React 应用从一个**入口**开始：入口把**根组件**（通常叫 App）挂载到页面的某个 DOM 节点上，之后整棵组件树都交给 React 接管。右侧的沙箱就是你的即时开发环境，改完即时生效，无需在本地装任何东西。\n\n## 拆分组件、按需引入\n真实项目会把界面拆成许多**组件文件**，好处是**复用**和**各管一段、互不干扰**。一个文件用 `export` 导出组件，别的文件用 `import` 引入。\n\n## 两种导出方式\n- `export default Foo` → `import Foo from './Foo'`（引入时名字可随意）\n- `export function Foo` → `import { Foo } from './Foo'`（名字要对上，带花括号）\n\n## 💡 提示\n组件文件名一般和组件名保持一致（`Greeting.js` 里放 `Greeting`），方便查找和维护。\n\n## 练习\n`Greeting` 已经拆到 `Greeting.js` 并 `import` 进来了。在 `App` 里用 `<Greeting />` 把它渲染出来。",
           "files": {
             "/App.js": "import Greeting from './Greeting'\n\nexport default function App() {\n  return (\n    <div>\n      <h1>我的应用</h1>\n      {/* TODO: 在这里渲染 <Greeting /> */}\n    </div>\n  )\n}",
             "/Greeting.js": "export default function Greeting() {\n  return <p>你好，我是拆到单独文件里的组件</p>\n}"
@@ -41,7 +41,7 @@
           "id": "st-jsx-expression",
           "title": "TSX 语法入门：表达式与列表",
           "order": 3,
-          "description": "用 `{}` 可以在 JSX 里嵌入任意 JavaScript **表达式**：变量、运算、三元、`map` 都行。\n\n下面的 `name` 变量还没用上，`items` 也没渲染。试着：① 把 `name` 显示到标题里；② 用 `items.map` 渲染成 `<li>` 列表。不会就点「给我看答案」。",
+          "description": "在 JSX 里用一对**花括号 `{}`** 就能嵌入任意 JavaScript **表达式**：变量、运算、函数调用、三元表达式都行。注意是**表达式**，不能直接放 `if`、`for` 这类语句。\n\n## 花括号里能放什么\n- 变量与运算：`{name}`、`{1 + 2}`\n- 三元表达式（代替 if）：`{ok ? '是' : '否'}`\n- 列表渲染：`{items.map(...)}`\n\n## 列表要给 key\n用 `map` 渲染列表时，每一项要有**唯一的 `key`**——React 靠它高效识别哪些项增删改了。`key` 通常用数据的 id，没有 id 时可临时用内容本身。\n\n## ⚠️ 常见错误\n- 在 `{}` 里写 `if`/`for` → 报错；改用三元表达式，或先在函数体里算好再用变量\n- 列表不给 `key` → 控制台警告，更新时可能出现错乱\n\n## 练习\n① 把 `name` 显示到标题里；② 用 `items.map` 把数组渲染成 `<li>` 列表（记得给每项加 `key`）。不会就点「给我看答案」。",
           "files": {
             "/App.js": "export default function App() {\n  const name = 'React'\n  const items = ['JSX', 'Props', 'State']\n  return (\n    <div>\n      <h1>Hello </h1>\n      <ul>\n        {/* TODO: 用 items.map 渲染每一项 */}\n      </ul>\n    </div>\n  )\n}"
           },
