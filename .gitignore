@@ -44,4 +44,6 @@ test-results/
 
 # === AI 协作私有配置 ===
 CLAUDE.md
+# 例外：repo 根的项目级 CLAUDE.md（架构 + 教程写作规范）纳入版本库
+!/CLAUDE.md
 .claude/
