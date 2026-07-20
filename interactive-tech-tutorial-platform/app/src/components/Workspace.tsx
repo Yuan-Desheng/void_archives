@@ -161,7 +161,7 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
               <h1 className="text-lg font-semibold mb-3">{cur.step.title}</h1>
               <MarkdownView>{cur.step.description}</MarkdownView>
             </section>
-            <section className={`${tab === 'sandbox' ? 'block' : 'hidden'} lg:block min-w-0 overflow-auto`}>
+            <section className={`${tab === 'sandbox' ? 'flex' : 'hidden'} lg:flex flex-col min-w-0 min-h-0`}>
               <Sandbox
                 key={cur.step.id}
                 language={pkg.meta.language}

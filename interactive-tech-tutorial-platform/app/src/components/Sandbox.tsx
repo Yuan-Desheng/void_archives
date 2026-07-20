@@ -77,20 +77,23 @@ export function Sandbox({ language, files, solution, defaultCode, dependencies }
       theme={dark ? 'dark' : 'light'}
       customSetup={dependencies ? { dependencies } : undefined}
       options={{ recompileMode: 'delayed', recompileDelay: 400 }}
+      style={{ display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0 }}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b bg-card">
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-card shrink-0">
         <span className="text-xs text-muted-foreground font-mono">沙箱</span>
         <AnswerControl solution={solution} />
       </div>
-      <SandpackLayout style={{ flexDirection: 'column' }}>
+      <SandpackLayout
+        style={{ flexDirection: 'column', flex: '1 1 0', minHeight: 0, border: 'none', borderRadius: 0 }}
+      >
         <SandpackCodeEditor
           showRunButton
           showLineNumbers
-          style={{ height: 320, flex: 'none', width: '100%' }}
+          style={{ height: '50%', minHeight: 0, width: '100%' }}
         />
         <SandpackPreview
           showOpenInCodeSandbox={false}
-          style={{ height: 300, flex: 'none', width: '100%' }}
+          style={{ height: '50%', minHeight: 0, width: '100%' }}
         />
       </SandpackLayout>
     </SandpackProvider>
