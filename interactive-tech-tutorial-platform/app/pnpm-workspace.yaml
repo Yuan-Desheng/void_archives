@@ -3,3 +3,7 @@ allowBuilds:
   sharp: true
 onlyBuiltDependencies:
   - sharp
+# eslint-config-next 从项目根解析其插件（react-hooks / @next / typescript-eslint 等），
+# pnpm 严格 node_modules 默认不软链它们 → 提升到顶层，让 next 构建时 lint 能加载插件
+publicHoistPattern:
+  - '*eslint*'
