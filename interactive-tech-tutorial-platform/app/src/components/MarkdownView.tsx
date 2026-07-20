@@ -5,7 +5,16 @@ import rehypeHighlight from 'rehype-highlight'
 export function MarkdownView({ children }: { children: string }) {
   return (
     <div className="prose-lesson text-sm text-foreground">
-      <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{children}</ReactMarkdown>
+      <ReactMarkdown
+        rehypePlugins={[rehypeHighlight]}
+        components={{
+          // 延伸阅读等外链在新标签打开，不打断当前学习
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+        }}
+      >
+        {children}
+      </ReactMarkdown>
     </div>
   )
 }
