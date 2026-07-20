@@ -239,7 +239,7 @@
           "id": "st-zustand-basics",
           "title": "安装与基础：创建 store",
           "order": 1,
-          "description": "Zustand 是轻量的状态管理库（约 1kb），不用 Provider 包裹。`create((set) => ({...}))` 建一个 store：里面放状态和「改状态的方法」，`set` 会**自动合并第一层**状态。得到的 `useXxxStore` 当普通 Hook 用即可。\n\n下面的价格 store 已有增加/减少。补一个「重置」按钮，调用 `reset`。",
+          "description": "Zustand 是轻量的全局状态管理库（约 1kb），不像 Redux 那样要 Provider 包裹。`create` 传入一个函数、返回一个 store：\n\n```jsx\nimport { create } from 'zustand'\n\nconst usePriceStore = create((set) => ({\n  price: 0,\n  increment: () => set((s) => ({ price: s.price + 1 })),\n}))\n```\n\n函数里放状态和「改状态的方法」，`set` 会**自动合并第一层**状态（不用手动展开 `...`）。得到的 `usePriceStore` 当普通 Hook 用，解构出值和方法即可。\n\n> 深入：[Zustand 官方文档](https://zustand.docs.pmnd.rs/)\n\n下面的价格 store 已有增加/减少。补一个「重置」按钮，调用 `reset`。",
           "files": {
             "/App.js": "import { create } from 'zustand'\n\nconst usePriceStore = create((set) => ({\n  price: 0,\n  increment: () => set((state) => ({ price: state.price + 1 })),\n  decrement: () => set((state) => ({ price: state.price - 1 })),\n  reset: () => set({ price: 0 }),\n}))\n\nexport default function App() {\n  const { price, increment, decrement, reset } = usePriceStore()\n  return (\n    <div style={{ padding: 12 }}>\n      <p>价格：{price}</p>\n      <button onClick={increment}>增加</button>\n      <button onClick={decrement}>减少</button>\n      {/* TODO: 再加一个「重置」按钮，调用 reset */}\n    </div>\n  )\n}"
           },
@@ -251,7 +251,7 @@
           "id": "st-zustand-immer",
           "title": "深层状态：immer 中间件",
           "order": 2,
-          "description": "`set` 只会自动合并**第一层**状态，嵌套对象要手动展开很繁琐。用 `immer` 中间件包裹后，可以在 `set` 里**直接改 draft**（`state.user.age += 1`），immer 负责生成不可变的新状态。\n\n下面用 immer 存了嵌套的 `user`。补一个「过生日」按钮，调用 `birthday`。",
+          "description": "`set` 只自动合并**第一层**状态，嵌套对象要手动逐层展开很繁琐。用 `immer` 中间件包裹后，可以在 `set` 里**直接改 draft**，immer 负责生成不可变的新状态：\n\n```jsx\nimport { immer } from 'zustand/middleware/immer'\n\nconst useUserStore = create(\n  immer((set) => ({\n    user: { name: '访客', age: 18 },\n    birthday: () => set((s) => { s.user.age += 1 }), // 直接改，无需展开\n  })),\n)\n```\n\n没有 immer 的话，改嵌套的 `user.age` 得写成 `set((s) => ({ user: { ...s.user, age: s.user.age + 1 } }))`——层级越深越痛苦。\n\n> 深入：[Zustand — immer 中间件](https://zustand.docs.pmnd.rs/integrations/immer-middleware)\n\n下面用 immer 存了嵌套的 `user`。补一个「过生日」按钮，调用 `birthday`。",
           "files": {
             "/App.js": "import { create } from 'zustand'\nimport { immer } from 'zustand/middleware/immer'\n\nconst useUserStore = create(\n  immer((set) => ({\n    user: { name: '访客', age: 18 },\n    birthday: () =>\n      set((state) => {\n        state.user.age += 1 // immer：直接改 draft，无需手动展开\n      }),\n  })),\n)\n\nexport default function App() {\n  const { user, birthday } = useUserStore()\n  return (\n    <div style={{ padding: 12 }}>\n      <p>{user.name}，{user.age} 岁</p>\n      {/* TODO: 加「过生日」按钮，调用 birthday */}\n    </div>\n  )\n}"
           },
@@ -263,7 +263,7 @@
           "id": "st-zustand-selector",
           "title": "选择器：避免无谓重渲染",
           "order": 3,
-          "description": "直接解构 `useStore()` 会订阅**整个 store**——任意状态变化都会让组件重渲染。用**选择器** `useStore((s) => s.price)` 只订阅需要的那部分；要取多个可配合 `useShallow`。\n\n下面用整体解构订阅了整个 store。把 `price` 改成用选择器订阅，只关心 `price`。",
+          "description": "直接解构 `useStore()` 会订阅**整个 store**——store 里任意状态变化，组件都会重渲染，哪怕它根本没用到那个状态。传一个**选择器**只订阅需要的那部分：\n\n```jsx\n// 只订阅 price，别的状态变了也不重渲染\nconst price = useStore((s) => s.price)\n\n// 要取多个字段，配合 useShallow 避免每次新对象引发重渲染\nconst { a, b } = useStore(useShallow((s) => ({ a: s.a, b: s.b })))\n```\n\n> 深入：[Zustand — 选择多个状态](https://zustand.docs.pmnd.rs/guides/prevent-rerenders-with-use-shallow)\n\n下面用整体解构订阅了整个 store。把 `price` 改成用选择器订阅，只关心 `price`。",
           "files": {
             "/App.js": "import { create } from 'zustand'\n\nconst useStore = create((set) => ({\n  price: 0,\n  label: '商品',\n  addPrice: () => set((s) => ({ price: s.price + 1 })),\n}))\n\nexport default function App() {\n  // TODO: 改用选择器 useStore((s) => s.price)，只订阅 price\n  const price = useStore().price\n  const addPrice = useStore((s) => s.addPrice)\n  return (\n    <div style={{ padding: 12 }}>\n      <p>价格：{price}</p>\n      <button onClick={addPrice}>+1</button>\n    </div>\n  )\n}"
           },
@@ -275,7 +275,7 @@
           "id": "st-zustand-persist",
           "title": "persist：持久化到 localStorage",
           "order": 4,
-          "description": "`persist` 中间件把 store 自动存进 `localStorage`（或 sessionStorage），刷新后状态不丢。`name` 是存储的唯一键，`storage` 用 `createJSONStorage` 指定存储介质。\n\n下面的计数 store 还没持久化。用 `persist` 包裹它，配好 `name` 和 `storage`——填完点看答案，刷新预览会发现 count 被记住了。",
+          "description": "`persist` 中间件把 store 自动存进 `localStorage`（或 sessionStorage），刷新后状态不丢：\n\n```jsx\nimport { persist, createJSONStorage } from 'zustand/middleware'\n\nconst useStore = create(\n  persist(\n    (set) => ({ count: 0, inc: () => set((s) => ({ count: s.count + 1 })) }),\n    { name: 'demo-count', storage: createJSONStorage(() => localStorage) },\n  ),\n)\n```\n\n`name` 是存储的唯一键，`storage` 用 `createJSONStorage` 指定存储介质。中间件都是这样一层层包裹 store 的创建函数。\n\n> 深入：[Zustand — persist 持久化](https://zustand.docs.pmnd.rs/integrations/persisting-store-data)\n\n下面的计数 store 还没持久化。用 `persist` 包裹它、配好 `name` 和 `storage`——填完点看答案，刷新预览会发现 count 被记住了。",
           "files": {
             "/App.js": "import { create } from 'zustand'\n\n// TODO: 用 persist 中间件包裹，让 count 刷新预览后仍然保留\nconst useStore = create((set) => ({\n  count: 0,\n  inc: () => set((s) => ({ count: s.count + 1 })),\n}))\n\nexport default function App() {\n  const { count, inc } = useStore()\n  return (\n    <div style={{ padding: 12 }}>\n      <p>count: {count}</p>\n      <button onClick={inc}>+1</button>\n    </div>\n  )\n}"
           },
@@ -287,7 +287,7 @@
           "id": "st-zustand-subscribe",
           "title": "subscribe：订阅状态变化",
           "order": 5,
-          "description": "`useStore.subscribe(cb)` 在状态变化时执行回调，但**不会**触发组件重渲染——适合把状态变化转成副作用（提示、埋点、同步等）。它返回一个取消订阅的函数；在组件里要放进 `useEffect` 防止重复订阅。\n\n下面想在 `age >= 26` 时更新 `status`。在 `useEffect` 里用 `useStore.subscribe` 监听，并返回取消订阅函数。",
+          "description": "除了在组件里读状态，还能用 `useStore.subscribe(cb)` **订阅**变化。回调在状态变化时执行，但**不会**触发组件重渲染——适合把状态变化转成副作用（提示、埋点、日志、同步等）：\n\n```jsx\nuseEffect(() => {\n  const unsub = useStore.subscribe((state) => {\n    console.log('age 变成', state.age)\n  })\n  return unsub // 清理：取消订阅\n}, [])\n```\n\n`subscribe` 返回一个取消订阅的函数。在组件里要放进 `useEffect` 并在清理时调用它，防止重复订阅和泄漏。\n\n> 深入：[Zustand — 无需渲染即可订阅](https://zustand.docs.pmnd.rs/guides/updating-state#with-subscribe)\n\n下面想在 `age >= 26` 时更新 `status`。在 `useEffect` 里用 `useStore.subscribe` 监听，并返回取消订阅函数。",
           "files": {
             "/App.js": "import { useState, useEffect } from 'react'\nimport { create } from 'zustand'\n\nconst useStore = create((set) => ({\n  age: 20,\n  grow: () => set((s) => ({ age: s.age + 1 })),\n}))\n\nexport default function App() {\n  const age = useStore((s) => s.age)\n  const grow = useStore((s) => s.grow)\n  const [status, setStatus] = useState('未满 26')\n  useEffect(() => {\n    // TODO: 用 useStore.subscribe 监听：age >= 26 设为「可以了」，否则「未满 26」，并返回取消订阅函数\n    return\n  }, [])\n  return (\n    <div style={{ padding: 12 }}>\n      <p>年龄：{age}　状态：{status}</p>\n      <button onClick={grow}>长一岁</button>\n    </div>\n  )\n}"
           },
