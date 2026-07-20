@@ -52,9 +52,64 @@
       ]
     },
     {
+      "id": "ch-components",
+      "title": "组件",
+      "order": 2,
+      "steps": [
+        {
+          "id": "st-components-basics",
+          "title": "认识组件：组合与复用",
+          "order": 1,
+          "description": "组件就是一个**返回 JSX 的函数**。把界面拆成组件后，同一个组件可以**复用多次**——改一处，所有用到它的地方都跟着变。\n\n下面定义了一个 `Card` 组件。试着在 `App` 里再多渲染两个 `<Card />`，体会组件的复用。",
+          "files": {
+            "/App.js": "function Card() {\n  return (\n    <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: 8 }}>\n      一张卡片\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <div>\n      <Card />\n      {/* TODO: 再放两个 <Card />，体会组件可以复用 */}\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "function Card() {\n  return (\n    <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: 8 }}>\n      一张卡片\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <div>\n      <Card />\n      <Card />\n      <Card />\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-props",
+          "title": "组件通信：Props",
+          "order": 2,
+          "description": "父组件通过 **props** 把数据传给子组件；props 是**只读**的（单向数据流，子组件不能改父组件的 props）。\n\n`Card` 已经接收 `title` 和 `content` 两个 props。再渲染一张 `Card`，传入**不同的** `title` 和 `content`，让同一个组件呈现不同内容。",
+          "files": {
+            "/App.js": "function Card({ title, content }) {\n  return (\n    <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: 8 }}>\n      <h3>{title}</h3>\n      <p>{content}</p>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <div>\n      <Card title=\"第一张\" content=\"这是内容 A\" />\n      {/* TODO: 再渲染一张 Card，传入不同的 title 和 content */}\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "function Card({ title, content }) {\n  return (\n    <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, margin: 8 }}>\n      <h3>{title}</h3>\n      <p>{content}</p>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <div>\n      <Card title=\"第一张\" content=\"这是内容 A\" />\n      <Card title=\"第二张\" content=\"这是内容 B\" />\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-controlled-form",
+          "title": "受控组件：表单与 State",
+          "order": 3,
+          "description": "把表单元素的值交给 **state** 管理，就是「受控组件」：`value` 绑到 state，`onChange` 里更新 state。React 没有 Vue 的 v-model，需要你自己接上这两根线。\n\n下面的输入框只绑了 `value`，还打不了字。给它加上 `onChange`，把输入同步回 `value`。",
+          "files": {
+            "/App.js": "import { useState } from 'react'\n\nexport default function App() {\n  const [value, setValue] = useState('')\n  return (\n    <div style={{ padding: 12 }}>\n      <input value={value} placeholder=\"输入点什么\" />\n      {/* TODO: 给 input 加 onChange，把输入同步到 value */}\n      <p>你输入了：{value}</p>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useState } from 'react'\n\nexport default function App() {\n  const [value, setValue] = useState('')\n  return (\n    <div style={{ padding: 12 }}>\n      <input value={value} onChange={(e) => setValue(e.target.value)} placeholder=\"输入点什么\" />\n      <p>你输入了：{value}</p>\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-lifting-state",
+          "title": "状态提升：兄弟组件共享",
+          "order": 4,
+          "description": "当两个兄弟组件要共享同一份数据时，就把 state **提升**到它们最近的公共父组件，父组件用 props 把数据往下传、把「改数据的回调」也往下传。这是官方推荐的 **状态提升（lifting state up）**，比用全局事件更清晰可控。\n\n`App` 已经持有 `count`。把它通过 props 传给 `Display` 显示，把「加一」回调传给 `AddButton`，让两个兄弟组件联动。",
+          "files": {
+            "/App.js": "import { useState } from 'react'\n\nfunction AddButton({ onAdd }) {\n  return <button onClick={onAdd}>加一</button>\n}\n\nfunction Display({ count }) {\n  return <p>当前：{count}</p>\n}\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <div style={{ padding: 12 }}>\n      {/* TODO: 把 count 传给 Display，把加一回调传给 AddButton */}\n      <AddButton />\n      <Display />\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useState } from 'react'\n\nfunction AddButton({ onAdd }) {\n  return <button onClick={onAdd}>加一</button>\n}\n\nfunction Display({ count }) {\n  return <p>当前：{count}</p>\n}\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <div style={{ padding: 12 }}>\n      <AddButton onAdd={() => setCount(count + 1)} />\n      <Display count={count} />\n    </div>\n  )\n}"
+          }
+        }
+      ]
+    },
+    {
       "id": "ch-hooks",
       "title": "Hooks",
-      "order": 2,
+      "order": 3,
       "steps": [
         {
           "id": "st-usestate",
