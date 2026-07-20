@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import type { TutorialPackage } from '@/lib/engine/schema'
 import { flattenSteps } from '@/lib/engine/loader'
@@ -18,6 +18,27 @@ import { Outline } from './Outline'
 import { StepNav } from './StepNav'
 import { ThemeToggle } from './ThemeToggle'
 
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 py-2.5 text-sm font-medium transition ${
+        active ? 'text-primary border-b-2 border-primary' : 'text-muted border-b-2 border-transparent'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
 /** 学习工作台：左讲解 + 右沙箱 + 大纲 + 步骤导航（Vue3 式，全程不拦人 D4） */
 export function Workspace({ pkg }: { pkg: TutorialPackage }) {
   const flat = useMemo(() => flattenSteps(pkg), [pkg])
@@ -25,6 +46,7 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
   const [progress, setProgress] = useState<PackageProgress | null>(null)
   const [ready, setReady] = useState(false)
   const [showResume, setShowResume] = useState(false)
+  const [tab, setTab] = useState<'lesson' | 'sandbox'>('lesson') // 移动端讲解/代码 Tab（R7，默认讲解）
 
   // 初始化：读 localStorage 进度，定位到断点（F7 续学：非第一步则提示）
   useEffect(() => {
@@ -105,13 +127,25 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
         </aside>
 
         <main className="flex flex-col min-w-0 min-h-0">
+          {/* 移动端 Tab（<lg）：讲解 / 代码 二选一，避免窄屏被挤成两栏（R7） */}
+          <div className="lg:hidden flex border-b border-border bg-surface shrink-0">
+            <TabButton active={tab === 'lesson'} onClick={() => setTab('lesson')}>
+              讲解
+            </TabButton>
+            <TabButton active={tab === 'sandbox'} onClick={() => setTab('sandbox')}>
+              代码
+            </TabButton>
+          </div>
+
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0 overflow-hidden">
-            <section className="p-5 md:p-6 overflow-y-auto border-b lg:border-b-0 lg:border-r border-border">
+            <section
+              className={`${tab === 'lesson' ? 'flex' : 'hidden'} lg:flex flex-col p-5 md:p-6 overflow-y-auto lg:border-r border-border`}
+            >
               <div className="text-xs text-muted mb-1">{cur.chapterTitle}</div>
               <h1 className="text-lg font-semibold mb-3">{cur.step.title}</h1>
               <MarkdownView>{cur.step.description}</MarkdownView>
             </section>
-            <section className="min-w-0 overflow-auto">
+            <section className={`${tab === 'sandbox' ? 'block' : 'hidden'} lg:block min-w-0 overflow-auto`}>
               <Sandbox
                 key={cur.step.id}
                 language={pkg.meta.language}
