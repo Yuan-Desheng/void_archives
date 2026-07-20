@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Sun, Moon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 /** 亮/暗切换 + localStorage 记忆（D5：亮暗双主题）。默认跟随系统偏好 */
 export function ThemeToggle() {
@@ -22,12 +24,8 @@ export function ThemeToggle() {
   }
 
   return (
-    <button
-      onClick={toggle}
-      aria-label="切换主题"
-      className="w-8 h-8 rounded-md border border-border text-fg hover:bg-surface-2 transition text-sm"
-    >
-      {dark ? '☾' : '☀'}
-    </button>
+    <Button variant="outline" size="icon" onClick={toggle} aria-label="切换主题">
+      {dark ? <Moon /> : <Sun />}
+    </Button>
   )
 }

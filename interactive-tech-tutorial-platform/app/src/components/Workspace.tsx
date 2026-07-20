@@ -17,6 +17,7 @@ import { Sandbox } from './Sandbox'
 import { Outline } from './Outline'
 import { StepNav } from './StepNav'
 import { ThemeToggle } from './ThemeToggle'
+import { Button } from '@/components/ui/button'
 
 function TabButton({
   active,
@@ -31,7 +32,9 @@ function TabButton({
     <button
       onClick={onClick}
       className={`flex-1 py-2.5 text-sm font-medium transition ${
-        active ? 'text-primary border-b-2 border-primary' : 'text-muted border-b-2 border-transparent'
+        active
+          ? 'text-primary border-b-2 border-primary'
+          : 'text-muted-foreground border-b-2 border-transparent'
       }`}
     >
       {children}
@@ -92,13 +95,13 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="flex items-center justify-between px-4 md:px-6 h-14 border-b border-border bg-surface shrink-0">
+      <header className="flex items-center justify-between px-4 md:px-6 h-14 border-b bg-card shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-sm text-muted hover:text-fg transition shrink-0">
-            ← 主题库
-          </Link>
+          <Button asChild variant="ghost" size="sm" className="shrink-0 text-muted-foreground">
+            <Link href="/">← 主题库</Link>
+          </Button>
           <span className="font-semibold">{pkg.meta.title}</span>
-          <span className="text-xs text-muted hidden sm:inline">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             {comp.done}/{comp.total} · {comp.percent}%
           </span>
         </div>
@@ -106,29 +109,29 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
       </header>
 
       {showResume && (
-        <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-2 border-b border-border bg-surface-2 text-sm shrink-0">
-          <span className="text-fg truncate">
+        <div className="flex items-center justify-between gap-3 px-4 md:px-6 py-2 border-b bg-muted text-sm shrink-0">
+          <span className="text-foreground truncate">
             继续学习：{cur.chapterTitle} · {cur.step.title}
           </span>
-          <div className="flex items-center gap-3 shrink-0">
-            <button onClick={restart} className="text-muted hover:text-fg transition">
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="ghost" size="sm" onClick={restart}>
               从头开始
-            </button>
-            <button onClick={() => setShowResume(false)} className="text-primary font-medium">
+            </Button>
+            <Button size="sm" onClick={() => setShowResume(false)}>
               继续
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-[220px_1fr] min-h-0">
-        <aside className="border-b md:border-b-0 md:border-r border-border bg-surface p-4 overflow-y-auto">
+        <aside className="border-b md:border-b-0 md:border-r bg-card p-4 overflow-y-auto">
           <Outline pkg={pkg} currentStepId={cur.step.id} progress={progress} onJump={jumpToStepId} />
         </aside>
 
         <main className="flex flex-col min-w-0 min-h-0">
           {/* 移动端 Tab（<lg）：讲解 / 代码 二选一，避免窄屏被挤成两栏（R7） */}
-          <div className="lg:hidden flex border-b border-border bg-surface shrink-0">
+          <div className="lg:hidden flex border-b bg-card shrink-0">
             <TabButton active={tab === 'lesson'} onClick={() => setTab('lesson')}>
               讲解
             </TabButton>
@@ -139,9 +142,9 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
 
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-0 overflow-hidden">
             <section
-              className={`${tab === 'lesson' ? 'flex' : 'hidden'} lg:flex flex-col p-5 md:p-6 overflow-y-auto lg:border-r border-border`}
+              className={`${tab === 'lesson' ? 'flex' : 'hidden'} lg:flex flex-col p-5 md:p-6 overflow-y-auto lg:border-r`}
             >
-              <div className="text-xs text-muted mb-1">{cur.chapterTitle}</div>
+              <div className="text-xs text-muted-foreground mb-1">{cur.chapterTitle}</div>
               <h1 className="text-lg font-semibold mb-3">{cur.step.title}</h1>
               <MarkdownView>{cur.step.description}</MarkdownView>
             </section>
@@ -156,7 +159,7 @@ export function Workspace({ pkg }: { pkg: TutorialPackage }) {
               />
             </section>
           </div>
-          <div className="border-t border-border bg-surface px-4 md:px-6 py-3 shrink-0">
+          <div className="border-t bg-card px-4 md:px-6 py-3 shrink-0">
             <StepNav
               index={idx}
               total={flat.length}

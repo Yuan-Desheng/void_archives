@@ -9,6 +9,7 @@ import {
   useSandpack,
   type SandpackPredefinedTemplate,
 } from '@codesandbox/sandpack-react'
+import { Button } from '@/components/ui/button'
 
 /**
  * R10「给我看答案」——用 useSandpack 真快照当前编辑内容，
@@ -20,7 +21,7 @@ function AnswerControl({ solution }: { solution?: Record<string, string> }) {
   const snapshot = useRef<Record<string, string>>({})
 
   if (!solution || Object.keys(solution).length === 0) {
-    return <span className="text-xs text-muted">本步暂无参考答案</span>
+    return <span className="text-xs text-muted-foreground">本步暂无参考答案</span>
   }
 
   const toggle = () => {
@@ -38,12 +39,9 @@ function AnswerControl({ solution }: { solution?: Record<string, string> }) {
   }
 
   return (
-    <button
-      onClick={toggle}
-      className="text-xs px-3 py-1.5 rounded-md border border-border text-fg hover:bg-surface-2 transition"
-    >
+    <Button variant="outline" size="sm" onClick={toggle}>
       {showing ? '切回我的代码' : '给我看答案'}
-    </button>
+    </Button>
   )
 }
 
@@ -80,8 +78,8 @@ export function Sandbox({ language, files, solution, defaultCode, dependencies }
       customSetup={dependencies ? { dependencies } : undefined}
       options={{ recompileMode: 'delayed', recompileDelay: 400 }}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-surface">
-        <span className="text-xs text-muted font-mono">沙箱</span>
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-card">
+        <span className="text-xs text-muted-foreground font-mono">沙箱</span>
         <AnswerControl solution={solution} />
       </div>
       <SandpackLayout>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { TutorialPackage } from '@/lib/engine/schema'
 import { displayState, type PackageProgress } from '@/lib/engine/progress'
+import { Input } from '@/components/ui/input'
 
 /**
  * 章节 / 步骤大纲树（theme-library F6/F9/F10/F11）。
@@ -45,15 +46,16 @@ export function Outline({
 
   const toggle = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }))
 
-  const anyMatch = !searching || pkg.chapters.some((ch) => ch.steps.some((s) => s.title.toLowerCase().includes(q)))
+  const anyMatch =
+    !searching || pkg.chapters.some((ch) => ch.steps.some((s) => s.title.toLowerCase().includes(q)))
 
   return (
     <nav className="text-sm">
-      <input
+      <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="搜索步骤…"
-        className="w-full mb-3 px-2.5 py-1.5 rounded-md border border-border bg-surface-2 text-fg placeholder:text-muted outline-none focus:border-primary transition"
+        className="mb-3 h-8"
       />
 
       {pkg.chapters.map((ch) => {
@@ -67,7 +69,7 @@ export function Outline({
           <div key={ch.id} className="mb-2">
             <button
               onClick={() => !searching && toggle(ch.id)}
-              className="w-full flex items-center gap-1.5 mb-1 text-muted hover:text-fg transition"
+              className="w-full flex items-center gap-1.5 mb-1 text-muted-foreground hover:text-foreground transition"
             >
               <span className="inline-block w-3 text-center text-xs">{open ? '▾' : '▸'}</span>
               <span className="flex-1 text-left text-xs font-semibold tracking-wide">{ch.title}</span>
@@ -83,12 +85,14 @@ export function Outline({
                       <button
                         onClick={() => onJump(s.id)}
                         className={`w-full text-left px-2.5 py-1.5 rounded-md flex items-center gap-2 transition ${
-                          st === 'current' ? 'bg-primary text-primary-fg' : 'text-fg hover:bg-surface-2'
+                          st === 'current'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-foreground hover:bg-accent'
                         }`}
                       >
                         <span
                           className={`inline-block w-3.5 shrink-0 text-center ${
-                            st === 'done' ? 'text-fg' : 'text-muted'
+                            st === 'done' ? 'text-foreground' : 'text-muted-foreground'
                           }`}
                         >
                           {st === 'done' ? '✓' : st === 'current' ? '●' : '○'}
@@ -104,7 +108,7 @@ export function Outline({
         )
       })}
 
-      {!anyMatch && <div className="text-xs text-muted px-2 py-1">无匹配步骤</div>}
+      {!anyMatch && <div className="text-xs text-muted-foreground px-2 py-1">无匹配步骤</div>}
     </nav>
   )
 }
