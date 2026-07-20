@@ -3,7 +3,7 @@
   "status": "active",
   "meta": {
     "title": "React 入门",
-    "description": "从 JSX 到 Hooks，跟着可运行沙箱一步步学 React。",
+    "description": "从 JSX 到核心 Hooks，跟着可运行沙箱一步步学 React。",
     "language": "react",
     "defaultCode": "export default function App(){\n  return <h1>Hello React</h1>\n}",
     "dependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" }
@@ -16,23 +16,37 @@
       "steps": [
         {
           "id": "st-first-component",
-          "title": "你的第一个组件",
+          "title": "基本介绍：你的第一个组件",
           "order": 1,
-          "description": "React 组件就是一个**返回 JSX 的函数**。JSX 看起来像 HTML，但它是 JavaScript。\n\n右侧编辑器里试着把 `Hello React` 改成你的名字，点 **Run** 看预览变化。",
+          "description": "React 是用来构建界面的库，核心思想是**声明式**：你描述界面「长什么样」，React 负责把它渲染出来、并在数据变化时自动更新。\n\n最小的单位是**组件**——一个**返回 JSX 的函数**。JSX 看起来像 HTML，但它是 JavaScript。\n\n右侧编辑器里把 `Hello React` 改成你的名字，点 **Run** 看预览变化。",
           "files": {
             "/App.js": "export default function App() {\n  return <h1>Hello React</h1>\n}"
           }
         },
         {
-          "id": "st-jsx-expression",
-          "title": "在 JSX 里用表达式",
+          "id": "st-project-structure",
+          "title": "开发环境与项目结构",
           "order": 2,
-          "description": "用 `{}` 可以在 JSX 里嵌入任意 JavaScript 表达式。\n\n下面的 `name` 变量还没用上，试着把它显示到标题里——不会的话点「给我看答案」。",
+          "description": "真实的 React 项目由一个**入口**把根组件挂到页面上，再由许多**组件文件**组合而成。右侧的沙箱就是你的即时开发环境，改完即时生效，无需本地装任何东西。\n\n组件可以拆到**单独的文件**里，用 `export` 导出、`import` 引入，从而复用。下面 `Greeting` 已经拆到 `Greeting.js`，试着在 `App` 里用 `<Greeting />` 把它渲染出来。",
           "files": {
-            "/App.js": "export default function App() {\n  const name = 'React'\n  // TODO: 把 name 显示到 <h1> 里\n  return <h1>Hello </h1>\n}"
+            "/App.js": "import Greeting from './Greeting'\n\nexport default function App() {\n  return (\n    <div>\n      <h1>我的应用</h1>\n      {/* TODO: 在这里渲染 <Greeting /> */}\n    </div>\n  )\n}",
+            "/Greeting.js": "export default function Greeting() {\n  return <p>你好，我是拆到单独文件里的组件</p>\n}"
           },
           "solution": {
-            "/App.js": "export default function App() {\n  const name = 'React'\n  return <h1>Hello {name}</h1>\n}"
+            "/App.js": "import Greeting from './Greeting'\n\nexport default function App() {\n  return (\n    <div>\n      <h1>我的应用</h1>\n      <Greeting />\n    </div>\n  )\n}",
+            "/Greeting.js": "export default function Greeting() {\n  return <p>你好，我是拆到单独文件里的组件</p>\n}"
+          }
+        },
+        {
+          "id": "st-jsx-expression",
+          "title": "TSX 语法入门：表达式与列表",
+          "order": 3,
+          "description": "用 `{}` 可以在 JSX 里嵌入任意 JavaScript **表达式**：变量、运算、三元、`map` 都行。\n\n下面的 `name` 变量还没用上，`items` 也没渲染。试着：① 把 `name` 显示到标题里；② 用 `items.map` 渲染成 `<li>` 列表。不会就点「给我看答案」。",
+          "files": {
+            "/App.js": "export default function App() {\n  const name = 'React'\n  const items = ['JSX', 'Props', 'State']\n  return (\n    <div>\n      <h1>Hello </h1>\n      <ul>\n        {/* TODO: 用 items.map 渲染每一项 */}\n      </ul>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "export default function App() {\n  const name = 'React'\n  const items = ['JSX', 'Props', 'State']\n  return (\n    <div>\n      <h1>Hello {name}</h1>\n      <ul>\n        {items.map((it) => (\n          <li key={it}>{it}</li>\n        ))}\n      </ul>\n    </div>\n  )\n}"
           }
         }
       ]
@@ -58,9 +72,57 @@
           "id": "st-useeffect",
           "title": "useEffect：处理副作用",
           "order": 2,
-          "description": "`useEffect` 在渲染后运行副作用（如订阅、定时器、请求）。第二个参数是**依赖数组**：为空 `[]` 时只在挂载后运行一次。\n\n下面用 `useEffect` 在标题里显示当前秒数。",
+          "description": "`useEffect` 在渲染后运行副作用（如订阅、定时器、请求）。第二个参数是**依赖数组**：为空 `[]` 时只在挂载后运行一次，并可返回**清理函数**。\n\n下面用 `useEffect` 起一个每秒 +1 的定时器，并在卸载时清理它。",
           "files": {
             "/App.js": "import { useState, useEffect } from 'react'\n\nexport default function App() {\n  const [sec, setSec] = useState(0)\n  useEffect(() => {\n    const id = setInterval(() => setSec((s) => s + 1), 1000)\n    return () => clearInterval(id)\n  }, [])\n  return <h1>已运行 {sec} 秒</h1>\n}"
+          }
+        },
+        {
+          "id": "st-useref",
+          "title": "useRef：访问 DOM 与存可变值",
+          "order": 3,
+          "description": "`useRef` 返回一个 `{ current }` 容器：改它**不会触发重渲染**。两大用途：① 直接访问某个 DOM 节点；② 存一份跨渲染保留、又不需要驱动界面的可变值。\n\n下面把 `inputRef` 绑到输入框上，补全按钮的点击处理，让它点一下就聚焦输入框。",
+          "files": {
+            "/App.js": "import { useRef } from 'react'\n\nexport default function App() {\n  const inputRef = useRef(null)\n  return (\n    <div>\n      <input ref={inputRef} placeholder=\"点按钮聚焦我\" />\n      {/* TODO: 点击时让输入框聚焦 */}\n      <button>聚焦输入框</button>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useRef } from 'react'\n\nexport default function App() {\n  const inputRef = useRef(null)\n  return (\n    <div>\n      <input ref={inputRef} placeholder=\"点按钮聚焦我\" />\n      <button onClick={() => inputRef.current.focus()}>聚焦输入框</button>\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-usememo",
+          "title": "useMemo：缓存昂贵计算",
+          "order": 4,
+          "description": "`useMemo(fn, deps)` 缓存 `fn` 的**计算结果**：只有依赖 `deps` 变化时才重新计算，否则复用上次结果，避免每次渲染都重跑昂贵计算。\n\n下面 `slowSum` 是个「昂贵」计算。现在每次在输入框打字都会让它重算——用 `useMemo` 把它包起来，只在 `n` 变化时才算。",
+          "files": {
+            "/App.js": "import { useState } from 'react'\n\nfunction slowSum(n) {\n  let s = 0\n  for (let i = 0; i <= n; i++) s += i\n  return s\n}\n\nexport default function App() {\n  const [n, setN] = useState(100)\n  const [text, setText] = useState('')\n  // TODO: 用 useMemo 缓存 slowSum(n)，仅在 n 变化时重算\n  const total = slowSum(n)\n  return (\n    <div>\n      <p>0..{n} 求和 = {total}</p>\n      <button onClick={() => setN(n + 1)}>n + 1</button>\n      <input value={text} onChange={(e) => setText(e.target.value)} placeholder=\"打字不该触发重算\" />\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useState, useMemo } from 'react'\n\nfunction slowSum(n) {\n  let s = 0\n  for (let i = 0; i <= n; i++) s += i\n  return s\n}\n\nexport default function App() {\n  const [n, setN] = useState(100)\n  const [text, setText] = useState('')\n  const total = useMemo(() => slowSum(n), [n])\n  return (\n    <div>\n      <p>0..{n} 求和 = {total}</p>\n      <button onClick={() => setN(n + 1)}>n + 1</button>\n      <input value={text} onChange={(e) => setText(e.target.value)} placeholder=\"打字不该触发重算\" />\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-usecallback",
+          "title": "useCallback：缓存函数引用",
+          "order": 5,
+          "description": "每次渲染都会新建一份函数。`useCallback(fn, deps)` 缓存**函数本身**，依赖不变就返回同一个引用——配合 `memo` 化的子组件，可避免子组件被无谓地重渲染。\n\n下面 `Child` 已用 `memo` 包裹。现在点「other +1」也会让 `Child` 重渲染（看控制台）。用 `useCallback` 缓存 `handleClick`，让 `Child` 不再被牵连。",
+          "files": {
+            "/App.js": "import { useState, memo } from 'react'\n\nconst Child = memo(function Child({ onClick }) {\n  console.log('Child 渲染了')\n  return <button onClick={onClick}>count + 1</button>\n})\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  const [other, setOther] = useState(0)\n  // TODO: 用 useCallback 缓存 handleClick，避免 other 变化时 Child 重渲染\n  const handleClick = () => setCount((c) => c + 1)\n  return (\n    <div>\n      <p>count: {count}</p>\n      <Child onClick={handleClick} />\n      <button onClick={() => setOther(other + 1)}>other: {other}</button>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useState, useCallback, memo } from 'react'\n\nconst Child = memo(function Child({ onClick }) {\n  console.log('Child 渲染了')\n  return <button onClick={onClick}>count + 1</button>\n})\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  const [other, setOther] = useState(0)\n  const handleClick = useCallback(() => setCount((c) => c + 1), [])\n  return (\n    <div>\n      <p>count: {count}</p>\n      <Child onClick={handleClick} />\n      <button onClick={() => setOther(other + 1)}>other: {other}</button>\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-usecontext",
+          "title": "useContext：跨层级共享数据",
+          "order": 6,
+          "description": "当很多层组件都要用同一份数据时，一层层传 props 很啰嗦。**Context** 让深层组件直接拿到共享值：`createContext` 建上下文，`<Provider value>` 提供值，`useContext` 消费值。\n\n下面 `App` 已经用 `Provider` 提供了主题 `\"dark\"`，但 `Toolbar` 还写死成 `light`。改用 `useContext` 读取真正的主题。",
+          "files": {
+            "/App.js": "import { createContext } from 'react'\n\nconst ThemeContext = createContext('light')\n\nfunction Toolbar() {\n  // TODO: 用 useContext(ThemeContext) 读取当前主题\n  const theme = 'light'\n  return <p>当前主题：{theme}</p>\n}\n\nexport default function App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Toolbar />\n    </ThemeContext.Provider>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { createContext, useContext } from 'react'\n\nconst ThemeContext = createContext('light')\n\nfunction Toolbar() {\n  const theme = useContext(ThemeContext)\n  return <p>当前主题：{theme}</p>\n}\n\nexport default function App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Toolbar />\n    </ThemeContext.Provider>\n  )\n}"
           }
         }
       ]
