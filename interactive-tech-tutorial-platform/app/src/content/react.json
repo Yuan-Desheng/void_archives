@@ -115,7 +115,7 @@
           "id": "st-usestate",
           "title": "useState：让组件有状态",
           "order": 1,
-          "description": "`useState` 给组件一块**会变化的状态**。它返回 `[值, 改值的函数]`。\n\n点按钮时调用 `setCount`，React 会自动重新渲染。补全 `onClick` 让计数器动起来。",
+          "description": "普通变量变了，界面不会更新。要让界面随数据变化，组件需要**状态**。`useState` 声明一块状态，返回「当前值 + 更新函数」：\n\n```jsx\nimport { useState } from 'react'\n\nconst [count, setCount] = useState(0)\nsetCount(1) // 触发重新渲染，count 变成 1\n```\n\n关键：**必须用更新函数改状态**（`setCount(...)`），不能直接 `count = 1`——React 靠它知道该重渲染了。基于旧值更新时，传一个回调更可靠：\n\n```jsx\nsetCount((c) => c + 1)\n```\n\n> 深入：[react.dev — state：组件的记忆](https://react.dev/learn/state-a-components-memory)\n\n现在，给按钮补上 `onClick`，点击时让 `count` 加一。",
           "files": {
             "/App.js": "import { useState } from 'react'\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <div>\n      <p>count: {count}</p>\n      {/* TODO: 点击时 count + 1 */}\n      <button>+1</button>\n    </div>\n  )\n}"
           },
@@ -127,7 +127,7 @@
           "id": "st-useeffect",
           "title": "useEffect：处理副作用",
           "order": 2,
-          "description": "`useEffect` 在渲染后运行副作用（如订阅、定时器、请求）。第二个参数是**依赖数组**：为空 `[]` 时只在挂载后运行一次，并可返回**清理函数**。\n\n下面用 `useEffect` 起一个每秒 +1 的定时器，并在卸载时清理它。",
+          "description": "组件渲染应保持纯粹，但真实应用要做「渲染之外」的事——定时器、订阅、请求数据、手动改 DOM，这些叫**副作用**，交给 `useEffect`：\n\n```jsx\nuseEffect(() => {\n  const id = setInterval(tick, 1000)\n  return () => clearInterval(id) // 清理函数\n}, [])\n```\n\n第二个参数是**依赖数组**，决定何时重跑：`[]` 只在挂载后跑一次；`[a]` 在 `a` 变化时跑；不传则每次渲染后都跑。返回的**清理函数**会在卸载或下次 effect 前调用，用来清定时器、退订阅，避免泄漏。\n\n> 深入：[react.dev — 使用 Effect 进行同步](https://react.dev/learn/synchronizing-with-effects)\n\n下面这个每秒 +1 的定时器已经写好、也会清理——观察它，体会 effect 的运行与清理时机。",
           "files": {
             "/App.js": "import { useState, useEffect } from 'react'\n\nexport default function App() {\n  const [sec, setSec] = useState(0)\n  useEffect(() => {\n    const id = setInterval(() => setSec((s) => s + 1), 1000)\n    return () => clearInterval(id)\n  }, [])\n  return <h1>已运行 {sec} 秒</h1>\n}"
           }
@@ -136,7 +136,7 @@
           "id": "st-useref",
           "title": "useRef：访问 DOM 与存可变值",
           "order": 3,
-          "description": "`useRef` 返回一个 `{ current }` 容器：改它**不会触发重渲染**。两大用途：① 直接访问某个 DOM 节点；② 存一份跨渲染保留、又不需要驱动界面的可变值。\n\n下面把 `inputRef` 绑到输入框上，补全按钮的点击处理，让它点一下就聚焦输入框。",
+          "description": "`useRef` 返回一个 `{ current }` 容器，改它**不会触发重渲染**：\n\n```jsx\nconst inputRef = useRef(null)\n\n<input ref={inputRef} />\ninputRef.current.focus() // 直接操作 DOM 节点\n```\n\n两大用途：① 通过 `ref` 属性拿到某个 **DOM 节点**直接操作；② 存一份跨渲染保留、又不需要驱动界面的**可变值**（改它不像 state 那样引发渲染）。\n\n> 深入：[react.dev — 用 ref 引用值](https://react.dev/learn/referencing-values-with-refs)\n\n下面把 `inputRef` 绑到了输入框上，补全按钮点击处理，让它点一下就聚焦输入框。",
           "files": {
             "/App.js": "import { useRef } from 'react'\n\nexport default function App() {\n  const inputRef = useRef(null)\n  return (\n    <div>\n      <input ref={inputRef} placeholder=\"点按钮聚焦我\" />\n      {/* TODO: 点击时让输入框聚焦 */}\n      <button>聚焦输入框</button>\n    </div>\n  )\n}"
           },
@@ -148,7 +148,7 @@
           "id": "st-usememo",
           "title": "useMemo：缓存昂贵计算",
           "order": 4,
-          "description": "`useMemo(fn, deps)` 缓存 `fn` 的**计算结果**：只有依赖 `deps` 变化时才重新计算，否则复用上次结果，避免每次渲染都重跑昂贵计算。\n\n下面 `slowSum` 是个「昂贵」计算。现在每次在输入框打字都会让它重算——用 `useMemo` 把它包起来，只在 `n` 变化时才算。",
+          "description": "组件每次渲染都会把函数体重跑一遍。如果里面有**昂贵计算**，可以用 `useMemo` 缓存结果，只在依赖变化时才重算：\n\n```jsx\nconst total = useMemo(() => slowSum(n), [n])\n```\n\n依赖 `[n]` 不变时，`useMemo` 直接返回上次的结果，跳过 `slowSum`。这样与它无关的 state（比如输入框）变化时，就不会白白触发昂贵计算。\n\n> 深入：[react.dev — useMemo](https://react.dev/reference/react/useMemo)\n\n下面 `slowSum` 每次打字都会重算。用 `useMemo` 把它包起来，只在 `n` 变化时才算。",
           "files": {
             "/App.js": "import { useState } from 'react'\n\nfunction slowSum(n) {\n  let s = 0\n  for (let i = 0; i <= n; i++) s += i\n  return s\n}\n\nexport default function App() {\n  const [n, setN] = useState(100)\n  const [text, setText] = useState('')\n  // TODO: 用 useMemo 缓存 slowSum(n)，仅在 n 变化时重算\n  const total = slowSum(n)\n  return (\n    <div>\n      <p>0..{n} 求和 = {total}</p>\n      <button onClick={() => setN(n + 1)}>n + 1</button>\n      <input value={text} onChange={(e) => setText(e.target.value)} placeholder=\"打字不该触发重算\" />\n    </div>\n  )\n}"
           },
@@ -160,7 +160,7 @@
           "id": "st-usecallback",
           "title": "useCallback：缓存函数引用",
           "order": 5,
-          "description": "每次渲染都会新建一份函数。`useCallback(fn, deps)` 缓存**函数本身**，依赖不变就返回同一个引用——配合 `memo` 化的子组件，可避免子组件被无谓地重渲染。\n\n下面 `Child` 已用 `memo` 包裹。现在点「other +1」也会让 `Child` 重渲染（看控制台）。用 `useCallback` 缓存 `handleClick`，让 `Child` 不再被牵连。",
+          "description": "组件每次渲染都会**新建一份函数**。`useCallback` 缓存函数本身，依赖不变就返回同一个引用：\n\n```jsx\nconst handleClick = useCallback(() => setCount((c) => c + 1), [])\n```\n\n它常和 `memo` 化的子组件搭配：`memo(Child)` 只在 props 变化时才重渲染，但如果每次都传一个「新」函数给它，`memo` 就失效了。用 `useCallback` 固定函数引用，子组件才能真正跳过重渲染。\n\n> 深入：[react.dev — useCallback](https://react.dev/reference/react/useCallback)\n\n下面 `Child` 已用 `memo` 包裹。点「other +1」也会让它重渲染（看控制台）。用 `useCallback` 缓存 `handleClick`，让 `Child` 不再被牵连。",
           "files": {
             "/App.js": "import { useState, memo } from 'react'\n\nconst Child = memo(function Child({ onClick }) {\n  console.log('Child 渲染了')\n  return <button onClick={onClick}>count + 1</button>\n})\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  const [other, setOther] = useState(0)\n  // TODO: 用 useCallback 缓存 handleClick，避免 other 变化时 Child 重渲染\n  const handleClick = () => setCount((c) => c + 1)\n  return (\n    <div>\n      <p>count: {count}</p>\n      <Child onClick={handleClick} />\n      <button onClick={() => setOther(other + 1)}>other: {other}</button>\n    </div>\n  )\n}"
           },
@@ -172,7 +172,7 @@
           "id": "st-usecontext",
           "title": "useContext：跨层级共享数据",
           "order": 6,
-          "description": "当很多层组件都要用同一份数据时，一层层传 props 很啰嗦。**Context** 让深层组件直接拿到共享值：`createContext` 建上下文，`<Provider value>` 提供值，`useContext` 消费值。\n\n下面 `App` 已经用 `Provider` 提供了主题 `\"dark\"`，但 `Toolbar` 还写死成 `light`。改用 `useContext` 读取真正的主题。",
+          "description": "很多层组件都要用同一份数据时，一层层传 props 很啰嗦。**Context** 让深层组件直接拿到共享值，不用中间层层转发：\n\n```jsx\nconst ThemeContext = createContext('light')\n\n// 父组件提供值\n<ThemeContext.Provider value=\"dark\">\n  <Toolbar />\n</ThemeContext.Provider>\n\n// 任意深度的子组件消费\nconst theme = useContext(ThemeContext)\n```\n\n`createContext` 建上下文，`<Provider value>` 往下提供值，`useContext` 在子组件里读取离它最近的那个 Provider 的值。\n\n> 深入：[react.dev — 用 Context 深层传递数据](https://react.dev/learn/passing-data-deeply-with-context)\n\n下面 `App` 用 Provider 提供了主题 `\"dark\"`，但 `Toolbar` 还写死成 `light`。改用 `useContext` 读取真正的主题。",
           "files": {
             "/App.js": "import { createContext } from 'react'\n\nconst ThemeContext = createContext('light')\n\nfunction Toolbar() {\n  // TODO: 用 useContext(ThemeContext) 读取当前主题\n  const theme = 'light'\n  return <p>当前主题：{theme}</p>\n}\n\nexport default function App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <Toolbar />\n    </ThemeContext.Provider>\n  )\n}"
           },
@@ -184,7 +184,7 @@
           "id": "st-usereducer",
           "title": "useReducer：集中式状态",
           "order": 7,
-          "description": "`useReducer` 和 `useState` 一样管理状态，但把「怎么改」集中到一个 **reducer 纯函数** 里：组件只负责 `dispatch({ type })` 派发动作，reducer 根据 action 返回新 state。状态变更逻辑复杂时比 useState 更清晰。\n\n下面计数器只有「-」按钮。补上一个「+」按钮，`dispatch` 一个 `increment` 动作。",
+          "description": "`useReducer` 和 `useState` 一样管理状态，但把「怎么改」集中到一个 **reducer 纯函数**里。组件只负责派发动作，reducer 根据动作返回新 state：\n\n```jsx\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment': return { count: state.count + 1 }\n    default: return state\n  }\n}\n\nconst [state, dispatch] = useReducer(reducer, { count: 0 })\ndispatch({ type: 'increment' }) // 派发动作\n```\n\n当状态变更逻辑复杂、或下一个状态依赖前一个时，把逻辑收进 reducer 比散落一堆 `setState` 更清晰、也更好测试。\n\n> 深入：[react.dev — 用 Reducer 整合状态逻辑](https://react.dev/learn/extracting-state-logic-into-a-reducer)\n\n下面计数器只有「-」按钮。补上一个「+」按钮，`dispatch` 一个 `increment` 动作。",
           "files": {
             "/App.js": "import { useReducer } from 'react'\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment':\n      return { count: state.count + 1 }\n    case 'decrement':\n      return { count: state.count - 1 }\n    default:\n      return state\n  }\n}\n\nexport default function App() {\n  const [state, dispatch] = useReducer(reducer, { count: 0 })\n  return (\n    <div style={{ padding: 12 }}>\n      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>\n      <span style={{ margin: '0 12px' }}>{state.count}</span>\n      {/* TODO: 加一个 + 按钮，dispatch 一个 increment 动作 */}\n    </div>\n  )\n}"
           },
@@ -196,7 +196,7 @@
           "id": "st-custom-hook",
           "title": "自定义 Hook：复用状态逻辑",
           "order": 8,
-          "description": "当多个组件有相同的**带状态的逻辑**时，把它抽成一个自定义 Hook 复用。规则只有两条：① 名字以 `use` 开头；② 内部可以调用其它 Hook。\n\n下面 `useCounter` 把计数逻辑封装好了。它已经返回了 `reset`，但界面还没用上——加一个「重置」按钮，调用 `counter.reset`。（实战里也可直接用 ahooks / react-use 等现成库。）",
+          "description": "多个组件有相同的**带状态的逻辑**时，把它抽成一个**自定义 Hook** 复用。规则只有两条：名字以 `use` 开头、内部可以调用其它 Hook：\n\n```jsx\nfunction useCounter(initial = 0) {\n  const [count, setCount] = useState(initial)\n  const increment = () => setCount((c) => c + 1)\n  return { count, increment }\n}\n\n// 任意组件里复用\nconst { count, increment } = useCounter(0)\n```\n\n自定义 Hook 复用的是**逻辑**，不是 state——每个组件调用它都会拿到自己独立的一份状态。实战里也常直接用 ahooks、react-use 等现成库。\n\n> 深入：[react.dev — 复用逻辑与自定义 Hook](https://react.dev/learn/reusing-logic-with-custom-hooks)\n\n下面 `useCounter` 已返回 `reset`，但界面还没用上——加一个「重置」按钮，调用 `counter.reset`。",
           "files": {
             "/App.js": "import { useState } from 'react'\n\n// 自定义 Hook：把计数逻辑抽出来复用（必须以 use 开头）\nfunction useCounter(initial = 0) {\n  const [count, setCount] = useState(initial)\n  const increment = () => setCount((c) => c + 1)\n  const reset = () => setCount(initial)\n  return { count, increment, reset }\n}\n\nexport default function App() {\n  const counter = useCounter(0)\n  return (\n    <div style={{ padding: 12 }}>\n      <p>count: {counter.count}</p>\n      <button onClick={counter.increment}>加一</button>\n      {/* TODO: 再加一个「重置」按钮，调用 counter.reset */}\n    </div>\n  )\n}"
           },
@@ -208,7 +208,7 @@
           "id": "st-usetransition",
           "title": "useTransition：标记非紧急更新",
           "order": 9,
-          "description": "`useTransition` 把一部分状态更新标记为**非紧急过渡**，让紧急更新（如输入框打字）先响应，繁重的更新（如大列表过滤）放低优先级，避免卡顿。它返回 `[isPending, startTransition]`。\n\n下面在 3000 项里过滤，输入会卡。用 `startTransition` 包裹 `setList`，把列表更新降级为过渡；`isPending` 会告诉你过渡进行中。",
+          "description": "`useTransition` 把一部分状态更新标记为**非紧急过渡**，让紧急更新（如打字）先响应、繁重更新（如大列表过滤）放低优先级，避免界面卡顿：\n\n```jsx\nconst [isPending, startTransition] = useTransition()\n\nsetText(v) // 紧急：输入框立即更新\nstartTransition(() => {\n  setList(filter(v)) // 非紧急：可被打断、延后\n})\n```\n\n被 `startTransition` 包裹的更新会被降级；`isPending` 告诉你过渡是否进行中，可用来显示 loading。\n\n> 深入：[react.dev — useTransition](https://react.dev/reference/react/useTransition)\n\n下面在 3000 项里过滤，输入会卡。用 `startTransition` 包裹 `setList`，把列表更新降级为过渡。",
           "files": {
             "/App.js": "import { useState, useTransition } from 'react'\n\nconst ALL = Array.from({ length: 3000 }, (_, i) => '项目 ' + i)\n\nexport default function App() {\n  const [text, setText] = useState('')\n  const [list, setList] = useState(ALL)\n  const [isPending, startTransition] = useTransition()\n  const onChange = (e) => {\n    const v = e.target.value\n    setText(v) // 紧急更新：输入框立即响应\n    // TODO: 用 startTransition 包裹列表过滤，标记为非紧急更新\n    setList(ALL.filter((x) => x.includes(v)))\n  }\n  return (\n    <div style={{ padding: 12 }}>\n      <input value={text} onChange={onChange} placeholder=\"过滤项目\" />\n      {isPending && <span> 更新中…</span>}\n      <ul style={{ height: 160, overflow: 'auto' }}>\n        {list.slice(0, 100).map((x) => (\n          <li key={x}>{x}</li>\n        ))}\n      </ul>\n    </div>\n  )\n}"
           },
@@ -220,7 +220,7 @@
           "id": "st-usedeferredvalue",
           "title": "useDeferredValue：延迟派生值",
           "order": 10,
-          "description": "`useDeferredValue` 给**单个值**一个「延迟版本」：输入变化时它先返回旧值、在后台再更新，从而让高频输入保持流畅。它和 `useTransition` 都是降优先级——区别是前者针对**值**，后者针对**更新动作**。注意它不是防抖（延迟量由设备而定）。\n\n下面用原始 `val` 过滤大列表会卡。改用 `useDeferredValue(val)` 得到延迟值再过滤，`isStale` 时把列表淡化提示。",
+          "description": "`useDeferredValue` 给**单个值**一个「延迟版本」：值变化时它先返回旧的、在后台再更新，从而让高频输入保持流畅：\n\n```jsx\nconst deferred = useDeferredValue(val)\nconst list = filter(deferred) // 用延迟值做繁重计算\n```\n\n它和 `useTransition` 都是降优先级，区别是：`useDeferredValue` 针对**一个值**，`useTransition` 针对**一段更新动作**。注意它不是防抖——延迟多久由设备性能决定，不是固定时间。\n\n> 深入：[react.dev — useDeferredValue](https://react.dev/reference/react/useDeferredValue)\n\n下面用原始 `val` 过滤大列表会卡。改用 `useDeferredValue(val)` 得到延迟值再过滤，`isStale` 时把列表淡化。",
           "files": {
             "/App.js": "import { useState, useDeferredValue } from 'react'\n\nconst ALL = Array.from({ length: 3000 }, (_, i) => '项目 ' + i)\n\nexport default function App() {\n  const [val, setVal] = useState('')\n  // TODO: 用 useDeferredValue 得到 val 的延迟值，用它来过滤\n  const deferred = val\n  const isStale = deferred !== val\n  const list = ALL.filter((x) => x.includes(deferred))\n  return (\n    <div style={{ padding: 12 }}>\n      <input value={val} onChange={(e) => setVal(e.target.value)} placeholder=\"搜索\" />\n      <ul style={{ height: 160, overflow: 'auto', opacity: isStale ? 0.4 : 1, transition: 'opacity .3s' }}>\n        {list.slice(0, 100).map((x) => (\n          <li key={x}>{x}</li>\n        ))}\n      </ul>\n    </div>\n  )\n}"
           },
