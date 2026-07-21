@@ -268,6 +268,42 @@
           "solution": {
             "/App.js": "import { useState, useDeferredValue } from 'react'\n\nconst ALL = Array.from({ length: 3000 }, (_, i) => '项目 ' + i)\n\nexport default function App() {\n  const [val, setVal] = useState('')\n  const deferred = useDeferredValue(val)\n  const isStale = deferred !== val\n  const list = ALL.filter((x) => x.includes(deferred))\n  return (\n    <div style={{ padding: 12 }}>\n      <input value={val} onChange={(e) => setVal(e.target.value)} placeholder=\"搜索\" />\n      <ul style={{ height: 160, overflow: 'auto', opacity: isStale ? 0.4 : 1, transition: 'opacity .3s' }}>\n        {list.slice(0, 100).map((x) => (\n          <li key={x}>{x}</li>\n        ))}\n      </ul>\n    </div>\n  )\n}"
           }
+        },
+        {
+          "id": "st-uselayouteffect",
+          "title": "useLayoutEffect：绘制前同步执行",
+          "order": 11,
+          "description": "## useLayoutEffect vs useEffect\n`useLayoutEffect` 的用法和 `useEffect` **完全一样**（同样的依赖数组、清理函数），区别只在**执行时机**：\n\n| | 执行时机 | 特点 |\n|---|---|---|\n| `useEffect` | 浏览器**绘制后**异步执行 | 不阻塞绘制，绝大多数场景用它 |\n| `useLayoutEffect` | 浏览器**绘制前**同步执行 | 阻塞绘制，能在用户看到画面前改好 |\n\n## 什么时候用它\n当你需要**读取 DOM 布局**（测量元素尺寸/位置）**并据此同步改状态或 DOM** 时用它。因为它在绘制前跑完，用户不会看到「先渲染错、再跳一下改对」的**闪烁**：\n\n```jsx\nuseLayoutEffect(() => {\n  const w = boxRef.current.offsetWidth // 测量\n  setWidth(w)                          // 同步改，绘制前就对了\n}, [])\n```\n\n用 `useEffect` 做同样的事，用户可能先看到旧值、下一帧才跳到新值——出现闪烁。\n\n## 默认还是用 useEffect\n`useLayoutEffect` 会**阻塞浏览器绘制**，滥用会拖慢页面。**默认用 `useEffect`**，只有确实遇到「测量 DOM 后同步更新、否则闪烁」的问题时，才换成它。\n\n## 小结\n两者用法相同、只差时机：useEffect 绘制后异步、useLayoutEffect 绘制前同步；需要测量 DOM 并同步更新以避免闪烁时用后者；默认用 useEffect。\n\n> 深入：[react.dev — useLayoutEffect](https://react.dev/reference/react/useLayoutEffect)\n\n下面用 `useLayoutEffect` 测量灰盒子的宽度：读 `boxRef.current.offsetWidth`，`setWidth` 上去。",
+          "files": {
+            "/App.js": "import { useLayoutEffect, useRef, useState } from 'react'\n\nexport default function App() {\n  const boxRef = useRef(null)\n  const [width, setWidth] = useState(0)\n  useLayoutEffect(() => {\n    // TODO: 读 boxRef.current.offsetWidth，setWidth 上去\n  }, [])\n  return (\n    <div style={{ padding: 12 }}>\n      <div ref={boxRef} style={{ width: 200, height: 40, background: '#eee', lineHeight: '40px', textAlign: 'center' }}>测量我</div>\n      <p>宽度：{width}px</p>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useLayoutEffect, useRef, useState } from 'react'\n\nexport default function App() {\n  const boxRef = useRef(null)\n  const [width, setWidth] = useState(0)\n  useLayoutEffect(() => {\n    setWidth(boxRef.current.offsetWidth)\n  }, [])\n  return (\n    <div style={{ padding: 12 }}>\n      <div ref={boxRef} style={{ width: 200, height: 40, background: '#eee', lineHeight: '40px', textAlign: 'center' }}>测量我</div>\n      <p>宽度：{width}px</p>\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-useid",
+          "title": "useId：稳定的唯一 ID",
+          "order": 12,
+          "description": "## 生成稳定的唯一 ID\n`useId` 生成一个**稳定、唯一**的字符串 id（形如 `:r0:`），无需传参、同一组件多次调用会递增。它专门用于**需要唯一 id 的可访问性场景**，不是给视觉/样式用的：\n\n```jsx\nconst id = useId()\n\n<label htmlFor={id}>用户名</label>\n<input id={id} />\n```\n\n## 为什么不自己生成\n手写 `id=\"name\"` 在组件复用多次时会**重复**；用 `Math.random()` 又会导致**服务端渲染（SSR）两端 id 不一致**、引发 hydration 报错。`useId` 保证同一组件在服务端和客户端生成**相同**的 id，且天然唯一。\n\n## 一个组件多个 id 用后缀\n需要多个相关 id 时，**调用一次 `useId`**、加后缀区分，别调多次：\n\n```jsx\nconst id = useId()\n<input aria-describedby={`${id}-hint`} />\n<p id={`${id}-hint`}>提示文本</p>\n```\n\n## 注意\n- **别用来做列表的 `key`**（key 要用数据 id）\n- 它是给可访问性/SSR 用的，不要拿来当 CSS 选择器或业务标识\n\n## 小结\nuseId 生成稳定唯一 id，用于 label/input 绑定、aria 属性、SSR 一致；多个相关 id 用同一次调用加后缀；不要用作 key 或样式标识。\n\n> 深入：[react.dev — useId](https://react.dev/reference/react/useId)\n\n下面 label 和 input 还没绑定。用 `useId` 生成 id，让点击「用户名」能聚焦到输入框。",
+          "files": {
+            "/App.js": "import { useId } from 'react'\n\nexport default function App() {\n  // TODO: 用 useId 生成 id\n  const id = ''\n  return (\n    <div style={{ padding: 12 }}>\n      <label htmlFor={id}>用户名：</label>\n      <input id={id} type=\"text\" />\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useId } from 'react'\n\nexport default function App() {\n  const id = useId()\n  return (\n    <div style={{ padding: 12 }}>\n      <label htmlFor={id}>用户名：</label>\n      <input id={id} type=\"text\" />\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-useimperativehandle",
+          "title": "useImperativeHandle：自定义 ref",
+          "order": 13,
+          "description": "## 自定义 ref 暴露的内容\n默认把 `ref` 传给 DOM 元素，`ref.current` 就是那个 DOM 节点。而 `useImperativeHandle` 让**子组件自定义**：父组件拿到子组件的 ref 时，`ref.current` 是什么——通常暴露几个**方法**，而不是整个 DOM：\n\n```jsx\nfunction TextInput({ ref }) {\n  const inputRef = useRef(null)\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current.focus(),\n    clear: () => { inputRef.current.value = '' },\n  }))\n  return <input ref={inputRef} />\n}\n```\n\n父组件就能 `childRef.current.focus()` 调用暴露的方法，但**碰不到**内部真实 DOM——只开放你想开放的接口。\n\n## 场景\n封装组件时对外提供**命令式**操作：让父组件能聚焦某个输入框、重置表单、播放/暂停播放器等。\n\n## 和 forwardRef 的关系\nReact 19 起，`ref` 可以像普通 **prop** 一样直接传给函数组件（如上例的 `{ ref }`），不再需要 `forwardRef` 包裹。旧代码里常见 `forwardRef((props, ref) => ...)` 配合 `useImperativeHandle`，作用一样。\n\n## 别滥用\n命令式 ref 是「逃生舱」。大多数交互用 **props + state** 声明式地做更好；只有确实需要「让父组件主动调用子组件某个动作」时，才用它。\n\n## 小结\nuseImperativeHandle 自定义 ref 暴露的内容（通常是方法）；用于对外提供命令式操作（聚焦/重置/播放）；React 19 里 ref 可作 prop、不必 forwardRef；优先声明式、别滥用。\n\n> 深入：[react.dev — useImperativeHandle](https://react.dev/reference/react/useImperativeHandle)\n\n下面 `TextInput` 想让父组件能聚焦它。用 `useImperativeHandle(ref, ...)` 暴露一个 `focus` 方法。",
+          "files": {
+            "/App.js": "import { useRef, useImperativeHandle } from 'react'\n\nfunction TextInput({ ref }) {\n  const inputRef = useRef(null)\n  // TODO: 用 useImperativeHandle(ref, ...) 暴露一个 focus 方法\n  return <input ref={inputRef} placeholder=\"点右边按钮聚焦我\" />\n}\n\nexport default function App() {\n  const childRef = useRef(null)\n  return (\n    <div style={{ padding: 12 }}>\n      <TextInput ref={childRef} />{' '}\n      <button onClick={() => childRef.current.focus()}>聚焦</button>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useRef, useImperativeHandle } from 'react'\n\nfunction TextInput({ ref }) {\n  const inputRef = useRef(null)\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current.focus(),\n  }))\n  return <input ref={inputRef} placeholder=\"点右边按钮聚焦我\" />\n}\n\nexport default function App() {\n  const childRef = useRef(null)\n  return (\n    <div style={{ padding: 12 }}>\n      <TextInput ref={childRef} />{' '}\n      <button onClick={() => childRef.current.focus()}>聚焦</button>\n    </div>\n  )\n}"
+          }
         }
       ]
     },
