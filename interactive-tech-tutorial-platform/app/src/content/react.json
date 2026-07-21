@@ -6,7 +6,7 @@
     "description": "从 JSX 到核心 Hooks，跟着可运行沙箱一步步学 React。",
     "language": "react",
     "defaultCode": "export default function App(){\n  return <h1>Hello React</h1>\n}",
-    "dependencies": { "react": "^19.0.0", "react-dom": "^19.0.0", "zustand": "^5.0.0", "immer": "^10.0.0" }
+    "dependencies": { "react": "^19.0.0", "react-dom": "^19.0.0", "zustand": "^5.0.0", "immer": "^10.0.0", "react-router": "^7.0.0" }
   },
   "chapters": [
     {
@@ -370,6 +370,25 @@
           },
           "solution": {
             "/App.js": "import { useState, useEffect } from 'react'\nimport { create } from 'zustand'\n\nconst useStore = create((set) => ({\n  age: 20,\n  grow: () => set((s) => ({ age: s.age + 1 })),\n}))\n\nexport default function App() {\n  const age = useStore((s) => s.age)\n  const grow = useStore((s) => s.grow)\n  const [status, setStatus] = useState('未满 26')\n  useEffect(() => {\n    const unsub = useStore.subscribe((state) => {\n      setStatus(state.age >= 26 ? '可以了' : '未满 26')\n    })\n    return unsub\n  }, [])\n  return (\n    <div style={{ padding: 12 }}>\n      <p>年龄：{age}　状态：{status}</p>\n      <button onClick={grow}>长一岁</button>\n    </div>\n  )\n}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ch-router",
+      "title": "Router",
+      "order": 5,
+      "steps": [
+        {
+          "id": "st-router-basics",
+          "title": "安装与基础路由",
+          "order": 1,
+          "description": "## React Router 是什么\nReact Router 是 React 最常用的**路由库**：根据不同的 **URL** 匹配并渲染不同的组件，从而在单页应用（SPA）里「切换页面」而无需刷新。类似 Vue Router。\n\n> 注意：Router **V7** 起包名统一为 `react-router`（不再需要 `react-router-dom`）。\n\n## 三种模式\n- **框架模式**：用官方脚手架 `create-react-router` 建项目，自带路由\n- **数据模式**：项目里用 `createBrowserRouter` + `RouterProvider`，能用全部功能（含数据加载）\n- **声明模式**：`<BrowserRouter>` + `<Routes>` + `<Route>`，只用路由跳转，适合小项目\n\n## 声明模式：最直观\n```jsx\nimport { BrowserRouter, Routes, Route } from 'react-router'\n\n<BrowserRouter>\n  <Routes>\n    <Route path=\"/\" element={<Home />} />\n    <Route path=\"/about\" element={<About />} />\n  </Routes>\n</BrowserRouter>\n```\n\n每个 `<Route>` 把一个 `path` 映射到一个 `element`；`<Routes>` 挑出与当前 URL 匹配的那一个渲染。\n\n## 数据模式：更强\n```jsx\nimport { createBrowserRouter, RouterProvider } from 'react-router'\n\nconst router = createBrowserRouter([\n  { path: '/', Component: Home },\n  { path: '/about', Component: About },\n])\n\n<RouterProvider router={router} />\n```\n\n## 用 Link 跳转\n别用 `<a href>`（会刷新整页）。用 `<Link to>` 做客户端跳转，不刷新：\n\n```jsx\n<Link to=\"/about\">去关于页</Link>\n```\n\n> 本教程沙箱用 `MemoryRouter`（路由存在内存里、不碰浏览器地址栏）便于在预览里演示；真实项目用 `BrowserRouter` 或 `createBrowserRouter`。\n\n## 小结\nReact Router 按 URL 渲染组件；V7 包名是 `react-router`；三种模式；Route 映射 path→element；用 Link 做无刷新跳转。\n\n> 深入：[React Router 官方文档](https://reactrouter.com/)\n\n下面用 `MemoryRouter` 搭了两个页面，但 `/about` 的路由还没配。补一个 `<Route path=\"/about\" ...>` 指向 `About`。",
+          "files": {
+            "/App.js": "import { MemoryRouter, Routes, Route, Link } from 'react-router'\n\nfunction Home() {\n  return (\n    <div>\n      <h3>首页</h3>\n      <Link to=\"/about\">去关于页 →</Link>\n    </div>\n  )\n}\n\nfunction About() {\n  return (\n    <div>\n      <h3>关于页</h3>\n      <Link to=\"/\">← 回首页</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Routes>\n          <Route path=\"/\" element={<Home />} />\n          {/* TODO: 补一个 /about 路由，element 指向 <About /> */}\n        </Routes>\n      </div>\n    </MemoryRouter>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { MemoryRouter, Routes, Route, Link } from 'react-router'\n\nfunction Home() {\n  return (\n    <div>\n      <h3>首页</h3>\n      <Link to=\"/about\">去关于页 →</Link>\n    </div>\n  )\n}\n\nfunction About() {\n  return (\n    <div>\n      <h3>关于页</h3>\n      <Link to=\"/\">← 回首页</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Routes>\n          <Route path=\"/\" element={<Home />} />\n          <Route path=\"/about\" element={<About />} />\n        </Routes>\n      </div>\n    </MemoryRouter>\n  )\n}"
           }
         }
       ]
