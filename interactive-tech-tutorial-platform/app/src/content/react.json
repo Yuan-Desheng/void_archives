@@ -438,6 +438,30 @@
           "solution": {
             "/App.js": "import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router'\n\nfunction User() {\n  const data = useLoaderData()\n  return (\n    <div style={{ padding: 12 }}>\n      <h3>用户信息</h3>\n      <p>姓名：{data.name}，年龄：{data.age}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    loader: () => ({ name: '访客', age: 18 }),\n    Component: User,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
           }
+        },
+        {
+          "id": "st-router-action",
+          "title": "表单操作：Form 与 action",
+          "order": 6,
+          "description": "## 表单提交：Form + action\n数据模式除了 `loader`（加载数据），还有 `action`（处理提交）。用 React Router 的 `<Form>` 替代原生 `<form>`，提交时会触发当前路由的 **`action`** 函数，由它处理数据（写库、调接口），组件用 `useActionData` 读 action 的返回：\n\n```jsx\nimport { Form, useActionData } from 'react-router'\n\n// 路由配置\n{ path: '/login', action: handleLogin, Component: Login }\n\nasync function handleLogin({ request }) {\n  const data = await request.formData()\n  return { message: `你好，${data.get('user')}` }\n}\n\nfunction Login() {\n  const result = useActionData()\n  return (\n    <Form method=\"post\">\n      <input name=\"user\" />\n      <button type=\"submit\">登录</button>\n      {result && <p>{result.message}</p>}\n    </Form>\n  )\n}\n```\n\n## 为什么不用 onSubmit\n传统写法在 `onSubmit` 里 `preventDefault` + 手动收集数据 + fetch。数据模式让 `<Form>` **自动收集**表单字段、提交给 `action`，你只写「拿到数据后干什么」——不用管阻止默认、序列化这些样板。\n\n## action 的入参\n`action` 收到 `{ request, params }`：`request.formData()` 拿表单数据、`params` 拿路径参数。返回值可被 `useActionData` 读到，也可以 `return redirect('/somewhere')` 提交后跳转。\n\n## 小结\n数据模式用 `<Form>` + `action` 处理提交；action 里 `request.formData()` 取数据、返回值给 `useActionData`；比手写 onSubmit 省事，还能 return redirect 跳转。\n\n> 深入：[React Router — 表单与 action](https://reactrouter.com/start/data/actions)\n\n下面登录表单提交后读不到结果。用 `useActionData` 读取 `action` 返回的消息。",
+          "files": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, Form, useActionData } from 'react-router'\n\nfunction Login() {\n  // TODO: 用 useActionData 读取 action 返回的结果\n  const result = null\n  return (\n    <div style={{ padding: 12 }}>\n      <Form method=\"post\">\n        <input name=\"user\" placeholder=\"输入用户名\" />{' '}\n        <button type=\"submit\">登录</button>\n      </Form>\n      {result && <p>{result.message}</p>}\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async ({ request }) => {\n      const data = await request.formData()\n      return { message: `你好，${data.get('user')}` }\n    },\n    Component: Login,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          },
+          "solution": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, Form, useActionData } from 'react-router'\n\nfunction Login() {\n  const result = useActionData()\n  return (\n    <div style={{ padding: 12 }}>\n      <Form method=\"post\">\n        <input name=\"user\" placeholder=\"输入用户名\" />{' '}\n        <button type=\"submit\">登录</button>\n      </Form>\n      {result && <p>{result.message}</p>}\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async ({ request }) => {\n      const data = await request.formData()\n      return { message: `你好，${data.get('user')}` }\n    },\n    Component: Login,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          }
+        },
+        {
+          "id": "st-router-error",
+          "title": "边界处理：errorElement",
+          "order": 7,
+          "description": "## 路由级错误边界\n路由的 `loader`/`action`/组件渲染**抛错**时，如果不处理，整个应用会崩白屏。数据模式给路由配一个 **`errorElement`**：这个路由（及其子路由）出错时就渲染它兜底，而不是整页崩溃。\n\n```jsx\n{\n  path: '/',\n  Component: Home,             // 万一 Home 或它的 loader 抛错\n  errorElement: <ErrorPage />, // 就渲染这个\n}\n```\n\n## useRouteError：拿到错误对象\n在 `errorElement` 组件里，用 `useRouteError()` 拿到抛出的错误，据此显示友好提示或重试按钮：\n\n```jsx\nfunction ErrorPage() {\n  const error = useRouteError()\n  return <p>出错了：{error.message}</p>\n}\n```\n\n## 就近兜底\n错误会**冒泡**到最近的、配了 `errorElement` 的父路由。可以在根路由配一个全局兜底，也可以给某个子路由单独配更精细的错误页——就近的那个先接住。\n\n## 小结\n给路由配 `errorElement`，loader/action/渲染抛错时渲染它兜底、不整页崩；里面用 `useRouteError()` 读错误；错误就近冒泡到配了 errorElement 的父路由。\n\n> 深入：[React Router — 错误处理](https://reactrouter.com/start/data/route-object)\n\n下面 `Home` 故意抛了错，`ErrorPage` 已兜底但读不到真正的错误。用 `useRouteError` 读出它。",
+          "files": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useRouteError } from 'react-router'\n\nfunction Home() {\n  throw new Error('页面加载出错了！')\n}\n\nfunction ErrorPage() {\n  // TODO: 用 useRouteError 读取真正的错误\n  const error = { message: '（未知错误）' }\n  return (\n    <div style={{ padding: 12, color: 'crimson' }}>\n      <h3>出错了</h3>\n      <p>{error.message}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    Component: Home,\n    errorElement: <ErrorPage />,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          },
+          "solution": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useRouteError } from 'react-router'\n\nfunction Home() {\n  throw new Error('页面加载出错了！')\n}\n\nfunction ErrorPage() {\n  const error = useRouteError()\n  return (\n    <div style={{ padding: 12, color: 'crimson' }}>\n      <h3>出错了</h3>\n      <p>{error.message}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    Component: Home,\n    errorElement: <ErrorPage />,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          }
         }
       ]
     }
