@@ -464,6 +464,39 @@
           }
         }
       ]
+    },
+    {
+      "id": "ch-css",
+      "title": "CSS 方案",
+      "order": 6,
+      "steps": [
+        {
+          "id": "st-css-in-js",
+          "title": "CSS-in-JS：行内样式与 styled",
+          "order": 1,
+          "description": "## CSS-in-JS：用 JS 写样式\n**CSS-in-JS** 指在 JavaScript 里写样式。最基础的形式是 React 内置的**行内 `style` 对象**——`style` 接收一个 JS 对象，属性用**小驼峰**、值多为字符串或数字（数字默认按 px）：\n\n```jsx\n<div style={{ padding: 16, color: 'red', backgroundColor: '#eee' }}>...</div>\n```\n\n## 动态样式\n因为是 JS 对象，样式能**随 state/props 变化**，天然支持条件样式，无需切 class：\n\n```jsx\nconst boxStyle = { background: active ? 'seagreen' : 'gray' }\n<div style={boxStyle} />\n```\n\n## 专门的库：styled-components / emotion\n行内 style 不支持伪类（`:hover`）、媒体查询、动画。要在 JS 里写完整 CSS，用 **styled-components** 或 **emotion** 这类库：\n\n```jsx\nimport styled from 'styled-components'\n\nconst Button = styled.button`\n  color: white;\n  background: royalblue;\n  &:hover { opacity: 0.8; }\n`\n\n<Button>按钮</Button>\n```\n\n它们把样式和组件绑在一起，自动生成唯一 class（天然作用域隔离），还能用 props 动态改样式。\n\n## 优缺点\n- ✅ 样式与组件同处一文件、作用域隔离、可用 JS 逻辑动态化\n- ❌ 行内 style 不支持伪类/媒体查询；运行时库有一定性能开销；生成的类名不可读\n\n## 小结\nCSS-in-JS 在 JS 里写样式；最简单是行内 `style` 对象（小驼峰、可动态）；要伪类/动画用 styled-components/emotion；优点是隔离 + 动态，缺点是行内受限、有运行时开销。\n\n> 深入：[styled-components 官网](https://styled-components.com/)\n\n下面盒子点击应切换颜色。给它加 `onClick`，点击时切换 `active`。",
+          "files": {
+            "/App.js": "import { useState } from 'react'\n\nexport default function App() {\n  const [active, setActive] = useState(false)\n  const boxStyle = {\n    padding: 16,\n    borderRadius: 8,\n    color: '#fff',\n    background: active ? 'seagreen' : 'gray',\n    cursor: 'pointer',\n    width: 160,\n    textAlign: 'center',\n  }\n  return (\n    <div style={{ padding: 12 }}>\n      {/* TODO: 给盒子加 onClick，点击时切换 active */}\n      <div style={boxStyle}>点我切换颜色</div>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useState } from 'react'\n\nexport default function App() {\n  const [active, setActive] = useState(false)\n  const boxStyle = {\n    padding: 16,\n    borderRadius: 8,\n    color: '#fff',\n    background: active ? 'seagreen' : 'gray',\n    cursor: 'pointer',\n    width: 160,\n    textAlign: 'center',\n  }\n  return (\n    <div style={{ padding: 12 }}>\n      <div style={boxStyle} onClick={() => setActive(!active)}>点我切换颜色</div>\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-css-modules",
+          "title": "CSS Modules：作用域隔离",
+          "order": 2,
+          "description": "## 样式冲突问题\nReact 没有 Vue 的 `scoped`，而 SPA 里所有组件的 CSS 都在同一个全局作用域——两个组件都写 `.btn` 就会**互相覆盖**。**CSS Modules** 解决这个：每个 `.module.css` 文件里的类名会被编译成**唯一的哈希类名**，自动做到作用域隔离。\n\n## 用法\n把样式文件命名为 `xxx.module.css`，`import` 进来得到一个**类名映射对象**，用 `对象.类名` 引用：\n\n```jsx\n// styles.module.css\n.btn { color: white; background: royalblue; }\n\n// App.js\nimport styles from './styles.module.css'\n\n<button className={styles.btn}>按钮</button>\n```\n\n编译后 `styles.btn` 是类似 `btn_x7f3a` 的唯一类名，别的组件的 `.btn` 不会与它冲突。\n\n## 支持预处理器\nCSS Modules 能和 Sass/Less 配合：文件名写成 `xxx.module.scss` 即可（需装对应预处理器）。\n\n## :global 逃逸\n某个类名不想被哈希化（比如要配合第三方库的固定类名），用 `:global(.name)` 声明为全局：\n\n```css\n:global(.no-hash) { color: red; }\n```\n\n## vs CSS-in-JS\nCSS Modules 写的是**真正的 CSS 文件**（支持全部 CSS 特性、无运行时开销），只是类名自动隔离；CSS-in-JS 把样式写在 JS 里、更动态但有运行时成本。各有适用。\n\n## 小结\nCSS Modules 用 `xxx.module.css` + `import styles` + `styles.类名`，把类名编译成唯一哈希实现作用域隔离；支持 Sass/Less；`:global` 声明全局类；是纯 CSS、无运行时开销。\n\n> 深入：[小满 React — CSS Modules](https://message163.github.io/react-docs/react/css/css-modules.html)\n\n下面 `styles.module.css` 里有个 `.btn` 样式，但按钮还没用上。给按钮加 `className={styles.btn}`。",
+          "files": {
+            "/App.js": "import styles from './styles.module.css'\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      {/* TODO: 给 button 加 className={styles.btn} */}\n      <button>按钮</button>\n    </div>\n  )\n}",
+            "/styles.module.css": ".btn {\n  background: royalblue;\n  color: white;\n  border: none;\n  padding: 8px 16px;\n  border-radius: 6px;\n  cursor: pointer;\n}"
+          },
+          "solution": {
+            "/App.js": "import styles from './styles.module.css'\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      <button className={styles.btn}>按钮</button>\n    </div>\n  )\n}",
+            "/styles.module.css": ".btn {\n  background: royalblue;\n  color: white;\n  border: none;\n  padding: 8px 16px;\n  border-radius: 6px;\n  cursor: pointer;\n}"
+          }
+        }
+      ]
     }
   ]
 }
