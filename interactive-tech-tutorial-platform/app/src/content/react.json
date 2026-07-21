@@ -304,6 +304,18 @@
           "solution": {
             "/App.js": "import { useRef, useImperativeHandle } from 'react'\n\nfunction TextInput({ ref }) {\n  const inputRef = useRef(null)\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current.focus(),\n  }))\n  return <input ref={inputRef} placeholder=\"点右边按钮聚焦我\" />\n}\n\nexport default function App() {\n  const childRef = useRef(null)\n  return (\n    <div style={{ padding: 12 }}>\n      <TextInput ref={childRef} />{' '}\n      <button onClick={() => childRef.current.focus()}>聚焦</button>\n    </div>\n  )\n}"
           }
+        },
+        {
+          "id": "st-usesyncexternalstore",
+          "title": "useSyncExternalStore：订阅外部数据",
+          "order": 14,
+          "description": "## 订阅 React 之外的数据\n有些数据不在 React 里，而在**外部数据源**：浏览器 API（在线状态、窗口尺寸、媒体查询）、第三方状态库、全局事件总线。要让组件安全地读取并**订阅这些外部数据的变化**，用 `useSyncExternalStore`：\n\n```jsx\nconst value = useSyncExternalStore(subscribe, getSnapshot)\n```\n\n- `subscribe(callback)`：注册监听，数据变了就调 `callback` 通知 React 重渲染；返回一个取消订阅的函数\n- `getSnapshot()`：读取当前值\n\n## 例子：订阅在线状态\n```jsx\nfunction subscribe(cb) {\n  window.addEventListener('online', cb)\n  window.addEventListener('offline', cb)\n  return () => {\n    window.removeEventListener('online', cb)\n    window.removeEventListener('offline', cb)\n  }\n}\n\nconst isOnline = useSyncExternalStore(subscribe, () => navigator.onLine)\n```\n\n断网/联网时，浏览器触发 `online`/`offline` 事件 → `cb` 通知 React → 组件用新的 `navigator.onLine` 重渲染。\n\n## 为什么不用 useEffect\n手动 `useEffect` + `useState` 订阅外部源，在并发渲染下可能读到**撕裂（不一致）**的值。`useSyncExternalStore` 是 React 专为此设计的，保证读取一致、还支持 SSR。写自定义 Hook 封装浏览器 API 时优先用它。\n\n## 小结\nuseSyncExternalStore 订阅 React 之外的数据源：`subscribe` 注册监听、`getSnapshot` 读值；比 useEffect 手动订阅更安全（并发下不撕裂、支持 SSR）；适合封装浏览器 API、第三方 store。\n\n> 深入：[react.dev — useSyncExternalStore](https://react.dev/reference/react/useSyncExternalStore)\n\n下面想显示网络在线状态，但还没订阅。用 `useSyncExternalStore(subscribe, () => navigator.onLine)` 读取并订阅它。",
+          "files": {
+            "/App.js": "import { useSyncExternalStore } from 'react'\n\n// 外部数据源：浏览器在线状态\nfunction subscribe(cb) {\n  window.addEventListener('online', cb)\n  window.addEventListener('offline', cb)\n  return () => {\n    window.removeEventListener('online', cb)\n    window.removeEventListener('offline', cb)\n  }\n}\n\nexport default function App() {\n  // TODO: 用 useSyncExternalStore(subscribe, () => navigator.onLine) 订阅在线状态\n  const isOnline = true\n  return (\n    <div style={{ padding: 12 }}>\n      <p>网络状态：{isOnline ? '在线 ✅' : '离线 ❌'}</p>\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { useSyncExternalStore } from 'react'\n\n// 外部数据源：浏览器在线状态\nfunction subscribe(cb) {\n  window.addEventListener('online', cb)\n  window.addEventListener('offline', cb)\n  return () => {\n    window.removeEventListener('online', cb)\n    window.removeEventListener('offline', cb)\n  }\n}\n\nexport default function App() {\n  const isOnline = useSyncExternalStore(subscribe, () => navigator.onLine)\n  return (\n    <div style={{ padding: 12 }}>\n      <p>网络状态：{isOnline ? '在线 ✅' : '离线 ❌'}</p>\n    </div>\n  )\n}"
+          }
         }
       ]
     },
@@ -487,6 +499,30 @@
           "solution": {
             "/App.js": "import { MemoryRouter, Routes, Route, Link } from 'react-router'\nimport { lazy, Suspense } from 'react'\n\nconst About = lazy(() => import('./About'))\n\nfunction Home() {\n  return (\n    <div>\n      <h3>首页</h3>\n      <Link to=\"/about\">去关于页（懒加载）</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Suspense fallback={<p>页面加载中…</p>}>\n          <Routes>\n            <Route path=\"/\" element={<Home />} />\n            <Route path=\"/about\" element={<About />} />\n          </Routes>\n        </Suspense>\n      </div>\n    </MemoryRouter>\n  )\n}",
             "/About.js": "export default function About() {\n  return <h3>关于页（单独打包、按需加载）</h3>\n}"
+          }
+        },
+        {
+          "id": "st-router-navigation",
+          "title": "导航状态：useNavigation",
+          "order": 10,
+          "description": "## 全局导航状态\n数据模式下，`useNavigation` 返回当前的**导航/提交状态**，让你给整个应用做 loading 反馈。它的 `state` 有三种值：\n\n| state | 含义 |\n|---|---|\n| `'idle'` | 空闲，没有进行中的导航/提交 |\n| `'submitting'` | 正在提交表单（action 执行中）|\n| `'loading'` | 正在加载数据（loader 执行中，如跳转新页面）|\n\n```jsx\nconst navigation = useNavigation()\nconst busy = navigation.state !== 'idle'\n\n<button disabled={busy}>{busy ? '处理中…' : '提交'}</button>\n```\n\n## 用来做什么\n- 提交表单时**禁用按钮**、显示「提交中…」，防重复提交\n- 跳转加载新页面数据时，显示**顶部进度条**或骨架屏\n- `navigation.location` 还能拿到「正要去的目标」，做更精细的提示\n\n以前这些要自己在组件里管 `loading` state，数据模式把它**统一到路由层**，一处就能拿到全局忙碌状态。\n\n## 小结\nuseNavigation 返回全局导航状态：`state` 为 idle/submitting/loading；用来在提交/加载时禁用按钮、显示 loading；把散落的 loading 管理统一到路由层。\n\n> 深入：[React Router — useNavigation](https://reactrouter.com/api/hooks/useNavigation)\n\n下面表单提交时（action 有 1 秒延迟）按钮没反应。用 `useNavigation` 判断 `state === 'submitting'`，提交中时禁用按钮、显示「提交中…」。",
+          "files": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, Form, useNavigation } from 'react-router'\n\nfunction Page() {\n  const navigation = useNavigation()\n  // TODO: 提交中时 navigation.state === 'submitting'，用它算出忙碌态\n  const busy = false\n  return (\n    <div style={{ padding: 12 }}>\n      <Form method=\"post\">\n        <input name=\"msg\" placeholder=\"随便输入\" />{' '}\n        <button type=\"submit\" disabled={busy}>{busy ? '提交中…' : '提交'}</button>\n      </Form>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async () => {\n      await new Promise((r) => setTimeout(r, 1000))\n      return { ok: true }\n    },\n    Component: Page,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          },
+          "solution": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, Form, useNavigation } from 'react-router'\n\nfunction Page() {\n  const navigation = useNavigation()\n  const busy = navigation.state === 'submitting'\n  return (\n    <div style={{ padding: 12 }}>\n      <Form method=\"post\">\n        <input name=\"msg\" placeholder=\"随便输入\" />{' '}\n        <button type=\"submit\" disabled={busy}>{busy ? '提交中…' : '提交'}</button>\n      </Form>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async () => {\n      await new Promise((r) => setTimeout(r, 1000))\n      return { ok: true }\n    },\n    Component: Page,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          }
+        },
+        {
+          "id": "st-router-submit",
+          "title": "编程式提交：useSubmit",
+          "order": 11,
+          "description": "## 编程式提交\n`<Form>` 靠点击提交按钮触发 action。但有时想**在事件里主动提交**——比如下拉框一变就自动按新条件筛选、不用点按钮。这时用 `useSubmit`，它返回一个 `submit` 函数：\n\n```jsx\nconst submit = useSubmit()\n\n// 提交一个表单元素\nsubmit(event.currentTarget.form)\n\n// 或直接提交一份数据\nsubmit({ sort: 'hot' }, { method: 'post' })\n```\n\n提交后照样触发当前路由的 `action`，和 `<Form>` 一样。\n\n## 典型场景：变即提交\n筛选、排序、搜索这类交互，常希望「一改就生效」，不需要额外的提交按钮：\n\n```jsx\n<select onChange={(e) => submit({ sort: e.target.value }, { method: 'post' })}>\n```\n\n## 和 Form 的关系\n`<Form>` 是声明式（模板里写好），`useSubmit` 是命令式（代码里主动触发）——就像 `<Link>` 和 `useNavigate` 的关系，两者最终都走 action。\n\n## 小结\nuseSubmit 返回 `submit` 函数，在事件里**主动提交**表单或一份数据、触发 action；适合「变即提交」的筛选/排序；是 `<Form>` 的命令式版本。\n\n> 深入：[React Router — useSubmit](https://reactrouter.com/api/hooks/useSubmit)\n\n下面下拉框改变时还不会自动筛选。用 `useSubmit` 在 `onChange` 里提交 `{ sort: 选中的值 }`。",
+          "files": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useSubmit, useActionData } from 'react-router'\n\nfunction Page() {\n  const submit = useSubmit()\n  const result = useActionData()\n  // TODO: 用 submit 在选择变化时提交 { sort: 选中的值 }\n  const onChange = (e) => {}\n  return (\n    <div style={{ padding: 12 }}>\n      <select defaultValue=\"new\" onChange={onChange}>\n        <option value=\"new\">最新</option>\n        <option value=\"hot\">最热</option>\n      </select>\n      {result && <p>已按「{result.sort}」排序</p>}\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async ({ request }) => {\n      const data = await request.formData()\n      return { sort: data.get('sort') }\n    },\n    Component: Page,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          },
+          "solution": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useSubmit, useActionData } from 'react-router'\n\nfunction Page() {\n  const submit = useSubmit()\n  const result = useActionData()\n  const onChange = (e) => submit({ sort: e.target.value }, { method: 'post' })\n  return (\n    <div style={{ padding: 12 }}>\n      <select defaultValue=\"new\" onChange={onChange}>\n        <option value=\"new\">最新</option>\n        <option value=\"hot\">最热</option>\n      </select>\n      {result && <p>已按「{result.sort}」排序</p>}\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    action: async ({ request }) => {\n      const data = await request.formData()\n      return { sort: data.get('sort') }\n    },\n    Component: Page,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
           }
         }
       ]
