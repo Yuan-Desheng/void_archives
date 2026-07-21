@@ -426,6 +426,18 @@
           "solution": {
             "/App.js": "import { MemoryRouter, Routes, Route, Link, useParams } from 'react-router'\n\nfunction UserList() {\n  return (\n    <div>\n      <h3>用户列表</h3>\n      <Link to=\"/user/1\">看用户 1</Link>　<Link to=\"/user/2\">看用户 2</Link>\n    </div>\n  )\n}\n\nfunction UserDetail() {\n  const { id } = useParams()\n  return (\n    <div>\n      <h3>用户详情</h3>\n      <p>当前用户 id：{id}</p>\n      <Link to=\"/\">返回</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Routes>\n          <Route path=\"/\" element={<UserList />} />\n          <Route path=\"/user/:id\" element={<UserDetail />} />\n        </Routes>\n      </div>\n    </MemoryRouter>\n  )\n}"
           }
+        },
+        {
+          "id": "st-router-loader",
+          "title": "数据模式：loader 与 useLoaderData",
+          "order": 5,
+          "description": "## 数据模式：路由带数据加载\n前面用的是**声明模式**（`<Routes>`/`<Route>`），只管跳转。**数据模式**用 `createXxxRouter` + `RouterProvider`，多了强大的**数据加载**能力：每个路由可配一个 `loader`，在**组件渲染前**就把数据准备好，组件里用 `useLoaderData` 直接拿——不用再在 `useEffect` 里请求、处理 loading。\n\n```jsx\nimport { createBrowserRouter, RouterProvider, useLoaderData } from 'react-router'\n\nconst router = createBrowserRouter([\n  {\n    path: '/user',\n    loader: async () => {\n      const res = await fetch('/api/user')\n      return res.json() // 返回的数据给组件用\n    },\n    Component: User,\n  },\n])\n\nfunction User() {\n  const data = useLoaderData() // 直接拿 loader 的返回值\n  return <p>{data.name}</p>\n}\n```\n\n## loader：渲染前加载\n`loader` 在路由匹配、组件渲染**之前**执行，可以是异步的。React Router 会等它完成再渲染组件——组件拿到数据时**不用处理 loading 态**（加载中由路由统一管）。\n\n## useLoaderData：读取数据\n组件里 `useLoaderData()` 直接返回对应路由 loader 的返回值，无需自己 `useState` 存。\n\n## vs 在 useEffect 里请求\n传统写法在组件里 `useEffect` 发请求 + `useState` 存数据 + 处理 loading/错误。数据模式把这些**上移到路由**：数据先备好再渲染，代码更简洁，还能做预加载。\n\n> 沙箱用 `createMemoryRouter`（内存路由）演示，真实项目用 `createBrowserRouter`。\n\n## 小结\n数据模式 = createXxxRouter + RouterProvider；`loader` 在渲染前加载数据（可异步）；`useLoaderData` 在组件里读取；比 useEffect 请求更简洁、数据先行。\n\n> 深入：[React Router — 数据加载](https://reactrouter.com/start/data/route-object)\n\n下面 `User` 组件读不到 loader 的数据。用 `useLoaderData` 读取它。",
+          "files": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router'\n\nfunction User() {\n  // TODO: 用 useLoaderData 读取 loader 返回的数据\n  const data = { name: '?', age: 0 }\n  return (\n    <div style={{ padding: 12 }}>\n      <h3>用户信息</h3>\n      <p>姓名：{data.name}，年龄：{data.age}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    loader: () => ({ name: '访客', age: 18 }),\n    Component: User,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          },
+          "solution": {
+            "/App.js": "import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router'\n\nfunction User() {\n  const data = useLoaderData()\n  return (\n    <div style={{ padding: 12 }}>\n      <h3>用户信息</h3>\n      <p>姓名：{data.name}，年龄：{data.age}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    loader: () => ({ name: '访客', age: 18 }),\n    Component: User,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
+          }
         }
       ]
     }
