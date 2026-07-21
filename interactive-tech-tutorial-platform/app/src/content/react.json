@@ -462,6 +462,32 @@
           "solution": {
             "/App.js": "import { createMemoryRouter, RouterProvider, useRouteError } from 'react-router'\n\nfunction Home() {\n  throw new Error('页面加载出错了！')\n}\n\nfunction ErrorPage() {\n  const error = useRouteError()\n  return (\n    <div style={{ padding: 12, color: 'crimson' }}>\n      <h3>出错了</h3>\n      <p>{error.message}</p>\n    </div>\n  )\n}\n\nconst router = createMemoryRouter([\n  {\n    path: '/',\n    Component: Home,\n    errorElement: <ErrorPage />,\n  },\n])\n\nexport default function App() {\n  return <RouterProvider router={router} />\n}"
           }
+        },
+        {
+          "id": "st-router-searchparams",
+          "title": "查询参数：useSearchParams",
+          "order": 8,
+          "description": "## 读写 URL 查询参数\n查询参数（`?page=2&sort=new`）适合放**可选的、可分享的**状态：分页、排序、筛选、搜索关键词。`useSearchParams` 让你像用 state 一样读写它，且**同步到 URL**——刷新、分享链接都能还原：\n\n```jsx\nconst [params, setParams] = useSearchParams()\n\nparams.get('page')        // 读：'2'\nsetParams({ page: '3' })  // 写：URL 变成 ?page=3\n```\n\n`params` 是一个 `URLSearchParams` 对象，`get('key')` 读单个、`getAll('key')` 读多个。\n\n## 为什么放 URL 里\n把筛选/分页放 URL 查询参数、而不是普通 state，好处是：**刷新不丢、可收藏、可分享、浏览器前进后退能回到之前的筛选**。这是「让 URL 成为唯一数据源」的思路。\n\n## 更新时保留其它参数\n`setParams` 会**替换**整个查询串。要保留其它参数、只改一个，先拿旧的再改：\n\n```jsx\nsetParams((prev) => {\n  prev.set('page', '3')\n  return prev\n})\n```\n\n## 小结\nuseSearchParams 读写 URL 查询参数：`get` 读、`setParams` 写并同步 URL；适合分页/排序/筛选等可分享状态；只改一个参数时注意保留其它。\n\n> 深入：[React Router — useSearchParams](https://reactrouter.com/api/hooks/useSearchParams)\n\n下面「去第 2 页」按钮还没接。用 `setParams` 把 `page` 设为 `'2'`。",
+          "files": {
+            "/App.js": "import { MemoryRouter, Routes, Route, useSearchParams } from 'react-router'\n\nfunction List() {\n  const [params, setParams] = useSearchParams()\n  const page = params.get('page') || '1'\n  return (\n    <div>\n      <p>当前第 {page} 页</p>\n      {/* TODO: 点击时 setParams({ page: '2' }) */}\n      <button>去第 2 页</button>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter initialEntries={['/?page=1']}>\n      <div style={{ padding: 12 }}>\n        <Routes>\n          <Route path=\"/\" element={<List />} />\n        </Routes>\n      </div>\n    </MemoryRouter>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { MemoryRouter, Routes, Route, useSearchParams } from 'react-router'\n\nfunction List() {\n  const [params, setParams] = useSearchParams()\n  const page = params.get('page') || '1'\n  return (\n    <div>\n      <p>当前第 {page} 页</p>\n      <button onClick={() => setParams({ page: '2' })}>去第 2 页</button>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter initialEntries={['/?page=1']}>\n      <div style={{ padding: 12 }}>\n        <Routes>\n          <Route path=\"/\" element={<List />} />\n        </Routes>\n      </div>\n    </MemoryRouter>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-router-lazy",
+          "title": "路由懒加载：按需分割",
+          "order": 9,
+          "description": "## 路由级代码分割\n应用变大后，把**每个路由页面单独打包**、访问到才加载，能大幅减小首屏体积。做法就是前面学过的 `lazy` + `Suspense`，用在路由上：\n\n```jsx\nimport { lazy, Suspense } from 'react'\n\nconst About = lazy(() => import('./About')) // 单独打包\n\n<Suspense fallback={<p>加载中…</p>}>\n  <Routes>\n    <Route path=\"/\" element={<Home />} />\n    <Route path=\"/about\" element={<About />} />\n  </Routes>\n</Suspense>\n```\n\n访问 `/` 时不会下载 About 的代码，点进 `/about` 才去加载——加载期间由 `Suspense` 的 `fallback` 占位。\n\n## 数据模式的 lazy 属性\n数据模式（`createBrowserRouter`）里，路由对象有个 `lazy` 属性可以异步加载**整个路由**（组件 + loader + action 一起分割），比手动 `React.lazy` 更强：\n\n```jsx\n{ path: '/about', lazy: () => import('./aboutRoute') }\n```\n\n## 小结\n路由懒加载 = `lazy(() => import(...))` + `Suspense` 包住 `Routes`，按路由分割代码、访问才加载；数据模式还有 `lazy` 属性能连 loader/action 一起分割。\n\n> 深入：[React Router — 懒加载](https://reactrouter.com/start/data/route-object)\n\n下面 `About` 已用 `lazy` 懒加载，但 `/about` 路由还没配。补一个 `<Route path=\"/about\" element={<About />} />`。",
+          "files": {
+            "/App.js": "import { MemoryRouter, Routes, Route, Link } from 'react-router'\nimport { lazy, Suspense } from 'react'\n\nconst About = lazy(() => import('./About'))\n\nfunction Home() {\n  return (\n    <div>\n      <h3>首页</h3>\n      <Link to=\"/about\">去关于页（懒加载）</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Suspense fallback={<p>页面加载中…</p>}>\n          <Routes>\n            <Route path=\"/\" element={<Home />} />\n            {/* TODO: 加 /about 路由，element 用懒加载的 <About /> */}\n          </Routes>\n        </Suspense>\n      </div>\n    </MemoryRouter>\n  )\n}",
+            "/About.js": "export default function About() {\n  return <h3>关于页（单独打包、按需加载）</h3>\n}"
+          },
+          "solution": {
+            "/App.js": "import { MemoryRouter, Routes, Route, Link } from 'react-router'\nimport { lazy, Suspense } from 'react'\n\nconst About = lazy(() => import('./About'))\n\nfunction Home() {\n  return (\n    <div>\n      <h3>首页</h3>\n      <Link to=\"/about\">去关于页（懒加载）</Link>\n    </div>\n  )\n}\n\nexport default function App() {\n  return (\n    <MemoryRouter>\n      <div style={{ padding: 12 }}>\n        <Suspense fallback={<p>页面加载中…</p>}>\n          <Routes>\n            <Route path=\"/\" element={<Home />} />\n            <Route path=\"/about\" element={<About />} />\n          </Routes>\n        </Suspense>\n      </div>\n    </MemoryRouter>\n  )\n}",
+            "/About.js": "export default function About() {\n  return <h3>关于页（单独打包、按需加载）</h3>\n}"
+          }
         }
       ]
     },
