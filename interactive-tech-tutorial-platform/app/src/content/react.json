@@ -103,6 +103,44 @@
           "solution": {
             "/App.js": "import { useState } from 'react'\n\nfunction AddButton({ onAdd }) {\n  return <button onClick={onAdd}>加一</button>\n}\n\nfunction Display({ count }) {\n  return <p>当前：{count}</p>\n}\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <div style={{ padding: 12 }}>\n      <AddButton onAdd={() => setCount(count + 1)} />\n      <Display count={count} />\n    </div>\n  )\n}"
           }
+        },
+        {
+          "id": "st-hoc",
+          "title": "高阶组件：HOC",
+          "order": 5,
+          "description": "## 什么是高阶组件（HOC）\n**高阶组件（Higher-Order Component）** 是一个函数：它**接收一个组件、返回一个新组件**。新组件包裹原组件，复用一段逻辑、再叠加新功能。它不是 React 的 API，而是一种**组合模式**。\n\n```jsx\nfunction withLoading(Component) {\n  return function (props) {\n    if (props.loading) return <p>加载中…</p>\n    return <Component {...props} /> // 透传 props\n  }\n}\n```\n\n## 几条规范\n- **不修改原组件**：用「包裹」扩展，而不是改传入的组件\n- **透传 props**：把收到的 props 用 `{...props}` 传给里面的组件\n- **命名以 `with` 开头**：`withLoading`、`withAuth`、`withTrack`\n- **别嵌套太多层**：一般不超过 3 层，否则难调试\n\n## 典型场景\n权限控制、加载态、日志埋点、注入公共数据——把这些「横切逻辑」抽到 HOC 里给多个组件复用：\n\n```jsx\nconst AdminPage = withAuth('admin')(Dashboard)\n```\n\n## 现代替代：自定义 Hook\n在 Hooks 时代，很多原来用 HOC 的场景改用**自定义 Hook** 更简单（没有额外的组件嵌套层）。HOC 现在主要出现在**类组件**或一些库的 API 里（如 Redux 旧版 `connect`）。了解它，读懂老代码、应对面试都用得上。\n\n## 小结\nHOC = 接收组件、返回增强组件的函数；不改原组件、透传 props、`with` 开头、别嵌套太多；适合复用横切逻辑；现代多用自定义 Hook 替代。\n\n> 深入：[react.dev — 用自定义 Hook 复用逻辑](https://react.dev/learn/reusing-logic-with-custom-hooks)\n\n下面 `withLoading` 已写好，但 `UserInfoWithLoading` 直接等于 `UserInfo`。用 `withLoading` 包裹 `UserInfo`，让 `loading` 时显示「加载中…」。",
+          "files": {
+            "/App.js": "function withLoading(Component) {\n  return function (props) {\n    if (props.loading) return <p>加载中…</p>\n    return <Component {...props} />\n  }\n}\n\nfunction UserInfo({ name }) {\n  return <p>用户：{name}</p>\n}\n\n// TODO: 用 withLoading 包裹 UserInfo\nconst UserInfoWithLoading = UserInfo\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      <UserInfoWithLoading loading={true} name=\"访客\" />\n      <UserInfoWithLoading loading={false} name=\"访客\" />\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "function withLoading(Component) {\n  return function (props) {\n    if (props.loading) return <p>加载中…</p>\n    return <Component {...props} />\n  }\n}\n\nfunction UserInfo({ name }) {\n  return <p>用户：{name}</p>\n}\n\nconst UserInfoWithLoading = withLoading(UserInfo)\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      <UserInfoWithLoading loading={true} name=\"访客\" />\n      <UserInfoWithLoading loading={false} name=\"访客\" />\n    </div>\n  )\n}"
+          }
+        },
+        {
+          "id": "st-async-component",
+          "title": "异步组件：lazy + Suspense",
+          "order": 6,
+          "description": "## 代码分割与懒加载\n默认所有组件会打进**同一个包**，首屏得下载全部代码。用 **`lazy` + `Suspense`** 可以把某些组件**按需加载**：需要时才去下载它的代码，减小首屏体积。\n\n```jsx\nimport { lazy, Suspense } from 'react'\n\nconst Heavy = lazy(() => import('./Heavy')) // 动态 import\n```\n\n`lazy` 接收一个返回 `import()` 的函数，得到一个「懒加载组件」。\n\n## 必须用 Suspense 包裹\n懒加载组件在**代码还没到**时会「挂起」，必须放进 `<Suspense>` 里，用 `fallback` 指定加载期间显示什么：\n\n```jsx\n<Suspense fallback={<p>加载中…</p>}>\n  <Heavy />\n</Suspense>\n```\n\n没有 Suspense 边界，挂起时会直接报错。一个 Suspense 可以包裹多个懒加载组件，它们共用一个 fallback。\n\n## 典型场景\n- **路由级分割**：每个页面单独打包，切到哪个页面才加载哪个\n- **重组件延后**：图表、编辑器、弹窗里的大组件，真正要用时再加载\n\n## 配合错误边界\n如果代码加载失败（网络问题），可以用**错误边界（Error Boundary）** 兜底给用户重试提示——Suspense 管「加载中」，错误边界管「加载失败」。\n\n## 小结\n`lazy(() => import(...))` 得到懒加载组件、按需下载代码；必须用 Suspense 包裹并给 fallback；适合路由分割和重组件延后；失败用错误边界兜底。\n\n> 深入：[react.dev — lazy](https://react.dev/reference/react/lazy) · [Suspense](https://react.dev/reference/react/Suspense)\n\n下面 `Heavy` 已用 `lazy` 懒加载，但 `Suspense` 的 `fallback` 还是空的。把它改成 `<p>加载中…</p>`。",
+          "files": {
+            "/App.js": "import { lazy, Suspense } from 'react'\n\nconst Heavy = lazy(() => import('./Heavy'))\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      <h3>首屏内容（立即显示）</h3>\n      {/* TODO: 把下面 Suspense 的 fallback 改成 <p>加载中…</p> */}\n      <Suspense fallback={null}>\n        <Heavy />\n      </Suspense>\n    </div>\n  )\n}",
+            "/Heavy.js": "export default function Heavy() {\n  return <p>我是被懒加载进来的组件</p>\n}"
+          },
+          "solution": {
+            "/App.js": "import { lazy, Suspense } from 'react'\n\nconst Heavy = lazy(() => import('./Heavy'))\n\nexport default function App() {\n  return (\n    <div style={{ padding: 12 }}>\n      <h3>首屏内容（立即显示）</h3>\n      <Suspense fallback={<p>加载中…</p>}>\n        <Heavy />\n      </Suspense>\n    </div>\n  )\n}",
+            "/Heavy.js": "export default function Heavy() {\n  return <p>我是被懒加载进来的组件</p>\n}"
+          }
+        },
+        {
+          "id": "st-portal",
+          "title": "传送门：createPortal",
+          "order": 7,
+          "description": "## createPortal：渲染到 DOM 任意位置\n`createPortal` 是 `react-dom` 的一个 API（不是组件），能把一段 JSX **渲染到 DOM 树的任意节点**（通常是 `document.body`）——它在 React 组件树里仍是子组件，但真实 DOM 跑到了别处。类似 Vue 的 `Teleport`。\n\n```jsx\nimport { createPortal } from 'react-dom'\n\ncreatePortal(<div>我在 body 上</div>, document.body)\n```\n\n参数：① 要渲染的 children；② 目标 DOM 节点。\n\n## 为什么需要它\n弹窗、下拉、全局提示、遮罩这类浮层，如果渲染在父组件内部，容易被父级的 `overflow: hidden`、`z-index`、`transform` 影响，定位或裁剪出问题。把它们 **portal 到 body**，就脱离了父级的样式约束，定位稳定：\n\n```jsx\nfunction Modal({ children }) {\n  return createPortal(<div className=\"overlay\">{children}</div>, document.body)\n}\n```\n\n## 事件仍按 React 树冒泡\n关键点：portal 只改变**真实 DOM 位置**，不改变 **React 组件树**。所以弹窗里的事件，仍会冒泡到它在 JSX 里的父组件，而不是 body 下的 DOM 父级——用起来和普通子组件一样。\n\n## 小结\n`createPortal(children, domNode)` 把内容渲染到 DOM 任意位置（常是 body）；解决浮层被父级 overflow/z-index/transform 影响的问题；事件仍按 React 树冒泡。\n\n> 深入：[react.dev — createPortal](https://react.dev/reference/react-dom/createPortal)\n\n下面 `Modal` 直接渲染在原地。用 `createPortal` 把它的内容传送到 `document.body`。",
+          "files": {
+            "/App.js": "import { createPortal } from 'react-dom'\nimport { useState } from 'react'\n\nfunction Modal({ children }) {\n  // TODO: 用 createPortal 把 children 渲染到 document.body\n  return <div>{children}</div>\n}\n\nexport default function App() {\n  const [open, setOpen] = useState(false)\n  return (\n    <div style={{ padding: 12 }}>\n      <button onClick={() => setOpen(true)}>打开弹窗</button>\n      {open && (\n        <Modal>\n          <div style={{ position: 'fixed', top: 40, left: 40, background: '#fff', border: '1px solid #ccc', padding: 16 }}>\n            我是弹窗　<button onClick={() => setOpen(false)}>关闭</button>\n          </div>\n        </Modal>\n      )}\n    </div>\n  )\n}"
+          },
+          "solution": {
+            "/App.js": "import { createPortal } from 'react-dom'\nimport { useState } from 'react'\n\nfunction Modal({ children }) {\n  return createPortal(children, document.body)\n}\n\nexport default function App() {\n  const [open, setOpen] = useState(false)\n  return (\n    <div style={{ padding: 12 }}>\n      <button onClick={() => setOpen(true)}>打开弹窗</button>\n      {open && (\n        <Modal>\n          <div style={{ position: 'fixed', top: 40, left: 40, background: '#fff', border: '1px solid #ccc', padding: 16 }}>\n            我是弹窗　<button onClick={() => setOpen(false)}>关闭</button>\n          </div>\n        </Modal>\n      )}\n    </div>\n  )\n}"
+          }
         }
       ]
     },
